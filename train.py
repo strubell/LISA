@@ -91,17 +91,21 @@ def dev_input_fn():
 
 model = LISAModel(args)
 
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=500, keep_checkpoint_max=5)
+save_and_eval_every = 1000
 
-estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
+# checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=save_and_eval_every, keep_checkpoint_max=5)
+# estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
+estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
-validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=500)
-# train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000, hooks=[validation_hook])
-# eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn)
-#
-# tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
-estimator.train(input_fn=train_input_fn, steps=100000, hooks=[validation_hook])
+# validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
+
+train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000)
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=1000)
+
+tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+
+# estimator.train(input_fn=train_input_fn, steps=100000, hooks=[validation_hook])
 #
 # estimator.evaluate(input_fn=train_input_fn)
 
