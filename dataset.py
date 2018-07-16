@@ -62,7 +62,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
 
 
     # intmap the dataset
-    dataset = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names))
+    dataset = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names), num_parallel_calls=8)
 
     # do batching
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=lambda d: tf.shape(d)[0],
@@ -70,12 +70,12 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       bucket_batch_sizes=[batch_size] * 5,
                                                                       padded_shapes=dataset.output_shapes))
 
-    dataset = dataset.map(to_input_fn(data_config, feature_label_names))
+    dataset = dataset.map(to_input_fn(data_config, feature_label_names), num_parallel_calls=8)
 
     # shuffle and expand out epochs if training
     if is_train:
         dataset = dataset.repeat(num_epochs)
-        dataset = dataset.shuffle(batch_size * 100)
+        dataset = dataset.shuffle(batch_size * 100da)
 
     # create the iterator
     iterator = dataset.make_initializable_iterator()
