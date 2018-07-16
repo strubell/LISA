@@ -4,6 +4,7 @@ import dataset
 from vocab import Vocab
 import os
 from LISA_model import LISAModel
+from hooks import ValidationHook
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
@@ -92,9 +93,15 @@ model = LISAModel(args)
 
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
-estimator.train(input_fn=train_input_fn, steps=20000)
+validation_hook = ValidationHook(estimator, dev_input_fn)
+# train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000, hooks=[validation_hook])
+# eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn)
+#
+# tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
-estimator.evaluate(input_fn=train_input_fn)
+estimator.train(input_fn=train_input_fn, steps=100000, hooks=[validation_hook])
+#
+# estimator.evaluate(input_fn=train_input_fn)
 
 # np.set_printoptions(threshold=np.inf)
 # with tf.Session() as sess:
