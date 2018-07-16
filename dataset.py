@@ -75,7 +75,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     # shuffle and expand out epochs if training
     if is_train:
         dataset = dataset.repeat(num_epochs)
-        dataset = dataset.shuffle(batch_size * 100da)
+        dataset = dataset.shuffle(batch_size * 100)
 
     # create the iterator
     iterator = dataset.make_initializable_iterator()
