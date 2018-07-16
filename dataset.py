@@ -1,5 +1,6 @@
 import tensorflow as tf
 from data_generator import conll_data_generator
+import vocab
 
 
 def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
@@ -16,6 +17,29 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
         last_idx = i + idx[1] if idx[1] > 0 else -1
         intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
     return tf.concat(intmapped, axis=-1)
+
+  return _mapper
+
+
+def to_input_fn(data_config, data_names):
+  def _mapper(d):
+    intmapped_feats = []
+    intmapped_labels = []
+    for i, datum_name in enumerate(data_names):
+      if 'feature' in data_config[datum_name] and data_config[datum_name]['feature']:
+        intmapped_feats.append(tf.expand_dims(d[:, :, i], -1))
+      elif 'label' in data_config[datum_name] and data_config[datum_name]['label']:
+        idx = data_config[datum_name]['idx']
+        if isinstance(idx, int):
+          intmapped_labels.append(tf.expand_dims(d[:, :, i], -1))
+        else:
+          last_idx = i + idx[1] if idx[1] > 0 else -1
+          intmapped_labels.append(d[:, :, i:last_idx])
+
+    labels = tf.concat(intmapped_labels, axis=-1)
+    feats = tf.concat(intmapped_feats, axis=-1)
+    ret = feats, labels
+    return ret
 
   return _mapper
 
@@ -46,6 +70,8 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       bucket_batch_sizes=[batch_size] * 5,
                                                                       padded_shapes=dataset.output_shapes))
 
+    dataset = dataset.map(to_input_fn(data_config, feature_label_names))
+
     # shuffle and expand out epochs if training
     if is_train:
         dataset = dataset.repeat(num_epochs)
@@ -55,7 +81,5 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     iterator = dataset.make_initializable_iterator()
     tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
 
-    return iterator
-
-
-
+    features, labels = iterator.get_next()
+    return features, labels
