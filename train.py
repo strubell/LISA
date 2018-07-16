@@ -61,7 +61,7 @@ data_config = {
     }
 
 num_epochs = 1
-batch_size = 20
+batch_size = 256
 is_train = True
 
 if not os.path.exists(args.save_dir):
