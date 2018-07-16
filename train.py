@@ -74,8 +74,10 @@ train_vocab = Vocab(args.train_file, data_config, args.save_dir)
 
 def get_input_fn(data_file):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
-  vocab_lookup_ops = train_vocab.get_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
-    else train_vocab.get_lookup_ops()
+  # vocab_lookup_ops = train_vocab.get_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
+  #   else train_vocab.get_lookup_ops()
+  vocab_lookup_ops = train_vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
+    else train_vocab.create_vocab_lookup_ops()
 
   return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
 
