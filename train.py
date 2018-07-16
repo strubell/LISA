@@ -93,7 +93,7 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 
 estimator.train(input_fn=train_input_fn, steps=2000)
 
-estimator.evaluate(input_fn=dev_input_fn)
+estimator.evaluate(input_fn=train_input_fn)
 
 # np.set_printoptions(threshold=np.inf)
 # with tf.Session() as sess:
