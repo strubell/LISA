@@ -93,7 +93,7 @@ model = LISAModel(args)
 
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
-validation_hook = ValidationHook(estimator, dev_input_fn)
+validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=500)
 # train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000, hooks=[validation_hook])
 # eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn)
 #
