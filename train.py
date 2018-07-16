@@ -7,6 +7,7 @@ from LISA_model import LISAModel
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
+arg_parser.add_argument('--dev_file', type=str, help='Development data file')
 arg_parser.add_argument('--save_dir', type=str, help='Training data file')
 arg_parser.add_argument('--word_embedding_file', type=str, help='File containing pre-trained word embeddings')
 
@@ -82,12 +83,17 @@ def get_input_fn(data_file):
 def train_input_fn():
   return get_input_fn(args.train_file)
 
+def dev_input_fn():
+  return get_input_fn(args.dev_file)
+
 
 model = LISAModel(args)
 
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
 estimator.train(input_fn=train_input_fn, steps=2000)
+
+estimator.evaluate(input_fn=dev_input_fn)
 
 # np.set_printoptions(threshold=np.inf)
 # with tf.Session() as sess:
