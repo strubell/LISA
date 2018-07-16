@@ -1,6 +1,5 @@
 import tensorflow as tf
 from data_generator import conll_data_generator
-import vocab
 
 
 def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
@@ -76,6 +75,9 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     if is_train:
         dataset = dataset.repeat(num_epochs)
         dataset = dataset.shuffle(batch_size * 100)
+
+    # todo should the buffer be bigger?
+    dataset.prefetch(buffer_size=1)
 
     # create the iterator
     iterator = dataset.make_initializable_iterator()
