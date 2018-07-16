@@ -93,7 +93,7 @@ model = LISAModel(args)
 
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
-estimator.train(input_fn=train_input_fn, steps=2000)
+estimator.train(input_fn=train_input_fn, steps=20000)
 
 estimator.evaluate(input_fn=train_input_fn)
 
