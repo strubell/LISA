@@ -1,13 +1,11 @@
 import tensorflow as tf
 import numpy as np
-import vocab
-import data_generator
 
 class LISAModel:
 
   def __init__(self, args):
-    self.inputs = tf.placeholder(dtype=tf.int32, shape=(None, None, None), name='inputs')
     self.args = args
+    self.PAD_VALUE = 0
 
   def model_fn(self, features, labels, mode):
 
@@ -41,6 +39,9 @@ class LISAModel:
       words = features[:, :, 0]
       labels = labels[:, :, 0]
 
+      pad_mask = tf.where(words == self.PAD_VALUE, tf.zeros([batch_size, batch_seq_len]), tf.ones([batch_size, batch_seq_len]))
+
+
       word_embeddings = tf.nn.embedding_lookup(word_embeddings_table, words)
 
       fwd_cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_dim, state_is_tuple=True)
@@ -53,21 +54,22 @@ class LISAModel:
 
       w_o = tf.get_variable(initializer=tf.constant(0.01, shape=[2 * hidden_dim, num_pos_labels]), name="w_o")
       b_o = tf.get_variable(initializer=tf.constant(0.01, shape=[num_pos_labels]), name="b_o")
-      scores = tf.nn.xw_plus_b(hidden_outputs_reshape, w_o, b_o, name="scores")
-      scores_reshape = tf.reshape(scores, [batch_size, batch_seq_len, num_pos_labels])
+      scores_flat = tf.nn.xw_plus_b(hidden_outputs_reshape, w_o, b_o, name="scores")
+      scores = tf.reshape(scores_flat, [batch_size, batch_seq_len, num_pos_labels])
 
-      loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=scores_reshape, labels=labels)
+      loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=scores, labels=labels)
+      masked_loss = loss * pad_mask
 
-      loss = tf.reduce_mean(loss)
+      loss = tf.reduce_sum(masked_loss) / tf.reduce_sum(pad_mask)
 
-      optimizer = tf.train.AdamOptimizer()
+      optimizer = tf.contrib.opt.NadamOptimizer()
       train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
 
-      preds = tf.argmax(scores_reshape, -1)
-      predictions = {'scores': scores_reshape, 'preds': preds}
+      preds = tf.argmax(scores, -1)
+      predictions = {'scores': scores, 'preds': preds}
 
       eval_metric_ops = {
-        "acc": tf.metrics.accuracy(labels, preds)
+        "acc": tf.metrics.accuracy(labels, preds, weights=pad_mask)
       }
 
       return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops)

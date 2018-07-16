@@ -4,8 +4,6 @@ import dataset
 from vocab import Vocab
 import os
 from LISA_model import LISAModel
-import numpy as np
-import data_generator
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
@@ -85,7 +83,6 @@ def train_input_fn():
   return get_input_fn(args.train_file)
 
 
-# with tf_graph.as_default():
 model = LISAModel(args)
 
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
