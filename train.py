@@ -4,7 +4,7 @@ import dataset
 from vocab import Vocab
 import os
 from LISA_model import LISAModel
-from hooks import ValidationHook
+from train_hooks import ValidationHook
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
@@ -91,7 +91,9 @@ def dev_input_fn():
 
 model = LISAModel(args)
 
-estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=500, keep_checkpoint_max=5)
+
+estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
 validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=500)
 # train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000, hooks=[validation_hook])
