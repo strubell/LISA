@@ -61,9 +61,8 @@ data_config = {
       },
     }
 
-num_epochs = 1
+num_train_epochs = 50
 batch_size = 256
-is_train = True
 
 if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir)
@@ -72,7 +71,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 train_vocab = Vocab(args.train_file, data_config, args.save_dir)
 
-def get_input_fn(data_file):
+def get_input_fn(data_file, num_epochs, is_train):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
   # vocab_lookup_ops = train_vocab.get_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
   #   else train_vocab.get_lookup_ops()
@@ -83,10 +82,10 @@ def get_input_fn(data_file):
 
 
 def train_input_fn():
-  return get_input_fn(args.train_file)
+  return get_input_fn(args.train_file, num_epochs=num_train_epochs, is_train=True)
 
 def dev_input_fn():
-  return get_input_fn(args.dev_file)
+  return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
 
 
 model = LISAModel(args)
