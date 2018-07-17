@@ -71,6 +71,8 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
 
     dataset = dataset.map(to_input_fn(data_config, feature_label_names), num_parallel_calls=8)
 
+    dataset = dataset.cache()
+
     # shuffle and expand out epochs if training
     if is_train:
       # dataset = dataset.repeat(num_epochs)
