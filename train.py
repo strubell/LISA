@@ -93,9 +93,9 @@ model = LISAModel(args)
 
 save_and_eval_every = 1000
 
-# checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=save_and_eval_every, keep_checkpoint_max=5)
-# estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
-estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=None, save_checkpoints_secs=None)
+estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
+# estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
