@@ -4,7 +4,7 @@ import dataset
 from vocab import Vocab
 import os
 from LISA_model import LISAModel
-from train_hooks import ValidationHook
+from functools import partial
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
@@ -100,8 +100,47 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
+num_train_examples = 39832  # todo: compute this automatically
+num_steps_in_epoch = int(num_train_examples / batch_size)
+
+
+# def __init__(self,
+#              name='best_exporter',
+#              serving_input_receiver_fn=None,
+#              event_file_pattern='eval/*.tfevents.*',
+#              compare_fn=_loss_smaller,
+#              assets_extra=None,
+#              as_text=False,
+#              exports_to_keep=5):
+
+
+"""Compares two evaluation results and returns true if the 2nd one is smaller.
+  Both evaluation results should have the values for MetricKeys.LOSS, which are
+  used for comparison.
+  Args:
+    best_eval_result: best eval metrics.
+    current_eval_result: current eval metrics.
+  Returns:
+    True if the loss of current_eval_result is smaller; otherwise, False.
+  Raises:
+    ValueError: If input eval result is None or no loss is available.
+  """
+def best_model_compare_fn(best_eval_result, current_eval_result, key):
+
+  if not best_eval_result or key not in best_eval_result:
+    raise ValueError(
+      'best_eval_result cannot be empty or no loss is found in it.')
+
+  if not current_eval_result or key not in current_eval_result:
+    raise ValueError(
+      'current_eval_result cannot be empty or no loss is found in it.')
+
+  return best_eval_result[key] > current_eval_result[key]
+
+
+save_best_exporter = estimator.BestExporter(compare_fn=partial(best_model_compare_fn, key="acc"))
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=1000)
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=num_steps_in_epoch, exporters=[save_best_exporter])
 
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
