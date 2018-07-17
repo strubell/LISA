@@ -91,17 +91,17 @@ def dev_input_fn():
 
 model = LISAModel(args)
 
-save_and_eval_every = 1000
+num_train_examples = 39832  # todo: compute this automatically
+num_steps_in_epoch = int(num_train_examples / batch_size)
 
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=None, save_checkpoints_secs=None)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=num_steps_in_epoch, keep_checkpoint_max=1)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 # estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
-num_train_examples = 39832  # todo: compute this automatically
-num_steps_in_epoch = int(num_train_examples / batch_size)
+
 
 
 # def __init__(self,
