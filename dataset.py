@@ -15,30 +15,9 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
       else:
         last_idx = i + idx[1] if idx[1] > 0 else -1
         intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
+
+    # this is where the order of features/labels in input gets defined
     return tf.concat(intmapped, axis=-1)
-
-  return _mapper
-
-
-def to_input_fn(data_config, data_names):
-  def _mapper(d):
-    intmapped_feats = []
-    intmapped_labels = []
-    for i, datum_name in enumerate(data_names):
-      if 'feature' in data_config[datum_name] and data_config[datum_name]['feature']:
-        intmapped_feats.append(tf.expand_dims(d[:, :, i], -1))
-      elif 'label' in data_config[datum_name] and data_config[datum_name]['label']:
-        idx = data_config[datum_name]['idx']
-        if isinstance(idx, int):
-          intmapped_labels.append(tf.expand_dims(d[:, :, i], -1))
-        else:
-          last_idx = i + idx[1] if idx[1] > 0 else -1
-          intmapped_labels.append(d[:, :, i:last_idx])
-
-    labels = tf.concat(intmapped_labels, axis=-1)
-    feats = tf.concat(intmapped_feats, axis=-1)
-    ret = feats, labels
-    return ret
 
   return _mapper
 
@@ -68,16 +47,13 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       bucket_boundaries=[20, 30, 50, 80],  # todo: optimal?
                                                                       bucket_batch_sizes=[batch_size] * 5,
                                                                       padded_shapes=dataset.output_shapes))
-
-    # dataset = dataset.map(to_input_fn(data_config, feature_label_names), num_parallel_calls=8)
-
     dataset = dataset.cache()
 
     # shuffle and expand out epochs if training
     if is_train:
-      # dataset = dataset.repeat(num_epochs)
-      # dataset = dataset.shuffle(batch_size * 100)
-      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size, count=num_epochs))
+      dataset = dataset.repeat(num_epochs)
+      dataset = dataset.shuffle(batch_size * 100)
+      # dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size, count=num_epochs))
 
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
