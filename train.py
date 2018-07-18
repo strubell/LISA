@@ -139,7 +139,7 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
 
 
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(best_model_compare_fn, key="acc"),
-                                               input_receiver_fn=tf.estimator.export.build_parsing_serving_input_receiver_fn)
+                                               serving_input_receiver_fn=tf.estimator.export.build_parsing_serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000)
 eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=num_steps_in_epoch, exporters=[save_best_exporter])
 
