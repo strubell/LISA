@@ -123,7 +123,7 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
     raise ValueError(
       'current_eval_result cannot be empty or no loss is found in it.')
 
-  return best_eval_result[key] > current_eval_result[key]
+  return best_eval_result[key] < current_eval_result[key]
 
 
 # serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn()
