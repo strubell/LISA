@@ -69,7 +69,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       bucket_batch_sizes=[batch_size] * 5,
                                                                       padded_shapes=dataset.output_shapes))
 
-    dataset = dataset.map(to_input_fn(data_config, feature_label_names), num_parallel_calls=8)
+    # dataset = dataset.map(to_input_fn(data_config, feature_label_names), num_parallel_calls=8)
 
     dataset = dataset.cache()
 
