@@ -1,7 +1,6 @@
 import tensorflow as tf
 from data_generator import conll_data_generator
 
-
 def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
   def _mapper(d):
     intmapped = []

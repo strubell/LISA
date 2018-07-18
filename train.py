@@ -5,6 +5,7 @@ from vocab import Vocab
 import os
 from LISA_model import LISAModel
 from functools import partial
+import train_utils
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
@@ -83,7 +84,7 @@ def get_input_fn(data_file, num_epochs, is_train):
 
 
 def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=num_train_epochs, is_train=True)
+  return get_input_fn(args.train_file, num_epochs=1, is_train=True)
 
 def dev_input_fn():
   return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
@@ -98,52 +99,18 @@ checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=num_steps_i
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 # estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
-
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
-
-"""Compares two evaluation results and returns true if the 2nd one is smaller.
-  Both evaluation results should have the values for MetricKeys.LOSS, which are
-  used for comparison.
-  Args:
-    best_eval_result: best eval metrics.
-    current_eval_result: current eval metrics.
-  Returns:
-    True if the loss of current_eval_result is smaller; otherwise, False.
-  Raises:
-    ValueError: If input eval result is None or no loss is available.
-  """
-def best_model_compare_fn(best_eval_result, current_eval_result, key):
-
-  if not best_eval_result or key not in best_eval_result:
-    raise ValueError(
-      'best_eval_result cannot be empty or no loss is found in it.')
-
-  if not current_eval_result or key not in current_eval_result:
-    raise ValueError(
-      'current_eval_result cannot be empty or no loss is found in it.')
-
-  return best_eval_result[key] < current_eval_result[key]
-
-
-# serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn()
-
-def serving_input_receiver_fn():
-  inputs = tf.placeholder(tf.int32, [None, None, None])
-  return tf.estimator.export.TensorServingInputReceiver(inputs, inputs)
-
-save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(best_model_compare_fn, key="acc"),
-                                               serving_input_receiver_fn=serving_input_receiver_fn)
-train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=2000)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=num_steps_in_epoch, exporters=[save_best_exporter])
-# eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=100, exporters=[save_best_exporter])
-
+save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn, key="acc"),
+                                               serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
+train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=1000, exporters=[save_best_exporter])
 
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 # estimator.train(input_fn=train_input_fn, steps=100000, hooks=[validation_hook])
-#
 # estimator.evaluate(input_fn=train_input_fn)
+
 
 # np.set_printoptions(threshold=np.inf)
 # with tf.Session() as sess:
