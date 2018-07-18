@@ -77,8 +77,10 @@ class LISAModel:
         "acc": tf.metrics.accuracy(labels, preds, weights=pad_mask)
       }
 
-      # todo add other losses here
+      export_outputs = {'predict_output': tf.estimator.export.PredictOutput({'scores': scores, 'preds': preds})}
+
+        # todo add other losses here
       logging_hook = tf.train.LoggingTensorHook({"loss": loss}, every_n_iter=10)
 
       return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops,
-                                        training_hooks=[logging_hook])
+                                        training_hooks=[logging_hook], export_outputs=export_outputs)
