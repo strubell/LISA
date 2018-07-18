@@ -67,7 +67,7 @@ class LISAModel:
       loss = tf.reduce_sum(masked_loss) / tf.reduce_sum(pad_mask)
 
       # optimizer = tf.contrib.opt.NadamOptimizer()
-      optimizer = tf.train.AdamOptimizer()
+      optimizer = tf.contrib.opt.LazyAdamOptimizer()
       train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
 
       preds = tf.argmax(scores, -1)
