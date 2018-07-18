@@ -102,18 +102,6 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
 
-
-
-# def __init__(self,
-#              name='best_exporter',
-#              serving_input_receiver_fn=None,
-#              event_file_pattern='eval/*.tfevents.*',
-#              compare_fn=_loss_smaller,
-#              assets_extra=None,
-#              as_text=False,
-#              exports_to_keep=5):
-
-
 """Compares two evaluation results and returns true if the 2nd one is smaller.
   Both evaluation results should have the values for MetricKeys.LOSS, which are
   used for comparison.
@@ -138,10 +126,20 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
   return best_eval_result[key] > current_eval_result[key]
 
 
+# serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn()
+
+def serving_input_receiver_fn():
+  inputs = {
+    'word': tf.placeholder(tf.int32, [None, None, None]),
+  }
+  return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(best_model_compare_fn, key="acc"),
-                                               serving_input_receiver_fn=tf.estimator.export.build_parsing_serving_input_receiver_fn)
+                                               serving_input_receiver_fn=serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=100000)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=num_steps_in_epoch, exporters=[save_best_exporter])
+# eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=num_steps_in_epoch, exporters=[save_best_exporter])
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=1000, exporters=[save_best_exporter])
+
 
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
