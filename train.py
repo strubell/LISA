@@ -135,8 +135,8 @@ def serving_input_receiver_fn():
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(best_model_compare_fn, key="acc"),
                                                serving_input_receiver_fn=serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=2000)
-# eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=num_steps_in_epoch, exporters=[save_best_exporter])
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=100, exporters=[save_best_exporter])
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, steps=num_steps_in_epoch, exporters=[save_best_exporter])
+# eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=100, exporters=[save_best_exporter])
 
 
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
