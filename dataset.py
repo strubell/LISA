@@ -86,5 +86,6 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     iterator = dataset.make_initializable_iterator()
     tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
 
-    features, labels = iterator.get_next()
-    return features, labels
+    # features, labels = iterator.get_next()
+    # return features, labels
+    return iterator.get_next()
