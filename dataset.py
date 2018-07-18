@@ -5,7 +5,7 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
   def _mapper(d):
     intmapped = []
     for i, datum_name in enumerate(data_names):
-      idx = data_config[datum_name]['idx']
+      idx = data_config[datum_name]['conll_idx']
       if isinstance(idx, int):
         if 'vocab' in data_config[datum_name]:
           intmapped.append(tf.expand_dims(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i]), -1))

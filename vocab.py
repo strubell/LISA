@@ -90,7 +90,7 @@ class Vocab:
         if line:
           split_line = line.split()
           for d in vocabs_index.keys():
-            datum_idx = data_config[d]['idx']
+            datum_idx = data_config[d]['conll_idx']
             this_vocab_map = vocabs[vocabs_index[d]]
             if isinstance(datum_idx, int):
               this_data = [split_line[datum_idx]]

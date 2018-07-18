@@ -7,6 +7,22 @@ from LISA_model import LISAModel
 from functools import partial
 import train_utils
 
+def get_input_fn(data_file, num_epochs, is_train):
+  # this needs to be created from here so that it ends up in the same tf.Graph as everything else
+  vocab_lookup_ops = train_vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
+    else train_vocab.create_vocab_lookup_ops()
+
+  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
+
+
+def train_input_fn():
+  return get_input_fn(args.train_file, num_epochs=1, is_train=True)
+
+
+def dev_input_fn():
+  return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
+
+
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
 arg_parser.add_argument('--dev_file', type=str, help='Development data file')
@@ -17,51 +33,55 @@ args = arg_parser.parse_args()
 
 data_config = {
       'id': {
-        'idx': 0,
+        'conll_idx': 0,
       },
       'word': {
-        'idx': 3,
+        'conll_idx': 3,
         'feature': True,
         'vocab': 'glove.6B.100d.txt',
         'converter': 'lowercase',
         'oov': True
       },
       'auto_pos': {
-        'idx': 4,
+        'conll_idx': 4,
         'vocab': 'gold_pos'
       },
       'gold_pos': {
-        'idx': 5,
+        'conll_idx': 5,
         'label': True,
         'vocab': 'gold_pos'
       },
       'parse_head': {
-        'idx': 6,
+        'conll_idx': 6,
         'label': True,
         'converter': 'parse_roots_self_loop'
       },
       'parse_label': {
-        'idx': 7,
+        'conll_idx': 7,
         'label': True,
         'vocab': 'parse_label'
       },
       'domain': {
-        'idx': 0,
+        'conll_idx': 0,
         'vocab': 'domain',
         'converter': 'strip_conll12_domain'
       },
       'predicate': {
-        'idx': 10,
+        'conll_idx': 10,
         'label': True,
         'vocab': 'predicate',
         'converter': 'conll12_binary_predicates'
       },
       'srl': {
-        'idx': [14, -1],
+        'conll_idx': [14, -1],
         'label': True,
         'vocab': 'srl'
       },
     }
+
+model_config = {
+  'layers'
+}
 
 num_train_epochs = 50
 batch_size = 256
@@ -73,38 +93,27 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 train_vocab = Vocab(args.train_file, data_config, args.save_dir)
 
-def get_input_fn(data_file, num_epochs, is_train):
-  # this needs to be created from here so that it ends up in the same tf.Graph as everything else
-  # vocab_lookup_ops = train_vocab.get_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
-  #   else train_vocab.get_lookup_ops()
-  vocab_lookup_ops = train_vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
-    else train_vocab.create_vocab_lookup_ops()
-
-  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
 
 
-def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=1, is_train=True)
-
-def dev_input_fn():
-  return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
 
 
 model = LISAModel(args)
 
 num_train_examples = 39832  # todo: compute this automatically
+evaluate_every_n_epochs = 5
 num_steps_in_epoch = int(num_train_examples / batch_size)
+eval_every_steps = evaluate_every_n_epochs * num_steps_in_epoch
+tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=num_steps_in_epoch, keep_checkpoint_max=1)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
-# estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn, key="acc"),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=1000, exporters=[save_best_exporter])
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, exporters=[save_best_exporter])
 
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
