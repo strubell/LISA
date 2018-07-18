@@ -8,14 +8,14 @@ class LISAModel:
     self.PAD_VALUE = 0
 
   # def model_fn(self, features, labels, mode):
-  def model_fn(self, inputs, mode):
+  def model_fn(self, features, mode):
 
     with tf.variable_scope("model", reuse=tf.AUTO_REUSE):
       hidden_dim = 128
       num_pos_labels = 45
       word_embedding_size = 100
       # batch_shape = tf.shape(features)
-      batch_shape = tf.shape(inputs)
+      batch_shape = tf.shape(features)
       batch_size = batch_shape[0]
       batch_seq_len = batch_shape[1]
 
@@ -40,8 +40,8 @@ class LISAModel:
 
       # words = features[:, :, 0]
       # labels = labels[:, :, 0]
-      words = inputs[:, :, 0]
-      labels = inputs[:, :, 1]
+      words = features[:, :, 0]
+      labels = features[:, :, 1]
 
       pad_mask = tf.where(words == self.PAD_VALUE, tf.zeros([batch_size, batch_seq_len]), tf.ones([batch_size, batch_seq_len]))
 
