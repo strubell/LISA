@@ -129,10 +129,8 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
 # serving_input_receiver_fn = tf.estimator.export.build_raw_serving_input_receiver_fn()
 
 def serving_input_receiver_fn():
-  inputs = {
-    'word': tf.placeholder(tf.int32, [None, None, None]),
-  }
-  return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+  inputs = tf.placeholder(tf.int32, [None, None, None])
+  return tf.estimator.export.TensorServingInputReceiver(inputs, inputs)
 
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(best_model_compare_fn, key="acc"),
                                                serving_input_receiver_fn=serving_input_receiver_fn)
