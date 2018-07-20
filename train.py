@@ -85,7 +85,7 @@ data_config = {
         'label': True,
         'vocab': 'srl',
         'converter': {
-          'namne': 'idx_range_converter'
+          'name': 'idx_range_converter'
         }
       },
     }

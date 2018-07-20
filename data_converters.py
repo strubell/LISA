@@ -21,8 +21,7 @@ def conll12_binary_predicates_converter(split_line, idx):
 
 
 def joint_converter(split_line, idx, component_converters):
-  components = [dispatch(converter)(split_line, i) for i, converter in zip(idx, component_converters)]
-  print(components)
+  components = [dispatch(converter)(split_line, i)[0] for i, converter in zip(idx, component_converters)]
   return [constants.JOINT_LABEL_SEP.join(components)]
 
 
