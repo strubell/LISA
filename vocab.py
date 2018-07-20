@@ -111,7 +111,7 @@ class Vocab:
             #   this_data = [split_line[datum_idx]]
             # if 'converter' in data_config[d]:
             converter_name = data_config[d]['converter']['name'] if 'converter' in data_config[d] else 'default_converter'
-            converter_params = data_converters.get_params(data_config[d]['converter'], split_line, datum_idx)
+            converter_params = data_converters.get_params(data_config[d], split_line, datum_idx)
             this_data = data_converters.dispatch(converter_name)(**converter_params)
             for this_datum in this_data:
               if this_datum not in this_vocab_map:

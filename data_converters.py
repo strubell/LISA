@@ -47,10 +47,10 @@ dispatcher = {
 }
 
 
-def get_params(converter_config, split_line, idx):
+def get_params(datum_config, split_line, idx):
   params = {'split_line': split_line, 'idx': idx}
-  if 'params' in converter_config:
-    params_map = converter_config['params']
+  if 'converter' in datum_config and 'params' in datum_config['converter']:
+    params_map = datum_config['params']
     for param_name, param_value in params_map.items():
       params[param_name] = param_value
   return params
