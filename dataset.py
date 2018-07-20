@@ -2,22 +2,25 @@ import tensorflow as tf
 from data_generator import conll_data_generator
 import constants
 
+
 def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
   def _mapper(d):
     intmapped = []
     for i, datum_name in enumerate(data_names):
-      idx = data_config[datum_name]['conll_idx']
-      if isinstance(idx, int):
-        if 'vocab' in data_config[datum_name]:
-          intmapped.append(tf.expand_dims(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i]), -1))
+      if 'vocab' in data_config[datum_name]:
+        # todo this is a little clumsy -- is there a better way to pass this info through?
+        if 'type' in data_config[datum_name] and data_config[datum_name]['type'] == 'range':
+          idx = data_config[datum_name]['conll_idx']
+          last_idx = i + idx[1] if idx[1] > 0 else -1
+          intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
         else:
-          intmapped.append(tf.expand_dims(tf.string_to_number(d[:, i], out_type=tf.int64), -1))
+          intmapped.append(tf.expand_dims(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i]), -1))
       else:
-        last_idx = i + idx[1] if idx[1] > 0 else -1
-        intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
+        intmapped.append(tf.expand_dims(tf.string_to_number(d[:, i], out_type=tf.int64), -1))
+
 
     # this is where the order of features/labels in input gets defined
-    return tf.concat(intmapped, axis=-1)
+    return tf.cast(tf.concat(intmapped, axis=-1), tf.int32) # todo: can i have these just naturally be int32?
 
   return _mapper
 
@@ -47,7 +50,9 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       bucket_boundaries=[20, 30, 50, 80],  # todo: optimal?
                                                                       bucket_batch_sizes=[batch_size] * 5,
                                                                       padded_shapes=dataset.output_shapes,
-                                                                      padding_values=constants.PAD_VALUE))
+                                                                      padding_values = constants.PAD_VALUE))
+                                                                      # padding_values=tf.constant(constants.PAD_VALUE,
+                                                                      #                            dtype=tf.int64)))
     dataset = dataset.cache()
 
     # shuffle and expand out epochs if training

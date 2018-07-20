@@ -5,7 +5,7 @@ import numpy as np
 def leaky_relu(x): return tf.maximum(.1*x, x)
 
 
-def layer_norm(inputs, reuse, epsilon=1e-6):
+def layer_norm(inputs, epsilon=1e-6):
   """Applies layer normalization.
 
   Args:
@@ -16,7 +16,7 @@ def layer_norm(inputs, reuse, epsilon=1e-6):
   Returns:
     A tensor with the same shape and data dtype as `inputs`.
   """
-  with tf.variable_scope("layer_norm", reuse=reuse):
+  with tf.variable_scope("layer_norm"):
     inputs_shape = inputs.get_shape()
     params_shape = inputs_shape[-1:]
 

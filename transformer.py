@@ -114,7 +114,6 @@ def conv_hidden_relu(inputs,
                      hidden_size,
                      output_size,
                      dropout,
-                     nonlinearity,
                      kernel):
   """Hidden layer with RELU activation followed by linear projection."""
   with tf.variable_scope("conv_hidden_relu", [inputs]):
@@ -124,10 +123,10 @@ def conv_hidden_relu(inputs,
     params2 = tf.get_variable("ff2", [1, kernel, hidden_size, hidden_size])
     params3 = tf.get_variable("ff3", [1, 1, hidden_size, output_size])
     h = tf.nn.conv2d(inputs, params1, [1, 1, 1, 1], "SAME")
-    h = nonlinearity(h)
+    h = nn_utils.leaky_relu(h)
     h = tf.nn.dropout(h, dropout)
     h = tf.nn.conv2d(h, params2, [1, 1, 1, 1], "SAME")
-    h = nonlinearity(h)
+    h = nn_utils.leaky_relu(h)
     h = tf.nn.dropout(h, dropout)
     ret = tf.nn.conv2d(h, params3, [1, 1, 1, 1], "SAME")
     ret = tf.squeeze(ret, 1)
@@ -139,7 +138,6 @@ def dot_product_attention(q, k, v,
                           dropout_rate=1.0,
                           num_capsule_heads=0,
                           manual_attn=None,
-                          hard_attn=False,
                           name=None):
   """dot-product attention.
   Args:
@@ -168,14 +166,14 @@ def dot_product_attention(q, k, v,
       weights_rest = weights_transpose[1:]
       weights_comb = tf.concat([tf.expand_dims(manual_attn, 0), weights_rest], axis=0)
       weights = tf.transpose(weights_comb, [1, 0, 2, 3])
-    if hard_attn:
-      # heads x batch x seq_len x seq_len
-      weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
-      weights_rest = weights_transpose[1:]
-      w = weights_transpose[0]
-      hard_weights = tf.where(tf.equal(w, tf.tile(tf.expand_dims(tf.reduce_max(w, axis=-1), -1), [1, 1, tf.shape(w)[-1]])), tf.ones_like(w), tf.zeros_like(w))
-      weights_comb = tf.concat([tf.expand_dims(hard_weights, 0), weights_rest], axis=0)
-      weights = tf.transpose(weights_comb, [1, 0, 2, 3])
+    # if hard_attn:
+    #   # heads x batch x seq_len x seq_len
+    #   weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
+    #   weights_rest = weights_transpose[1:]
+    #   w = weights_transpose[0]
+    #   hard_weights = tf.where(tf.equal(w, tf.tile(tf.expand_dims(tf.reduce_max(w, axis=-1), -1), [1, 1, tf.shape(w)[-1]])), tf.ones_like(w), tf.zeros_like(w))
+    #   weights_comb = tf.concat([tf.expand_dims(hard_weights, 0), weights_rest], axis=0)
+    #   weights = tf.transpose(weights_comb, [1, 0, 2, 3])
     # dropping out the attention links for each of the heads
     weights_drop = tf.nn.dropout(weights, dropout_rate)
     return tf.matmul(weights_drop, v), logits
@@ -204,9 +202,7 @@ def multihead_attention(antecedent,
                         output_depth,
                         num_heads,
                         dropout_rate,
-                        num_capsule_heads,
                         manual_attn=None,
-                        hard_attn=False,
                         name=None):
   """Multihead scaled-dot-product attention with input/output transformations.
   Args:
@@ -236,7 +232,7 @@ def multihead_attention(antecedent,
     v = split_heads(v, num_heads)
     key_depth_per_head = total_key_depth // num_heads
     q *= key_depth_per_head**-0.5
-    x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate, num_capsule_heads, manual_attn, hard_attn)
+    x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate, manual_attn)
     x = combine_heads(x)
     params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
     x = tf.expand_dims(x, 1)
@@ -245,27 +241,27 @@ def multihead_attention(antecedent,
     return x, attn_weights
 
 
-def transformer(self, inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
-                nonlinearity, kernel, reuse, num_capsule_heads, manual_attn=None):
+def transformer(mode, inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
+                manual_attn=None):
 
   mask = attention_bias_ignore_padding(seq_lengths)
 
   hidden_size = head_size * num_heads
 
-  if self.moving_params is not None:
+  if mode is not tf.estimator.ModeKeys.TRAIN:
     attn_dropout = 1.0
     relu_dropout = 1.0
     prepost_dropout = 1.0
 
   with tf.variable_scope("self_attention"):
-    x = nn_utils.layer_norm(inputs, reuse)
+    x = nn_utils.layer_norm(inputs)
     y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout,
-                                          num_capsule_heads, manual_attn)
+                                          manual_attn)
     x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
   with tf.variable_scope("ffnn"):
-    x = nn_utils.layer_norm(x, reuse)
-    y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout, nonlinearity, kernel)
+    x = nn_utils.layer_norm(x)
+    y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout)
     x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
   return x

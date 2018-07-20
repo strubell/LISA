@@ -49,7 +49,7 @@ class LISAModel:
       batch_size = batch_shape[0]
       batch_seq_len = batch_shape[1]
       layer_config = self.model_config['layers']
-      sa_hidden_size = layer_config['head_size'] * layer_config['num_heads']
+      sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
       feats = {f: features[idx] for f, idx in self.feature_idx_map.items()}
       labels = {l: features[idx] for l, idx in self.label_idx_map.items()}
@@ -59,9 +59,10 @@ class LISAModel:
       # for masking out padding tokens
       tokens_to_keep = tf.where(words == constants.PAD_VALUE, tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
-      seq_lengths = tf.reshape(tf.reduce_sum(tokens_to_keep, [1, 2]), [-1, 1])
+      # seq_lengths = tf.reshape(tf.reduce_sum(tokens_to_keep, [1, 2]), [-1, 1])
+      seq_lengths = tf.reduce_sum(tokens_to_keep, -1)
 
-      mask2d = tokens_to_keep * tf.transpose(tokens_to_keep, [0, 2, 1])
+      mask2d = tokens_to_keep * tf.transpose(tokens_to_keep)
 
       # todo this is parse specific
       # compute targets adj matrix
@@ -89,7 +90,7 @@ class LISAModel:
 
         for i in range(self.model_config['num_layers']):
           with tf.variable_scope('layer%d' % i):
-            current_input = transformer.transformer(current_input, seq_lengths, layer_config['head_size'],
+            current_input = transformer.transformer(mode, current_input, seq_lengths, layer_config['head_dim'],
                                                     layer_config['num_heads'], layer_config['attn_dropout'],
                                                     layer_config['ff_dropout'], layer_config['prepost_dropout'],
                                                     layer_config['ff_hidden_size'],

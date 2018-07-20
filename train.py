@@ -82,6 +82,7 @@ data_config = {
       },
       'srl': {
         'conll_idx': [14, -1],
+        'type': 'range',
         'label': True,
         'vocab': 'srl',
         'converter': {
@@ -96,6 +97,7 @@ model_config = {
   'predicate_mlp_size': 200,
   'role_mlp_size': 200,
   'predicate_pred_mlp_size': 200,
+  'word_embedding_size': 100,
   'layers': {
     'type': 'transformer',
     'num_heads': 8,
