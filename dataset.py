@@ -1,5 +1,6 @@
 import tensorflow as tf
 from data_generator import conll_data_generator
+import constants
 
 def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
   def _mapper(d):
@@ -45,7 +46,8 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=lambda d: tf.shape(d)[0],
                                                                       bucket_boundaries=[20, 30, 50, 80],  # todo: optimal?
                                                                       bucket_batch_sizes=[batch_size] * 5,
-                                                                      padded_shapes=dataset.output_shapes))
+                                                                      padded_shapes=dataset.output_shapes,
+                                                                      padding_values=constants.PAD_VALUE))
     dataset = dataset.cache()
 
     # shuffle and expand out epochs if training

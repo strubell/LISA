@@ -3,24 +3,9 @@ import argparse
 import dataset
 from vocab import Vocab
 import os
-from LISA_model import LISAModel
+from model import LISAModel
 from functools import partial
 import train_utils
-
-def get_input_fn(data_file, num_epochs, is_train):
-  # this needs to be created from here so that it ends up in the same tf.Graph as everything else
-  vocab_lookup_ops = train_vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
-    else train_vocab.create_vocab_lookup_ops()
-
-  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
-
-
-def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=1, is_train=True)
-
-
-def dev_input_fn():
-  return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
 
 
 arg_parser = argparse.ArgumentParser(description='')
@@ -52,7 +37,7 @@ data_config = {
         'vocab': 'gold_pos'
       },
       'parse_head': {
-        'conll_idx': 6,
+        'conll_idx': [6, 0],
         'label': True,
         'converter': 'parse_roots_self_loop'
       },
@@ -72,15 +57,101 @@ data_config = {
         'vocab': 'predicate',
         'converter': 'conll12_binary_predicates'
       },
+      'joint_pos_predicate': {
+        'conll_idx': [5, 10],
+        'label': True,
+        'vocab': 'joint_pos_predicate',
+        'converter': 'joint_converter',
+        'label_components': [
+          'gold_pos',
+          'predicate'
+        ]
+      },
       'srl': {
         'conll_idx': [14, -1],
         'label': True,
-        'vocab': 'srl'
+        'vocab': 'srl',
+        'converter': 'idx_range_converter'
       },
     }
 
 model_config = {
-  'layers'
+  'num_layers': 12,
+  'input_dropout': 0.8,
+  'predicate_mlp_size': 200,
+  'role_mlp_size': 200,
+  'predicate_pred_mlp_size': 200,
+  'layers': {
+    'type': 'transformer',
+    'num_heads': 8,
+    'head_dim': 25,
+    'ff_hidden_size': 800,
+    'attn_dropout': 0.9,
+    'ff_dropout': 0.9,
+    'prepost_dropout': 0.9,
+  }
+}
+
+# task_config = {
+#   'gold_pos': {
+#     'layer': 3,
+#   },
+#   'predicate': {
+#     'layer': 3,
+#   },
+#   'parse_head': {
+#     'layer': 5,
+#   },
+#   'parse_label': {
+#     'layer': 5,
+#   },
+#   'srl': {
+#     'layer': 12
+#   },
+# }
+task_config = {
+  3: {
+    'joint_pos_predicates': {
+      'penalty': 1.0,
+      'output_fn': {
+        'name': 'joint_softmax_classifier',
+        'params': {
+          'joint_maps': {
+            'maps': [
+              'joint_pos_predicates_to_gold_pos',
+              'joint_pos_predicates_to_predicate'
+            ]
+          }
+        }
+      },
+      'eval_fn': {
+        'name': 'accuracy',
+        'params': {}
+      }
+    }
+  },
+  # 5: {
+  #   'parse_head',
+  #   'parse_label'
+  # },
+  12: {
+    'srl': {
+      'penalty': 1.0,
+      'output_fn': {
+        'name': 'srl_bilinear',
+        'params': {
+          'predicate_preds': {
+            'layer': 'joint_pos_predicates',
+            'output': 'predicate_predictions'
+          }
+        }
+      },
+      'eval_fn': {
+        'name': 'accuracy',
+        'params': {}
+      }
+    }
+  }
 }
 
 num_train_epochs = 50
@@ -93,11 +164,34 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 train_vocab = Vocab(args.train_file, data_config, args.save_dir)
 
+def get_input_fn(data_file, num_epochs, is_train):
+  # this needs to be created from here so that it ends up in the same tf.Graph as everything else
+  vocab_lookup_ops = train_vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
+    else train_vocab.create_vocab_lookup_ops()
+
+  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
 
 
+def train_input_fn():
+  return get_input_fn(args.train_file, num_epochs=1, is_train=True)
 
 
-model = LISAModel(args)
+def dev_input_fn():
+  return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
+
+
+feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
+                           ('feature' in data_config[d] and data_config[d]['feature']) or
+                           ('label' in data_config[d] and data_config[d]['label'])])
+                   if 'feature' in data_config[f] and data_config[f]['feature']}
+
+label_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if \
+                           ('feature' in data_config[d] and data_config[d]['feature']) or \
+                           ('label' in data_config[d] and data_config[d]['label'])])
+                 if 'label' in data_config[f] and data_config[f]['label']}
+
+model = LISAModel(args, model_config, task_config, feature_idx_map, label_idx_map, train_vocab.joint_label_lookup_maps,
+                  train_vocab.vocab_sizes)
 
 num_train_examples = 39832  # todo: compute this automatically
 evaluate_every_n_epochs = 5
