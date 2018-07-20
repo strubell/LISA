@@ -1,5 +1,6 @@
 import constants
 
+
 def lowercase_converter(split_line, idx):
   return [split_line[idx].lower()]
 
@@ -19,8 +20,9 @@ def conll12_binary_predicates_converter(split_line, idx):
   return [str(split_line[idx] != '-')]
 
 
-def joint_converter(split_line, idx):
-  return [constants.JOINT_LABEL_SEP.join([split_line[i] for i in idx])]
+def joint_converter(split_line, idx, component_converters):
+  components = [dispatch(converter)(split_line[i]) for i, converter in zip(idx, component_converters)]
+  return [constants.JOINT_LABEL_SEP.join(components)]
 
 
 def idx_range_converter(split_line, idx):
@@ -43,6 +45,15 @@ dispatcher = {
   'idx_list_converter': idx_list_converter,
   'default_converter': idx_list_converter
 }
+
+
+def get_params(converter_config, split_line, idx):
+  params = {'split_line': split_line, 'idx': idx}
+  if 'params' in converter_config:
+    params_map = converter_config['params']
+    for param_name, param_value in params_map.items():
+      params[param_name] = param_value
+  return params
 
 
 def dispatch(converter_name):

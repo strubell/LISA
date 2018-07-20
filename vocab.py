@@ -110,8 +110,9 @@ class Vocab:
             # if isinstance(datum_idx, int):
             #   this_data = [split_line[datum_idx]]
             # if 'converter' in data_config[d]:
-            converter_name = data_config[d]['converter'] if 'converter' in data_config[d] else 'default_converter'
-            this_data = data_converters.dispatch(converter_name)(split_line, datum_idx)
+            converter_name = data_config[d]['converter']['name'] if 'converter' in data_config[d] else 'default_converter'
+            converter_params = data_converters.get_params(data_config[d]['converter'], split_line, datum_idx)
+            this_data = data_converters.dispatch(converter_name)(**converter_params)
             for this_datum in this_data:
               if this_datum not in this_vocab_map:
                 this_vocab_map[this_datum] = 0
@@ -135,8 +136,8 @@ class Vocab:
             joint_to_comp_map[joint_idx] = comp_idx
 
         # add them to the master map
-        for map_name, comp_map in zip(map_names, joint_to_comp_maps):
-          self.joint_label_lookup_maps[map_name] = comp_map
+        for map_name, joint_to_comp_map in zip(map_names, joint_to_comp_maps):
+          self.joint_label_lookup_maps[map_name] = joint_to_comp_map
 
     for d in vocabs_index.keys():
       this_vocab_map = vocabs[vocabs_index[d]]

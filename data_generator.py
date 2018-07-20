@@ -16,8 +16,9 @@ def conll_data_generator(filename, data_config):
           if ('feature' in data_config[d] and data_config[d]['feature']) or \
              ('label' in data_config[d] and data_config[d]['label']):
             datum_idx = data_config[d]['conll_idx']
-            converter_name = data_config[d]['converter'] if 'converter' in data_config[d] else 'default_converter'
-            data = data_converters.dispatch(converter_name)(split_line, datum_idx)
+            converter_name = data_config[d]['converter']['name'] if 'converter' in data_config[d] else 'default_converter'
+            converter_params = data_converters.get_params(data_config[d]['converter'], split_line, datum_idx)
+            data = data_converters.dispatch(converter_name)(**converter_params)
             data_vals.extend(data)
         buf.append(tuple(data_vals))
       else:

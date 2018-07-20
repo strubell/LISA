@@ -24,7 +24,9 @@ data_config = {
         'conll_idx': 3,
         'feature': True,
         'vocab': 'glove.6B.100d.txt',
-        'converter': 'lowercase',
+        'converter':  {
+          'name': 'lowercase'
+        },
         'oov': True
       },
       'auto_pos': {
@@ -39,7 +41,9 @@ data_config = {
       'parse_head': {
         'conll_idx': [6, 0],
         'label': True,
-        'converter': 'parse_roots_self_loop'
+        'converter':  {
+          'name': 'parse_roots_self_loop'
+        }
       },
       'parse_label': {
         'conll_idx': 7,
@@ -49,19 +53,28 @@ data_config = {
       'domain': {
         'conll_idx': 0,
         'vocab': 'domain',
-        'converter': 'strip_conll12_domain'
+        'converter': {
+          'name': 'strip_conll12_domain'
+        }
       },
       'predicate': {
         'conll_idx': 10,
         'label': True,
         'vocab': 'predicate',
-        'converter': 'conll12_binary_predicates'
+        'converter': {
+          'name': 'conll12_binary_predicates'
+        }
       },
       'joint_pos_predicate': {
         'conll_idx': [5, 10],
         'label': True,
         'vocab': 'joint_pos_predicate',
-        'converter': 'joint_converter',
+        'converter': {
+          'name': 'joint_converter',
+          'params': {
+            'component_converters': ['default_converter', 'conll12_binary_predicates']
+          }
+        },
         'label_components': [
           'gold_pos',
           'predicate'
@@ -71,7 +84,9 @@ data_config = {
         'conll_idx': [14, -1],
         'label': True,
         'vocab': 'srl',
-        'converter': 'idx_range_converter'
+        'converter': {
+          'namne': 'idx_range_converter'
+        }
       },
     }
 
