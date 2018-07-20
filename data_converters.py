@@ -38,7 +38,7 @@ dispatcher = {
   'strip_conll12_domain': strip_conll12_domain_converter,
   'conll12_binary_predicates': conll12_binary_predicates_converter,
   'lowercase': lowercase_converter,
-  'joint_pos_predicate': joint_converter,
+  'joint_converter': joint_converter,
   'idx_range_converter': idx_range_converter,
   'idx_list_converter': idx_list_converter,
   'default_converter': idx_list_converter
@@ -49,5 +49,5 @@ def dispatch(converter_name):
     try:
       return dispatcher[converter_name]
     except KeyError:
-      print('Undefined data converter `%s' % converter_name)
+      print('Undefined data converter: %s' % converter_name)
       exit(1)
