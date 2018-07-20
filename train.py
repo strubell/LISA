@@ -62,10 +62,10 @@ data_config = {
         'label': True,
         'vocab': 'joint_pos_predicate',
         'converter': 'joint_converter',
-        'label_components': {
+        'label_components': [
           'gold_pos',
           'predicate'
-        }
+        ]
       },
       'srl': {
         'conll_idx': [14, -1],
@@ -117,10 +117,10 @@ task_config = {
         'name': 'joint_softmax_classifier',
         'params': {
           'joint_maps': {
-            'maps': {
+            'maps': [
               'joint_pos_predicates_to_gold_pos',
               'joint_pos_predicates_to_predicate'
-            }
+            ]
           }
         }
       },
