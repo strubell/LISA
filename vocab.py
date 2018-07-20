@@ -111,7 +111,7 @@ class Vocab:
             #   this_data = [split_line[datum_idx]]
             # if 'converter' in data_config[d]:
             converter_name = data_config[d]['converter'] if 'converter' in data_config[d] else 'default_converter'
-            print('converter_name')
+            print(converter_name)
             this_data = data_converters.dispatch(converter_name)(split_line, datum_idx)
             for this_datum in this_data:
               print(this_datum)
