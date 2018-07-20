@@ -24,7 +24,7 @@ def joint_converter(split_line, idx):
 
 
 def idx_range_converter(split_line, idx):
-  return [split_line[idx[0]: idx[1]]]
+  return split_line[idx[0]: idx[1]]
 
 
 def idx_list_converter(split_line, idx):
