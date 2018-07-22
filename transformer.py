@@ -113,14 +113,13 @@ def combine_heads(x):
 def conv_hidden_relu(inputs,
                      hidden_size,
                      output_size,
-                     dropout,
-                     kernel):
+                     dropout):
   """Hidden layer with RELU activation followed by linear projection."""
   with tf.variable_scope("conv_hidden_relu", [inputs]):
     inputs = tf.expand_dims(inputs, 1)
     in_size = inputs.get_shape().as_list()[-1]
     params1 = tf.get_variable("ff1", [1, 1, in_size, hidden_size])
-    params2 = tf.get_variable("ff2", [1, kernel, hidden_size, hidden_size])
+    params2 = tf.get_variable("ff2", [1, 1, hidden_size, hidden_size])
     params3 = tf.get_variable("ff3", [1, 1, hidden_size, output_size])
     h = tf.nn.conv2d(inputs, params1, [1, 1, 1, 1], "SAME")
     h = nn_utils.leaky_relu(h)
