@@ -53,6 +53,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       padding_values = constants.PAD_VALUE))
                                                                       # padding_values=tf.constant(constants.PAD_VALUE,
                                                                       #                            dtype=tf.int64)))
+
     dataset = dataset.cache()
 
     # shuffle and expand out epochs if training

@@ -6,6 +6,7 @@ Much of this code is adapted from the Tensor2Tensor Transformer implementation:
     https://github.com/tensorflow/tensor2tensor
 '''
 
+
 def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
   """Adds a bunch of sinusoids of different frequencies to a Tensor.
   Each channel of the input Tensor is incremented by a sinusoid of a different
