@@ -33,6 +33,7 @@ class BaseOptimizer:
     self.decay_rate = kwargs.pop('decay_rate', constants.DEFAULT_DECAY_RATE)
     self.decay_steps = kwargs.pop('decay_steps', constants.DEFAULT_DECAY_STEPS)
     self.warmup_steps = kwargs.pop('warmup_steps', constants.DEFAULT_WARMUP_STEPS)
+    self.gradient_clip_norm = kwargs.pop('gradient_clip_norm', constants.DEFAULT_GRADIENT_CLIP_NORM)
     self.chi = kwargs.pop('chi', constants.DEFAULT_CHI)
 
 
@@ -190,9 +191,9 @@ class BaseOptimizer:
   def _finish(self, caches):
     """"""
 
-    if self.clip > 0:
+    if self.gradient_clip_norm > 0:
       S_t = [cache['s_t'] for cache in caches]
-      S_t, _ = tf.clip_by_global_norm(S_t, self.clip)
+      S_t, _ = tf.clip_by_global_norm(S_t, self.gradient_clip_norm)
       for cache, s_t in zip(caches, S_t):
         cache['s_t'] = s_t
 
