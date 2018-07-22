@@ -166,7 +166,7 @@ def get_params(model_config, task_map, train_outputs, current_outputs, task_labe
       # print(param_values['maps'])
       # print(joint_lookup_maps['joint_pos_predicate_to_predicate'])
       # print(param_name)
-      params = {**params, **{joint_lookup_maps[map_name] for map_name in param_values['maps']}}
+      params[param_name] = {joint_lookup_maps[map_name] for map_name in param_values['maps']}
     # otherwise, this is a previous-prediction-type param, look those up and pass through
     else:
       outputs_layer = train_outputs[param_values['layer']]
