@@ -136,7 +136,6 @@ def conv_hidden_relu(inputs,
 def dot_product_attention(q, k, v,
                           bias,
                           dropout_rate=1.0,
-                          num_capsule_heads=0,
                           manual_attn=None,
                           name=None):
   """dot-product attention.
