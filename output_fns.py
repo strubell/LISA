@@ -2,7 +2,7 @@ import tensorflow as tf
 import nn_utils
 
 
-def joint_softmax_classifier(model_config, input, targets, num_labels, tokens_to_keep, joint_maps):
+def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps):
 
   predicate_pred_mlp_size = model_config['predicate_pred_mlp_size']
 
@@ -36,7 +36,7 @@ def joint_softmax_classifier(model_config, input, targets, num_labels, tokens_to
   return output
 
 
-def srl_bilinear(model_config, input, targets, num_labels, tokens_to_keep, predicate_preds, transition_params=None):
+def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds, transition_params=None):
     '''
 
     :param input: Tensor with dims: [batch_size, batch_seq_len, hidden_size]
@@ -164,9 +164,6 @@ def get_params(model_config, task_map, train_outputs, current_outputs, task_labe
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
     if 'maps' in param_values:
-      # print(param_values['maps'])
-      # print(joint_lookup_maps['joint_pos_predicate_to_predicate'])
-      # print(param_name)
       params[param_name] = {map_name: joint_lookup_maps[map_name] for map_name in param_values['maps']}
     # otherwise, this is a previous-prediction-type param, look those up and pass through
     else:
