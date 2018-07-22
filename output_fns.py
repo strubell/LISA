@@ -7,7 +7,7 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   predicate_pred_mlp_size = model_config['predicate_pred_mlp_size']
 
   with tf.variable_scope('MLP'):
-    mlp = nn_utils.MLP(input, predicate_pred_mlp_size, n_splits=1)
+    mlp = nn_utils.MLP(inputs, predicate_pred_mlp_size, n_splits=1)
   with tf.variable_scope('Classifier'):
     logits = nn_utils.MLP(mlp, num_labels, n_splits=1)
 
@@ -48,7 +48,7 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
     :return:
     '''
 
-    input_shape = tf.shape(input)
+    input_shape = tf.shape(inputs)
     batch_size = input_shape[0]
     batch_seq_len = input_shape[1]
 
@@ -60,7 +60,7 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
 
     # (1) project into predicate, role representations
     with tf.variable_scope('MLP'):
-      predicate_role_mlp = nn_utils.MLP(input, predicate_mlp_size + role_mlp_size, n_splits=1)
+      predicate_role_mlp = nn_utils.MLP(inputs, predicate_mlp_size + role_mlp_size, n_splits=1)
       predicate_mlp, role_mlp = predicate_role_mlp[:, :, :predicate_mlp_size], \
                                 predicate_role_mlp[:, :, predicate_mlp_size:]
 
