@@ -58,12 +58,6 @@ class LISAModel:
 
       words = feats['word']
 
-
-      words = tf.Print(words, [tf.shape(features)], "features shape")
-
-      words = tf.Print(words, [tf.shape(words)], "words shape")
-
-
       # for masking out padding tokens
       tokens_to_keep = tf.where(words == constants.PAD_VALUE, tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
@@ -102,7 +96,6 @@ class LISAModel:
 
         for i in range(self.model_config['num_layers']):
           with tf.variable_scope('layer%d' % i):
-            current_input = tf.Print(current_input, [tf.shape(current_input)], "current_input")
             current_input = transformer.transformer(mode, current_input, tokens_to_keep, layer_config['head_dim'],
                                                     layer_config['num_heads'], layer_config['attn_dropout'],
                                                     layer_config['ff_dropout'], layer_config['prepost_dropout'],
