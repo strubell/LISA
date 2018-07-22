@@ -1,8 +1,8 @@
 import tensorflow as tf
 
 
-def accuracy(preds, targets, tokens_to_keep):
-  return tf.metrics.accuracy(targets, preds, weights=tokens_to_keep)
+def accuracy(predictions, targets, tokens_to_keep):
+  return tf.metrics.accuracy(targets, predictions, weights=tokens_to_keep)
 
 
 dispatcher = {
