@@ -98,7 +98,7 @@ class LISAModel:
             if i in self.task_config:
               for task, task_map in self.task_config[i].items():
                 task_labels = labels[task]
-                output_fn_params = output_fns.get_params(self.model_config, task_map, predictions, current_input,
+                output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions, current_input,
                                                          task_labels, self.label_vocab_sizes[task],
                                                          self.joint_label_lookup_maps, tokens_to_keep)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)

@@ -126,6 +126,7 @@ model_config = {
 #     'layer': 12
 #   },
 # }
+# todo validate these files
 task_config = {
   3: {
     'joint_pos_predicate': {
