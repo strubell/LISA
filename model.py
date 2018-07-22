@@ -79,12 +79,8 @@ class LISAModel:
       current_input = word_embeddings
       current_input = tf.nn.dropout(current_input, self.model_config['input_dropout'] if mode == tf.estimator.ModeKeys.TRAIN else 1.0)
 
-      current_input = tf.Print(current_input, [tf.shape(current_input)], "current_input")
-
       with tf.variable_scope('project_input'):
         current_input = nn_utils.MLP(current_input, sa_hidden_size, n_splits=1)
-
-      current_input = tf.Print(current_input, [tf.shape(current_input)], "current_input")
 
       manual_attn = None
       predictions = {}
