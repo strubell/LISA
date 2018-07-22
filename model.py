@@ -5,6 +5,7 @@ import transformer
 import nn_utils
 import output_fns
 import evaluation_fns
+from radam_optimizer import RadamOptimizer
 
 
 class LISAModel:
@@ -143,8 +144,18 @@ class LISAModel:
 
       # todo
       # optimizer = tf.contrib.opt.NadamOptimizer()
-      optimizer = tf.contrib.opt.LazyAdamOptimizer()
-      train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+      learning_rate = 0.04
+      decay_rate = 1.5
+      warmup_steps = 8000
+      mu = 0.9
+      nu = 0.98
+      epsilon = 1e-12
+      # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=learning_rate, beta1=mu, beta2=nu, epsilon=epsilon)
+      optimizer = RadamOptimizer(learning_rate=learning_rate, mu=mu, nu=nu, epsilon=epsilon, decay_rate=decay_rate,
+                                 warmup_steps=warmup_steps, global_step=tf.train.get_global_step())
+      train_op = optimizer.minimize(loss=loss)
+      # train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+
 
       # preds = tf.argmax(scores, -1)
       # predictions = {'scores': scores, 'preds': preds}
