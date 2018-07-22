@@ -256,13 +256,15 @@ def transformer(mode, inputs, seq_lengths, head_size, num_heads, attn_dropout, r
     x = nn_utils.layer_norm(inputs)
     y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout,
                                           manual_attn)
+    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "xy")
+    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "xy")
     x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
   with tf.variable_scope("ffnn"):
     x = nn_utils.layer_norm(x)
     y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout)
-    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "xy")
-    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "xy")
+    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "ffxy")
+    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "ffxy")
     x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
   return x
