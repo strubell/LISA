@@ -113,10 +113,11 @@ def linear_layer(inputs, output_size, add_bias=True, n_splits=1, initializer=Non
 def MLP(inputs, output_size, func=leaky_relu, keep_prob=1.0, n_splits=1, moving_params=None):
   """"""
 
-  n_dims = len(inputs.get_shape().as_list())
-  print("n_dims", n_dims)
+  input_shape = inputs.get_shape().as_list()
+  n_dims = len(input_shape)
   batch_size = tf.shape(inputs)[0]
-  input_size = inputs.get_shape().as_list()[-1]
+  input_size = input_shape[-1]
+  print("n_dims", n_dims, input_size, output_size)
   shape_to_set = [tf.Dimension(None)] * (n_dims - 1) + [tf.Dimension(output_size)]
 
   if keep_prob < 1:
