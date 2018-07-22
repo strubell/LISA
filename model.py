@@ -120,6 +120,8 @@ class LISAModel:
                 # get the individual task loss and apply penalty
                 this_task_loss = task_outputs['loss'] * task_map['penalty']
 
+                this_task_loss = tf.Print(this_task_loss, [this_task_loss], task)
+
                 # log this task's loss
                 items_to_log['%s_loss' % task] = this_task_loss
 
