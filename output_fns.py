@@ -19,6 +19,8 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   cross_entropy *= tokens_to_keep
   loss = tf.reduce_sum(cross_entropy) / tf.reduce_sum(tokens_to_keep)
 
+  loss = tf.Print(loss, [loss], "joint softmax loss")
+
   predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
   # predictions *= int_mask
 
