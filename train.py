@@ -128,15 +128,15 @@ model_config = {
 # }
 task_config = {
   3: {
-    'joint_pos_predicates': {
+    'joint_pos_predicate': {
       'penalty': 1.0,
       'output_fn': {
         'name': 'joint_softmax_classifier',
         'params': {
           'joint_maps': {
             'maps': [
-              'joint_pos_predicates_to_gold_pos',
-              'joint_pos_predicates_to_predicate'
+              'joint_pos_predicate_to_gold_pos',
+              'joint_pos_predicate_to_predicate'
             ]
           }
         }
@@ -158,7 +158,7 @@ task_config = {
         'name': 'srl_bilinear',
         'params': {
           'predicate_preds': {
-            'layer': 'joint_pos_predicates',
+            'layer': 'joint_pos_predicate',
             'output': 'predicate_predictions'
           }
         }
