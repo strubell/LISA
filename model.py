@@ -58,6 +58,9 @@ class LISAModel:
 
       words = feats['word']
 
+      words = tf.Print(words, [tf.shape(words)], "words shape")
+
+
       # for masking out padding tokens
       tokens_to_keep = tf.where(words == constants.PAD_VALUE, tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
