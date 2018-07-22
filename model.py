@@ -18,6 +18,8 @@ class LISAModel:
     self.joint_label_lookup_maps = joint_label_lookup_maps
     self.label_vocab_sizes = label_vocab_sizes
 
+    print("joint label lookup maps", joint_label_lookup_maps)
+
   def load_pretrained_embeddings(self):
     tf.logging.log(tf.logging.INFO, "Loading pre-trained word embedding file: %s" % self.args.word_embedding_file)
 
