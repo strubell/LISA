@@ -208,8 +208,7 @@ label_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if \
                            ('label' in data_config[d] and data_config[d]['label'])])
                  if 'label' in data_config[f] and data_config[f]['label']}
 
-model = LISAModel(args, model_config, task_config, feature_idx_map, label_idx_map, train_vocab.joint_label_lookup_maps,
-                  train_vocab.vocab_sizes)
+model = LISAModel(args, model_config, task_config, feature_idx_map, label_idx_map, train_vocab)
 
 num_train_examples = 39832  # todo: compute this automatically
 evaluate_every_n_epochs = 5

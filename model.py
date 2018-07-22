@@ -9,14 +9,15 @@ import evaluation_fns
 
 class LISAModel:
 
-  def __init__(self, args, model_config, task_config, feature_idx_map, label_idx_map, joint_label_lookup_maps, label_vocab_sizes):
+  def __init__(self, args, model_config, task_config, feature_idx_map, label_idx_map, vocab):
     self.args = args
     self.model_config = model_config
     self.task_config = task_config
     self.feature_idx_map = feature_idx_map
     self.label_idx_map = label_idx_map
-    self.joint_label_lookup_maps = joint_label_lookup_maps
-    self.label_vocab_sizes = label_vocab_sizes
+    # self.joint_label_lookup_maps = joint_label_lookup_maps
+    # self.label_vocab_sizes = label_vocab_sizes
+    self.vocab = vocab
 
 
   def load_pretrained_embeddings(self):
@@ -99,9 +100,9 @@ class LISAModel:
             if i in self.task_config:
               for task, task_map in self.task_config[i].items():
                 task_labels = labels[task]
-                output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions, current_input,
-                                                         task_labels, self.label_vocab_sizes[task],
-                                                         self.joint_label_lookup_maps, tokens_to_keep)
+                output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions,
+                                                         current_input, task_labels, self.vocab.vocab_names_sizes[task],
+                                                         self.vocab.joint_label_lookup_maps, tokens_to_keep)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
                 # want task_outputs to have:
@@ -111,7 +112,8 @@ class LISAModel:
                 predictions[task] = task_outputs
 
                 # do the evaluation
-                eval_fn_params = evaluation_fns.get_params(task_outputs['predictions'], task_map, predictions, task_labels, tokens_to_keep)
+                eval_fn_params = evaluation_fns.get_params(task_outputs['predictions'], task_map, predictions,
+                                                           task_labels, tokens_to_keep)
                 eval_result = evaluation_fns.dispatch(task_map['eval_fn']['name'])(**eval_fn_params)
                 eval_metric_ops['%s_%s' % (task, task_map['eval_fn']['name'])] = eval_result
 

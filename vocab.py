@@ -14,11 +14,11 @@ class Vocab:
     self.data_config = data_config
     self.save_dir = save_dir
 
-    self.vocab_sizes = {}
+    # self.vocab_sizes = {}
     self.joint_label_lookup_maps = {}
     self.vocab_lookups = None
 
-    self.vocab_names = self.make_vocab_files(self.data_filename, self.data_config, self.save_dir)
+    self.vocab_names_sizes = self.make_vocab_files(self.data_filename, self.data_config, self.save_dir)
 
   '''
   Creates tf.contrib.lookup ops for all the vocabs defined in self.data_config.
@@ -34,14 +34,15 @@ class Vocab:
     # Don't waste GPU memory with these lookup tables; tell tf to put it on CPU
     with tf.device('/cpu:0'):
       vocab_lookup_ops = {}
-      for v in self.vocab_names:
+      for v in self.vocab_names_sizes.keys():
         num_oov = 1 if 'oov' in self.data_config[v] and self.data_config[v]['oov'] else 0
         this_lookup = tf.contrib.lookup.index_table_from_file("%s/%s.txt" % (self.save_dir, v),
                                                                       num_oov_buckets=num_oov,
                                                                       key_column_index=0)
         vocab_lookup_ops[v] = this_lookup
-        this_lookup_size = this_lookup.size()
-        self.vocab_sizes[v] = this_lookup_size
+        # self.vocab_names_sizes[v] += num_oov
+        # this_lookup_size = this_lookup.size()
+        # self.vocab_sizes[v] = this_lookup_size
 
       if word_embedding_file:
         embeddings_name = word_embedding_file.split("/")[-1]
@@ -49,7 +50,7 @@ class Vocab:
                                                                                     num_oov_buckets=1,
                                                                                     key_column_index=0,
                                                                                     delimiter=' ')
-        self.vocab_sizes[embeddings_name] = vocab_lookup_ops[embeddings_name].size()
+        self.vocab_names_sizes[embeddings_name] = vocab_lookup_ops[embeddings_name].size()
 
     tf.logging.log(tf.logging.INFO, "Created %d vocab lookup ops: %s" %
                    (len(vocab_lookup_ops), str([k for k in vocab_lookup_ops.keys()])))
@@ -82,7 +83,7 @@ class Vocab:
     data_config: Data configuration map
   
   Returns:
-    List of created vocab names
+    Map from vocab names to their sizes
   '''
   def make_vocab_files(self, filename, data_config, save_dir):
 
@@ -142,4 +143,4 @@ class Vocab:
         for k, v in this_vocab_map.items():
           print("%s\t%d" % (k, v), file=f)
 
-    return vocabs_index.keys()
+    return {k: len(vocabs[vocabs_index[k]]) for k in vocabs_index.keys()}

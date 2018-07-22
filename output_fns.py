@@ -9,7 +9,7 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   with tf.variable_scope('MLP'):
     mlp = nn_utils.MLP(inputs, predicate_pred_mlp_size, n_splits=1)
   with tf.variable_scope('Classifier'):
-    logits = nn_utils.MLP(mlp, num_labels[0], n_splits=1)
+    logits = nn_utils.MLP(mlp, num_labels, n_splits=1)
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
