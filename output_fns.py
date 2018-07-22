@@ -143,6 +143,7 @@ def srl_bilinear(model_config, input, targets, num_labels, tokens_to_keep, predi
 
 dispatcher = {
   'srl_bilinear': srl_bilinear,
+  'joint_softmax_classifier': joint_softmax_classifier,
 }
 
 
