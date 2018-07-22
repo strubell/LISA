@@ -26,7 +26,7 @@ class BaseOptimizer:
   def __init__(self, *args, **kwargs):
     """"""
 
-    self._global_step = kwargs.pop('global_step', tf.Variable(0., trainable=False, name="global_step"))
+    self._global_step = kwargs.pop('global_step')
     self._accumulators = {}
 
     self.initial_learning_rate = kwargs.pop('learning_rate', constants.DEFAULT_LEARNING_RATE)
@@ -67,7 +67,7 @@ class BaseOptimizer:
     # Apply gradients
     with tf.control_dependencies(None):
       self._init_acc(var_list, grads)
-    with tf.name_scope(values=[], name=name, default_name=self._name) as name:
+    with tf.name_scope(values=[], name=name, default_name=self.name) as name:
       caches = filter(lambda cache: cache['g_t'] is not None, self._prepare(var_list, grads))
       for cache in caches:
         x_tm1, g_t = cache['x_tm1'], cache['g_t']
@@ -233,7 +233,7 @@ class BaseOptimizer:
   def average_name(self, x_tm1):
     """"""
 
-    return x_tm1.op.name + '/' + self._name + '/' + 'x'
+    return x_tm1.op.name + '/' + self.name + '/' + 'x'
 
   # ==============================================================
   def variables_to_restore(self, moving_avg_variables=None):

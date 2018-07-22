@@ -28,15 +28,13 @@ class RadamOptimizer(BaseOptimizer):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
 
-    self._name = "RadamOptimizer"
+    self.name = "RadamOptimizer"
 
     self.mu = kwargs.pop('mu', constants.DEFAULT_MU)
     self.nu = kwargs.pop('mu', constants.DEFAULT_MU)
     self.gamma = kwargs.pop('gamma', constants.DEFAULT_GAMMA)
 
     self.epsilon = kwargs.pop('epsilon', constants.DEFAULT_EPSILON)
-
-
 
 
   # =============================================================
