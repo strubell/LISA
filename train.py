@@ -18,7 +18,7 @@ args = arg_parser.parse_args()
 
 data_config = {
       'id': {
-        'conll_idx': 0,
+        'conll_idx': 2,
       },
       'word': {
         'conll_idx': 3,
@@ -39,7 +39,7 @@ data_config = {
         'vocab': 'gold_pos'
       },
       'parse_head': {
-        'conll_idx': [6, 0],
+        'conll_idx': [6, 2],
         'label': True,
         'converter':  {
           'name': 'parse_roots_self_loop'
