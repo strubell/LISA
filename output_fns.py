@@ -30,8 +30,9 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
 
   # now get separate-task predictions for each of the maps we've passed through
   for map_name, label_comp_map in joint_maps.items():
+    short_map_name = map_name.split('_to_')[-1]
     label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
-    output["%s_predictions" % map_name] = tf.squeeze(label_comp_predictions, -1)
+    output["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
 
   return output
 

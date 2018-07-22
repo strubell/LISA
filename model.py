@@ -155,5 +155,7 @@ class LISAModel:
 
       logging_hook = tf.train.LoggingTensorHook(items_to_log, every_n_iter=10)
 
-      return tf.estimator.EstimatorSpec(mode, predictions, loss, train_op, eval_metric_ops,
+      flat_predictions = {"%s_%s" % (k1, k2): k2[v2] for k1, v1 in predictions.items() for k2, v2 in v1}
+
+      return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
                                         training_hooks=[logging_hook], export_outputs=export_outputs)
