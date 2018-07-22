@@ -92,7 +92,7 @@ class LISAModel:
 
         for i in range(self.model_config['num_layers']):
           with tf.variable_scope('layer%d' % i):
-            current_input = transformer.transformer(mode, current_input, seq_lengths, layer_config['head_dim'],
+            current_input = transformer.transformer(mode, current_input, tokens_to_keep, layer_config['head_dim'],
                                                     layer_config['num_heads'], layer_config['attn_dropout'],
                                                     layer_config['ff_dropout'], layer_config['prepost_dropout'],
                                                     layer_config['ff_hidden_size'],

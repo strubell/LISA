@@ -44,17 +44,16 @@ def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
   return x + signal
 
 
-def attention_bias_ignore_padding(lengths):
-  """Create an bias tensor to be added to attention logits.
+def attention_bias_ignore_padding(tokens_to_keep):
+  """Create a bias tensor to be added to attention logits.
   Args:
-    memory_padding: a float `Tensor` with shape [batch, memory_length].
+    tokens_to_keep: an int Tensor with shape [batch, batch_seq_len].
   Returns:
-    a `Tensor` with shape [batch, 1, 1, memory_length].
+    A `Tensor` with shape [batch, 1, 1, batch_seq_len].
   """
-  mask = tf.sequence_mask(lengths, tf.reduce_max(lengths))
-  memory_padding = tf.cast(tf.logical_not(mask), tf.float32)
-  ret = memory_padding * -1e9
-  return tf.expand_dims(tf.expand_dims(ret, axis=1), axis=1)
+  # mask = tf.sequence_mask(lengths, tf.reduce_max(lengths))
+  mask = tf.cast(1 - tokens_to_keep, tf.float32) * -1e9
+  return tf.expand_dims(tf.expand_dims(mask, axis=1), axis=1)
 
 
 def split_last_dimension(x, n):
