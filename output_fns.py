@@ -16,7 +16,7 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   # squeezed_mask = tf.squeeze(tokens_to_keep, -1)
   # int_mask = tf.cast(squeezed_mask, tf.int32)
 
-  cross_entropy *= tf.squeeze(tokens_to_keep, -1)
+  cross_entropy *= tokens_to_keep
   loss = tf.reduce_sum(cross_entropy) / tf.reduce_sum(tokens_to_keep)
 
   predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
@@ -85,8 +85,7 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
     # (3) compute loss
 
     # need to repeat each of these once for each target in the sentence
-    mask_tiled = tf.reshape(tf.tile(tf.squeeze(tokens_to_keep, -1), [1, batch_seq_len]),
-                            [batch_size, batch_seq_len, batch_seq_len])
+    mask_tiled = tf.reshape(tf.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
     mask = tf.gather_nd(mask_tiled, tf.where(tf.equal(predicate_preds, 1)))
     count = tf.cast(tf.count_nonzero(mask), tf.float32)
 
