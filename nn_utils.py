@@ -114,6 +114,7 @@ def MLP(inputs, output_size, func=leaky_relu, keep_prob=1.0, n_splits=1, moving_
   """"""
 
   n_dims = len(inputs.get_shape().as_list())
+  print("n_dims", n_dims)
   batch_size = tf.shape(inputs)[0]
   input_size = inputs.get_shape().as_list()[-1]
   shape_to_set = [tf.Dimension(None)] * (n_dims - 1) + [tf.Dimension(output_size)]
