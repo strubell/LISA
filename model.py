@@ -60,7 +60,7 @@ class LISAModel:
       words = feats['word']
 
       # for masking out padding tokens
-      tokens_to_keep = tf.where(words == constants.PAD_VALUE, tf.zeros([batch_size, batch_seq_len]),
+      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
 
       words *= tf.cast(tokens_to_keep, tf.int32)
