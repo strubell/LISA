@@ -6,6 +6,8 @@ def lowercase_converter(split_line, idx):
 
 
 def parse_roots_self_loop_converter(split_line, idx):
+  print(idx)
+  print(split_line)
   # idx[0] is parse head, idx[1] is token id
   head = int(split_line[idx[0]])
   id = int(split_line[idx[1]])
