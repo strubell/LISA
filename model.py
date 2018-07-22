@@ -63,7 +63,7 @@ class LISAModel:
       tokens_to_keep = tf.where(words == constants.PAD_VALUE, tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
 
-      words *= tokens_to_keep
+      words *= tf.cast(tokens_to_keep, tf.int32)
 
       # seq_lengths = tf.reshape(tf.reduce_sum(tokens_to_keep, [1, 2]), [-1, 1])
       # seq_lengths = tf.reduce_sum(tokens_to_keep, -1)
