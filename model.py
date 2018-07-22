@@ -58,6 +58,9 @@ class LISAModel:
 
       words = feats['word']
 
+
+      words = tf.Print(words, [tf.shape(features)], "features shape")
+
       words = tf.Print(words, [tf.shape(words)], "words shape")
 
 
