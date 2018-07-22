@@ -65,21 +65,14 @@ class LISAModel:
 
       words *= tf.cast(tokens_to_keep, tf.int32)
 
-      words = tf.Print(words, [words], "words", summarize=500)
-      words = tf.Print(words, [tokens_to_keep], "tokens_to_keep", summarize=500)
-
-
-      # seq_lengths = tf.reshape(tf.reduce_sum(tokens_to_keep, [1, 2]), [-1, 1])
-      # seq_lengths = tf.reduce_sum(tokens_to_keep, -1)
-
-      mask2d = tokens_to_keep * tf.transpose(tokens_to_keep)
 
       # todo this is parse specific
       # compute targets adj matrix
-      i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(batch_seq_len), indexing="ij")
-      idx = tf.stack([i1, i2, labels['parse_head']], axis=-1)
-      adj = tf.scatter_nd(idx, tf.ones([batch_size, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
-      adj = adj * mask2d
+      # i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(batch_seq_len), indexing="ij")
+      # idx = tf.stack([i1, i2, labels['parse_head']], axis=-1)
+      # adj = tf.scatter_nd(idx, tf.ones([batch_size, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
+      # mask2d = tokens_to_keep * tf.transpose(tokens_to_keep)
+      # adj = adj * mask2d
 
       word_embeddings_table = self.load_pretrained_embeddings()
       word_embeddings = tf.nn.embedding_lookup(word_embeddings_table, words)

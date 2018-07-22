@@ -148,28 +148,30 @@ task_config = {
       }
     }
   },
+
   # 5: {
   #   'parse_head',
   #   'parse_label'
   # },
-  12: {
-    'srl': {
-      'penalty': 1.0,
-      'output_fn': {
-        'name': 'srl_bilinear',
-        'params': {
-          'predicate_preds': {
-            'layer': 'joint_pos_predicate',
-            'output': 'predicate_predictions'
-          }
-        }
-      },
-      'eval_fn': {
-        'name': 'accuracy',
-        'params': {}
-      }
-    }
-  }
+
+  # 12: {
+  #   'srl': {
+  #     'penalty': 1.0,
+  #     'output_fn': {
+  #       'name': 'srl_bilinear',
+  #       'params': {
+  #         'predicate_preds': {
+  #           'layer': 'joint_pos_predicate',
+  #           'output': 'predicate_predictions'
+  #         }
+  #       }
+  #     },
+  #     'eval_fn': {
+  #       'name': 'accuracy',
+  #       'params': {}
+  #     }
+  #   }
+  # }
 }
 
 num_train_epochs = 50
