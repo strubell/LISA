@@ -163,8 +163,8 @@ def get_params(model_config, task_map, train_outputs, current_outputs, task_labe
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
     if 'maps' in param_values:
-      print(param_values)
-      print(joint_lookup_maps)
+      print(param_values['maps'])
+      print(joint_lookup_maps['joint_pos_predicate_to_predicate'])
       params[param_name] = {joint_lookup_maps[map_name] for map_name in param_values['maps']}
     # otherwise, this is a previous-prediction-type param, look those up and pass through
     else:
