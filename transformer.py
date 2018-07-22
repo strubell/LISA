@@ -261,6 +261,8 @@ def transformer(mode, inputs, seq_lengths, head_size, num_heads, attn_dropout, r
   with tf.variable_scope("ffnn"):
     x = nn_utils.layer_norm(x)
     y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout)
+    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "xy")
+    x = tf.Print(x, [tf.shape(x), tf.shape(y)], "xy")
     x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
   return x
