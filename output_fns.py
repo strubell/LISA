@@ -14,8 +14,6 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   # logits = tf.Print(logits, [logits], "joint softmax logits", summarize=500)
   # logits = tf.Print(logits, [tf.shape(targets), targets], "joint softmax targets", summarize=500)
 
-  print(joint_maps)
-
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
   # squeezed_mask = tf.squeeze(tokens_to_keep, -1)
@@ -41,7 +39,6 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   for map_name, label_comp_map in joint_maps.items():
     short_map_name = map_name.split('_to_')[-1]
     label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
-    label_comp_predictions = tf.Print(label_comp_predictions, [label_comp_predictions], "%s_predictions" % short_map_name, summarize=200)
     output["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
 
 
@@ -116,7 +113,7 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
     # num_triggers_in_batch x seq_len
     predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
 
-    predicate_counts = tf.reduce_sum(predicate_gather_indices, -1)
+    predicate_counts = tf.reduce_sum(predicate_preds, -1)
 
     predicate_counts = tf.Print(predicate_counts, [predicate_counts], "predicate_counts", summarize=200)
 
