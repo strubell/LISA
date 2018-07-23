@@ -61,7 +61,7 @@ class LISAModel:
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
 
-      labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tokens_to_keep, tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
+      labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
                 for l, idx in self.label_idx_map.items()}
 
       print(labels)
