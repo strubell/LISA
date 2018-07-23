@@ -220,7 +220,7 @@ feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
 
 label_idx_map = {}
 for i, f in enumerate([d for d in data_config.keys() if 'label' in data_config[d] and data_config[d]['label']]):
-  label_idx_map[f] = (i, i+1) if ('type' in data_config[f] and data_config[f]['type'] != 'range') else (i, data_config[f]['conll_idx'][1])
+  label_idx_map[f] = (i, data_config[f]['conll_idx'][1]) if ('type' in data_config[f] and data_config[f]['type'] == 'range') else (i, i+1)
 
 
 
