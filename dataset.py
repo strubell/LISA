@@ -50,7 +50,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       bucket_boundaries=[20, 30, 50, 80],  # todo: optimal?
                                                                       bucket_batch_sizes=[batch_size] * 5,
                                                                       padded_shapes=dataset.output_shapes,
-                                                                      padding_values = constants.PAD_VALUE))
+                                                                      padding_values=constants.PAD_VALUE))
                                                                       # padding_values=tf.constant(constants.PAD_VALUE,
                                                                       #                            dtype=tf.int64)))
 
@@ -58,9 +58,9 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
 
     # shuffle and expand out epochs if training
     if is_train:
-      dataset = dataset.repeat(num_epochs)
-      dataset = dataset.shuffle(batch_size * 100)
-      # dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size, count=num_epochs))
+      # dataset = dataset.repeat(num_epochs)
+      # dataset = dataset.shuffle(batch_size * 100)
+      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*10, count=num_epochs))
 
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
