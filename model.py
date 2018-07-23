@@ -89,7 +89,7 @@ class LISAModel:
       eval_metric_ops = {}
       export_outputs = {}
       loss = tf.constant(0.)
-      items_to_log = {'loss': loss}
+      items_to_log = {}
       with tf.variable_scope('transformer'):
 
         for i in range(self.model_config['num_layers']):
@@ -137,7 +137,7 @@ class LISAModel:
                                                                     'predictions': task_outputs['predictions']})
                 export_outputs['%s_predict' % task] = predict_output
 
-
+      items_to_log['loss'] = loss
 
       # loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=scores, labels=labels)
       # masked_loss = loss * pad_mask
