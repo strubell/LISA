@@ -223,7 +223,7 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
-save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn, key="acc"),
+save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn, key="joint_pos_predicate_accuracy"),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
 eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, exporters=[save_best_exporter])
