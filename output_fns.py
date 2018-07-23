@@ -14,7 +14,6 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   # logits = tf.Print(logits, [logits], "joint softmax logits", summarize=500)
   # logits = tf.Print(logits, [targets], "joint softmax targets", summarize=500)
 
-
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
   # squeezed_mask = tf.squeeze(tokens_to_keep, -1)
