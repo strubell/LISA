@@ -176,7 +176,7 @@ class LISAModel:
       #                            global_step=tf.train.get_global_step())
       # train_op = optimizer.minimize(loss=loss)
 
-      items_to_log['learning_rate'] = optimizer.learning_rate
+      # items_to_log['learning_rate'] = optimizer.learning_rate
 
 
       # preds = tf.argmax(scores, -1)
