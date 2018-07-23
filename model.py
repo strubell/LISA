@@ -143,9 +143,9 @@ class LISAModel:
 
                 # add the predictions to export_outputs
                 # todo add un-joint predictions too?
-                predict_output = tf.estimator.export.PredictOutput({'scores': task_outputs['scores'],
-                                                                    'predictions': task_outputs['predictions']})
-                export_outputs['%s_predict' % task] = predict_output
+                # predict_output = tf.estimator.export.PredictOutput({'scores': task_outputs['scores'],
+                #                                                     'predictions': task_outputs['predictions']})
+                # export_outputs['%s_predict' % task] = predict_output
 
       items_to_log['loss'] = loss
 
@@ -192,6 +192,9 @@ class LISAModel:
 
       # need to flatten the dict of predictions to make Estimator happy
       flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
+
+      export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                          tf.estimator.export.PredictOutput(flat_predictions)}
 
       return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
                                         training_hooks=[logging_hook], export_outputs=export_outputs)
