@@ -35,14 +35,15 @@ class Vocab:
     with tf.device('/cpu:0'):
       vocab_lookup_ops = {}
       for v in self.vocab_names_sizes.keys():
-        num_oov = 1 if 'oov' in self.data_config[v] and self.data_config[v]['oov'] else 0
-        this_lookup = tf.contrib.lookup.index_table_from_file("%s/%s.txt" % (self.save_dir, v),
-                                                                      num_oov_buckets=num_oov,
-                                                                      key_column_index=0)
-        vocab_lookup_ops[v] = this_lookup
-        # self.vocab_names_sizes[v] += num_oov
-        # this_lookup_size = this_lookup.size()
-        # self.vocab_sizes[v] = this_lookup_size
+        if v in self.data_config:
+          num_oov = 1 if 'oov' in self.data_config[v] and self.data_config[v]['oov'] else 0
+          this_lookup = tf.contrib.lookup.index_table_from_file("%s/%s.txt" % (self.save_dir, v),
+                                                                        num_oov_buckets=num_oov,
+                                                                        key_column_index=0)
+          vocab_lookup_ops[v] = this_lookup
+          # self.vocab_names_sizes[v] += num_oov
+          # this_lookup_size = this_lookup.size()
+          # self.vocab_sizes[v] = this_lookup_size
 
       if word_embedding_file:
         embeddings_name = word_embedding_file.split("/")[-1]
