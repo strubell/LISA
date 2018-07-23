@@ -178,8 +178,8 @@ def get_params(model_config, task_map, train_outputs, current_outputs, features,
     # if this is a map-type param, do map lookups and pass those through
     if 'maps' in param_values:
       params[param_name] = {map_name: joint_lookup_maps[map_name] for map_name in param_values['maps']}
-    elif 'features' in param_values:
-      params[param_name] = features[param_values['features']]
+    elif 'feature' in param_values:
+      params[param_name] = features[param_values['feature']]
     # otherwise, this is a previous-prediction-type param, look those up and pass through
     else:
       outputs_layer = train_outputs[param_values['layer']]
