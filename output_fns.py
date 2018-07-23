@@ -117,7 +117,7 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
 
     predicate_counts = tf.Print(predicate_counts, [predicate_preds], "predicate_preds", summarize=200)
 
-    predicate_counts = tf.Print(predicate_counts, [tf.shape(srl_targets_transposed), tf.shape(predicate_counts), predicate_counts], "predicate_counts", summarize=200)
+    predicate_counts = tf.Print(predicate_counts, [batch_size, batch_seq_len, tf.shape(srl_targets_transposed), tf.shape(predicate_counts), predicate_counts], "predicate_counts", summarize=200)
 
     srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(predicate_counts, [-1])))
 
