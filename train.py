@@ -221,7 +221,7 @@ num_steps_in_epoch = int(num_train_examples / batch_size)
 eval_every_steps = evaluate_every_n_epochs * num_steps_in_epoch
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps*1000, keep_checkpoint_max=1)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
