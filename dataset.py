@@ -9,6 +9,7 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
     for i, datum_name in enumerate(feature_label_names):
       if 'vocab' in data_config[datum_name]:
         # todo this is a little clumsy -- is there a better way to pass this info through?
+        # todo also we need the variable-length feat to come last, gross
         if 'type' in data_config[datum_name] and data_config[datum_name]['type'] == 'range':
           idx = data_config[datum_name]['conll_idx']
           if idx[1] == -1:
@@ -23,9 +24,9 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
       else:
         intmapped.append(tf.expand_dims(tf.string_to_number(d[:, i], out_type=tf.int64), -1))
 
-
     # this is where the order of features/labels in input gets defined
-    return tf.cast(tf.concat(intmapped, axis=-1), tf.int32) # todo: can i have these just naturally be int32?
+    # todo: can i have these come out of the lookup as int32?
+    return tf.cast(tf.concat(intmapped, axis=-1), tf.int32)
 
   return _mapper
 

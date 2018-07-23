@@ -51,7 +51,7 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
 
     :param input: Tensor with dims: [batch_size, batch_seq_len, hidden_size]
     :param predicate_preds: Tensor of predictions from predicates layer with dims: [batch_size, batch_seq_len]
-    :param targets: Tensor of SRL labels with dims: [batch_size, batch_seq_len]
+    :param targets: Tensor of SRL labels with dims: [batch_size, batch_seq_len, batch_num_predicates]
     :param tokens_to_keep:
     :param predictions:
     :param transition_params: [num_labels x num_labels] transition parameters, if doing Viterbi decoding
