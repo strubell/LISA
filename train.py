@@ -159,7 +159,7 @@ task_config = {
     #   'parse_label'
     # },
 
-    12: {
+    11: {
       'srl': {
         'penalty': 1.0,
         'output_fn': {
