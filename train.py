@@ -197,7 +197,7 @@ def get_input_fn(data_file, num_epochs, is_train):
 
 
 def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=1, is_train=True)
+  return get_input_fn(args.train_file, num_epochs=num_train_epochs, is_train=True)
 
 
 def dev_input_fn():
