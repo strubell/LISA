@@ -109,7 +109,7 @@ class LISAModel:
             if i in self.task_config:
               for task, task_map in self.task_config[i].items():
                 # todo fix masking -- do it in lookup table?
-                task_labels = labels[task] * tf.cast(tokens_to_keep, tf.int32)
+                task_labels = tf.multiply(labels[task], tf.cast(tokens_to_keep, tf.int32))
 
                 # task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
 
