@@ -59,6 +59,8 @@ class LISAModel:
 
       words = feats['word']
 
+      words = tf.Print(words, [words], "words", summarize=500)
+
       # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
@@ -107,6 +109,9 @@ class LISAModel:
               for task, task_map in self.task_config[i].items():
                 # todo fix masking -- do it in lookup table?
                 task_labels = labels[task] * tf.cast(tokens_to_keep, tf.int32)
+
+                task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
+
                 output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions,
                                                          current_input, task_labels, self.vocab.vocab_names_sizes[task],
                                                          self.vocab.joint_label_lookup_maps, tokens_to_keep)

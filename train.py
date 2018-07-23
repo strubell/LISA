@@ -1,6 +1,7 @@
 import tensorflow as tf
 import argparse
 import dataset
+import numpy as np
 from vocab import Vocab
 import os
 from model import LISAModel
@@ -242,5 +243,5 @@ tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 # with tf.Session() as sess:
 #   sess.run(tf.tables_initializer())
 #   for i in range(3):
-#     print(sess.run(input_fn()))
+#     print(sess.run(train_input_fn()))
 
