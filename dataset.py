@@ -41,6 +41,8 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     dataset = tf.data.Dataset.from_generator(lambda: conll_data_generator(data_filename, data_config),
                                              output_shapes=[None, None], output_types=tf.string)
 
+    dataset = dataset.take(3)
+
 
     # intmap the dataset
     dataset = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names), num_parallel_calls=8)
@@ -57,10 +59,10 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       #                            dtype=tf.int64)))
 
     # shuffle and expand out epochs if training
-    if is_train:
-      # dataset = dataset.repeat(num_epochs)
-      # dataset = dataset.shuffle(batch_size * 100)
-      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*10, count=num_epochs))
+    # if is_train:
+    #   # dataset = dataset.repeat(num_epochs)
+    #   # dataset = dataset.shuffle(batch_size * 100)
+    #   dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*10, count=num_epochs))
 
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
