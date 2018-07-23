@@ -11,8 +11,13 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
         # todo this is a little clumsy -- is there a better way to pass this info through?
         if 'type' in data_config[datum_name] and data_config[datum_name]['type'] == 'range':
           idx = data_config[datum_name]['conll_idx']
-          last_idx = i + idx[1] if idx[1] > 0 else -1
-          intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
+          if idx[1] == -1:
+            intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:]))
+          else:
+            last_idx = i + idx[1]
+            intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
+          # last_idx = i + idx[1] if idx[1] > 0 else -1
+          # intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
         else:
           intmapped.append(tf.expand_dims(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i]), -1))
       else:
