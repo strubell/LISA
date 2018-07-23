@@ -55,18 +55,22 @@ class LISAModel:
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
       feats = {f: features[:, :, idx] for f, idx in self.feature_idx_map.items()}
-      labels = {l: tf.squeeze(features[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else features[:, :, idx[0]:]
+
+      words = feats['word']
+
+      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
+                                tf.ones([batch_size, batch_seq_len]))
+
+      labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tokens_to_keep, tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
                 for l, idx in self.label_idx_map.items()}
 
       print(labels)
 
-      words = feats['word']
 
       # words = tf.Print(words, [words], "words", summarize=500)
 
       # for masking out padding tokens
-      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
-                                tf.ones([batch_size, batch_seq_len]))
+
 
       # todo fix masking -- do it in lookup table?
       words *= tf.cast(tokens_to_keep, tf.int32)
@@ -111,7 +115,7 @@ class LISAModel:
             if i in self.task_config:
               for task, task_map in self.task_config[i].items():
                 # todo fix masking -- do it in lookup table?
-                task_labels = tf.multiply(labels[task], tf.expand_dims(tf.cast(tokens_to_keep, tf.int32), -1))
+                task_labels = labels[task]
 
                 # task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
 
