@@ -122,7 +122,8 @@ class Vocab:
       if 'label_components' in self.data_config[v]:
         joint_vocab_map = vocabs[vocabs_index[v]]
         label_components = self.data_config[v]['label_components']
-        component_maps = [vocabs[vocabs_index[d]] for d in label_components]
+        component_keys = [vocabs[vocabs_index[d]].keys() for d in label_components]
+        component_maps = [dict(zip(comp_keys, range(len(comp_keys)))) for comp_keys in component_keys]
         map_names = ["%s_to_%s" % (v, label_comp) for label_comp in label_components]
         joint_to_comp_maps = [np.zeros([len(joint_vocab_map), 1], dtype=np.int32) for _ in label_components]
         for joint_idx, joint_label in enumerate(joint_vocab_map.keys()):
