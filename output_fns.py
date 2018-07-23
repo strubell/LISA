@@ -67,6 +67,7 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
     bilin_keep_prob = 1.0
 
     # inputs = tf.Print(inputs, [tf.shape(targets)], "targets shape", summarize=20)
+    inputs = tf.Print(inputs, [predicate_preds], "predicate preds", summarize=200)
 
     # (1) project into predicate, role representations
     with tf.variable_scope('MLP'):
