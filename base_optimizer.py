@@ -187,7 +187,7 @@ class BaseOptimizer:
   def _finish(self, caches):
     """"""
 
-    if self.gradient_clip_norm > 0:
+    if self.gradient_clip_norm > 0.:
       S_t = [cache['s_t'] for cache in caches]
       S_t, _ = tf.clip_by_global_norm(S_t, self.gradient_clip_norm)
       for cache, s_t in zip(caches, S_t):
