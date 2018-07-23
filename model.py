@@ -162,7 +162,7 @@ class LISAModel:
       mu = 0.9
       nu = 0.98
       epsilon = 1e-12
-      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=learning_rate, beta1=mu, beta2=nu, epsilon=epsilon)
+      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.001, beta1=mu, beta2=nu, epsilon=epsilon)
       # optimizer = RadamOptimizer(learning_rate=learning_rate, mu=mu, nu=nu, epsilon=epsilon, decay_rate=decay_rate,
       #                            warmup_steps=warmup_steps, gradient_clip_norm=gradient_clip_norm,
       #                            global_step=tf.train.get_global_step())
