@@ -28,33 +28,33 @@ def layer_norm(inputs, epsilon=1e-6):
   return outputs
 
 
-def orthonormal_initializer(input_size, output_size):
-  """"""
-
-  if not tf.get_variable_scope().reuse:
-    print(tf.get_variable_scope().name)
-    I = np.eye(output_size)
-    lr = .1
-    eps = .05 / (output_size + input_size)
-    success = False
-    while not success:
-      Q = np.random.randn(input_size, output_size) / np.sqrt(output_size)
-      for i in range(100):
-        QTQmI = Q.T.dot(Q) - I
-        loss = np.sum(QTQmI ** 2 / 2)
-        Q2 = Q ** 2
-        Q -= lr * Q.dot(QTQmI) / (np.abs(Q2 + Q2.sum(axis=0, keepdims=True) + Q2.sum(axis=1, keepdims=True) - 1) + eps)
-        if np.isnan(Q[0, 0]):
-          lr /= 2
-          break
-      if np.isfinite(loss) and np.max(Q) < 1e6:
-        success = True
-      eps *= 2
-    print('Orthogonal pretrainer loss: %.2e' % loss)
-  else:
-    print('Orthogonal pretrainer failed, using non-orthogonal random matrix')
-    Q = np.random.randn(input_size, output_size) / np.sqrt(output_size)
-  return Q.astype(np.float32)
+# def orthonormal_initializer(input_size, output_size):
+#   """"""
+#
+#   if not tf.get_variable_scope().reuse:
+#     print(tf.get_variable_scope().name)
+#     I = np.eye(output_size)
+#     lr = .1
+#     eps = .05 / (output_size + input_size)
+#     success = False
+#     while not success:
+#       Q = np.random.randn(input_size, output_size) / np.sqrt(output_size)
+#       for i in range(100):
+#         QTQmI = Q.T.dot(Q) - I
+#         loss = np.sum(QTQmI ** 2 / 2)
+#         Q2 = Q ** 2
+#         Q -= lr * Q.dot(QTQmI) / (np.abs(Q2 + Q2.sum(axis=0, keepdims=True) + Q2.sum(axis=1, keepdims=True) - 1) + eps)
+#         if np.isnan(Q[0, 0]):
+#           lr /= 2
+#           break
+#       if np.isfinite(loss) and np.max(Q) < 1e6:
+#         success = True
+#       eps *= 2
+#     print('Orthogonal pretrainer loss: %.2e' % loss)
+#   else:
+#     print('Orthogonal pretrainer failed, using non-orthogonal random matrix')
+#     Q = np.random.randn(input_size, output_size) / np.sqrt(output_size)
+#   return Q.astype(np.float32)
 
 
 def linear_layer(inputs, output_size, add_bias=True, n_splits=1, initializer=None, scope=None, moving_params=None):
@@ -82,9 +82,10 @@ def linear_layer(inputs, output_size, add_bias=True, n_splits=1, initializer=Non
 
     # Get the matrix
     if initializer is None and moving_params is None:
-      mat = orthonormal_initializer(total_input_size, output_size // n_splits)
-      mat = np.concatenate([mat] * n_splits, axis=1)
-      initializer = tf.constant_initializer(mat)
+      initializer = tf.initializers.orthogonal
+      # mat = orthonormal_initializer(total_input_size, output_size // n_splits)
+      # mat = np.concatenate([mat] * n_splits, axis=1)
+      # initializer = tf.constant_initializer(mat)
     matrix = tf.get_variable('Weights', [total_input_size, output_size], initializer=initializer)
     if moving_params is not None:
       matrix = moving_params.average(matrix)

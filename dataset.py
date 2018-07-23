@@ -54,7 +54,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       # padding_values=tf.constant(constants.PAD_VALUE,
                                                                       #                            dtype=tf.int64)))
 
-    dataset = dataset.cache()
+    # dataset = dataset.cache()
 
     # shuffle and expand out epochs if training
     if is_train:
@@ -63,7 +63,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
       dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*10, count=num_epochs))
 
     # todo should the buffer be bigger?
-    dataset.prefetch(buffer_size=1)
+    # dataset.prefetch(buffer_size=1)
 
     # create the iterator
     iterator = dataset.make_initializable_iterator()
