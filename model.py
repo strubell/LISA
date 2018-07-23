@@ -93,7 +93,7 @@ class LISAModel:
       loss = tf.constant(0.)
       items_to_log = {}
 
-      num_layers = max(self.task_config.keys())
+      num_layers = max(self.task_config.keys()) + 1
       tf.logging.log(tf.logging.INFO, "Creating transformer model with %d layers" % num_layers)
       with tf.variable_scope('transformer'):
         for i in range(num_layers):
