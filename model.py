@@ -58,11 +58,6 @@ class LISAModel:
       labels = {l: tf.squeeze(features[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else features[:, :, idx[0]:]
                 for l, idx in self.label_idx_map.items()}
 
-      print(labels)
-
-      labels = {l: features[:, :, idx[0]:idx[1]] for l, idx in self.label_idx_map.items()}
-      print(labels)
-
       words = feats['word']
 
       # words = tf.Print(words, [words], "words", summarize=500)
