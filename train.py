@@ -220,6 +220,7 @@ def dev_input_fn():
 #                            ('label' in data_config[d] and data_config[d]['label'])])
 #                  if 'label' in data_config[f] and data_config[f]['label']}
 
+# Generate mappings from feature/label names to indices in the model_fn inputs
 feature_idx_map = {}
 label_idx_map = {}
 for i, f in enumerate(data_config.keys()):
@@ -228,7 +229,7 @@ for i, f in enumerate(data_config.keys()):
   if 'label' in data_config[f] and data_config[f]['label']:
     if 'type' in data_config[f] and data_config[f]['type'] == 'range':
       idx = data_config[f]['conll_idx']
-      j = j + idx[1] if idx[1] != -1 else -1
+      j = i + idx[1] if idx[1] != -1 else -1
       label_idx_map[f] = (i, j)
     else:
       label_idx_map[f] = (i, i+1)
