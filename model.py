@@ -55,7 +55,13 @@ class LISAModel:
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
       feats = {f: features[:, :, idx] for f, idx in self.feature_idx_map.items()}
-      labels = {l: tf.squeeze(features[:, :, idx[0]:idx[1]], -1) for l, idx in self.label_idx_map.items()}
+      labels = {l: tf.squeeze(features[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else features[:, :, idx[0]:]
+                for l, idx in self.label_idx_map.items()}
+
+      print(labels)
+
+      labels = {l: features[:, :, idx[0]:idx[1]] for l, idx in self.label_idx_map.items()}
+      print(labels)
 
       words = feats['word']
 
