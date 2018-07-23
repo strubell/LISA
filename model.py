@@ -92,9 +92,11 @@ class LISAModel:
       export_outputs = {}
       loss = tf.constant(0.)
       items_to_log = {}
-      with tf.variable_scope('transformer'):
 
-        for i in range(self.model_config['num_layers']):
+      num_layers = max(self.task_config.keys())
+      tf.logging.log(tf.logging.INFO, "Creating transformer model with %d layers" % num_layers)
+      with tf.variable_scope('transformer'):
+        for i in range(num_layers):
           with tf.variable_scope('layer%d' % i):
             current_input = transformer.transformer(mode, current_input, tokens_to_keep, layer_config['head_dim'],
                                                     layer_config['num_heads'], layer_config['attn_dropout'],

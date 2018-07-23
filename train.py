@@ -92,7 +92,7 @@ data_config = {
     }
 
 model_config = {
-  'num_layers': 12,
+  # 'num_layers': 12,
   'input_dropout': 0.8,
   'predicate_mlp_size': 200,
   'role_mlp_size': 200,
@@ -216,7 +216,7 @@ label_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if \
 model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, label_idx_map, train_vocab)
 
 num_train_examples = 39832  # todo: compute this automatically
-evaluate_every_n_epochs = 10
+evaluate_every_n_epochs = 100
 num_steps_in_epoch = int(num_train_examples / batch_size)
 eval_every_steps = evaluate_every_n_epochs * num_steps_in_epoch
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
