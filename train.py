@@ -229,8 +229,8 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=task_config['best_eval_key']),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
-train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, exporters=[save_best_exporter])
+train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs*1000)
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=1200, exporters=[save_best_exporter])
 
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 

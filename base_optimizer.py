@@ -18,7 +18,7 @@
 import tensorflow as tf
 import constants
 
-# ***************************************************************
+
 class BaseOptimizer:
   """"""
 
@@ -36,9 +36,6 @@ class BaseOptimizer:
     self.gradient_clip_norm = kwargs.pop('gradient_clip_norm', constants.DEFAULT_GRADIENT_CLIP_NORM)
     self.chi = kwargs.pop('chi', constants.DEFAULT_CHI)
 
-
-
-
   # =============================================================
   def minimize(self, loss, name=None):
     """"""
@@ -54,7 +51,6 @@ class BaseOptimizer:
       raise ValueError('Loss is not float32')
 
     # Compute gradients
-    # var_refs = [x_tm1.read_value() for x_tm1 in var_list]
     grads = tf.gradients(loss, var_list,
                          colocate_gradients_with_ops=True,
                          gate_gradients=True,
