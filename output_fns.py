@@ -112,7 +112,7 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
     # num_triggers_in_batch x seq_len
     predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
 
-    predicate_counts = tf.reduce_sum(predicate_preds, -1)
+    predicate_counts = tf.reduce_sum(predicate_gather_indices, -1)
 
     predicate_counts = tf.Print(predicate_counts, [predicate_counts], "predicate_counts", summarize=200)
 
