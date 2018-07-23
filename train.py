@@ -225,7 +225,7 @@ tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps*1000, keep_checkpoint_max=1)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
-validation_hook = train_hooks.ValidationHook(estimator, dev_input_fn, every_n_steps=eval_every_steps)
+validation_hook = train_hooks.ValidationHook(estimator, dev_input_fn, every_n_steps=eval_every_steps*1000)
 
 # save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
 #                                                                   key=task_config['best_eval_key']),
