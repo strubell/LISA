@@ -101,21 +101,21 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
     count = tf.cast(tf.count_nonzero(mask), tf.float32)
 
     # now we have k sets of targets for the k frames
-    # (t1) f1 f2 f3
-    # (t2) f1 f2 f3
+    # (p1) f1 f2 f3
+    # (p2) f1 f2 f3
 
     # get all the tags for each token (which is the predicate for a frame), structuring
-    # targets as follows (assuming t1 and t2 are predicates for f1 and f3, respectively):
-    # (t1) f1 f1 f1
-    # (t2) f3 f3 f3
+    # targets as follows (assuming p1 and p2 are predicates for f1 and f3, respectively):
+    # (p1) f1 f1 f1
+    # (p2) f3 f3 f3
     srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
 
-    # num_triggers_in_batch x seq_len
+    # num_predicates_in_batch x seq_len
     predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
 
     predicate_counts = tf.reduce_sum(predicate_preds, -1)
 
-    # predicate_counts = tf.Print(predicate_counts, [predicate_counts], "predicate_counts", summarize=200)
+    predicate_counts = tf.Print(predicate_counts, [tf.shape(srl_targets_transposed), tf.shape(predicate_counts), predicate_counts], "predicate_counts", summarize=200)
 
     srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(predicate_counts, [-1])))
 
