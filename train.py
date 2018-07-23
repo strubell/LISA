@@ -216,7 +216,7 @@ label_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if \
 model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, label_idx_map, train_vocab)
 
 num_train_examples = 39832  # todo: compute this automatically
-evaluate_every_n_epochs = 5
+evaluate_every_n_epochs = 10
 num_steps_in_epoch = int(num_train_examples / batch_size)
 eval_every_steps = evaluate_every_n_epochs * num_steps_in_epoch
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
@@ -226,7 +226,8 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
-save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn, key=task_config['best_eval_key']),
+save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
+                                                                  key=task_config['best_eval_key']),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
 eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, exporters=[save_best_exporter])
