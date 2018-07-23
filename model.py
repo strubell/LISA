@@ -163,15 +163,17 @@ class LISAModel:
       mu = 0.9
       nu = 0.98
       epsilon = 1e-12
-      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
-      gradients, variables = zip(*optimizer.compute_gradients(loss))
-      gradients, _ = tf.clip_by_global_norm(gradients, gradient_clip_norm)
-      train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
-      # optimizer = RadamOptimizer(learning_rate=learning_rate, mu=mu, nu=nu, epsilon=epsilon, decay_rate=decay_rate,
-      #                            warmup_steps=warmup_steps, gradient_clip_norm=gradient_clip_norm,
-      #                            global_step=tf.train.get_global_step())
-      # train_op = optimizer.minimize(loss=loss)
-      # train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+
+      # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
+      # gradients, variables = zip(*optimizer.compute_gradients(loss))
+      # gradients, _ = tf.clip_by_global_norm(gradients, gradient_clip_norm)
+      # train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
+      # # train_op = optimizer.minimize(loss=loss)
+
+      optimizer = RadamOptimizer(learning_rate=learning_rate, mu=mu, nu=nu, epsilon=epsilon, decay_rate=decay_rate,
+                                 warmup_steps=warmup_steps, gradient_clip_norm=gradient_clip_norm,
+                                 global_step=tf.train.get_global_step())
+      train_op = optimizer.minimize(loss=loss)
 
 
       # preds = tf.argmax(scores, -1)
