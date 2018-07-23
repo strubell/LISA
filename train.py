@@ -128,50 +128,53 @@ model_config = {
 # }
 # todo validate these files
 task_config = {
-  3: {
-    'joint_pos_predicate': {
-      'penalty': 1.0,
-      'output_fn': {
-        'name': 'joint_softmax_classifier',
-        'params': {
-          'joint_maps': {
-            'maps': [
-              'joint_pos_predicate_to_gold_pos',
-              'joint_pos_predicate_to_predicate'
-            ]
+  'best_eval_key': 'joint_pos_predicate_accuracy',
+  'layers': {
+    3: {
+      'joint_pos_predicate': {
+        'penalty': 1.0,
+        'output_fn': {
+          'name': 'joint_softmax_classifier',
+          'params': {
+            'joint_maps': {
+              'maps': [
+                'joint_pos_predicate_to_gold_pos',
+                'joint_pos_predicate_to_predicate'
+              ]
+            }
           }
+        },
+        'eval_fn': {
+          'name': 'accuracy',
+          'params': {}
         }
-      },
-      'eval_fn': {
-        'name': 'accuracy',
-        'params': {}
       }
-    }
-  },
+    },
 
-  # 5: {
-  #   'parse_head',
-  #   'parse_label'
-  # },
+    # 5: {
+    #   'parse_head',
+    #   'parse_label'
+    # },
 
-  # 12: {
-  #   'srl': {
-  #     'penalty': 1.0,
-  #     'output_fn': {
-  #       'name': 'srl_bilinear',
-  #       'params': {
-  #         'predicate_preds': {
-  #           'layer': 'joint_pos_predicate',
-  #           'output': 'predicate_predictions'
-  #         }
-  #       }
-  #     },
-  #     'eval_fn': {
-  #       'name': 'accuracy',
-  #       'params': {}
-  #     }
-  #   }
-  # }
+    # 12: {
+    #   'srl': {
+    #     'penalty': 1.0,
+    #     'output_fn': {
+    #       'name': 'srl_bilinear',
+    #       'params': {
+    #         'predicate_preds': {
+    #           'layer': 'joint_pos_predicate',
+    #           'output': 'predicate_predictions'
+    #         }
+    #       }
+    #     },
+    #     'eval_fn': {
+    #       'name': 'accuracy',
+    #       'params': {}
+    #     }
+    #   }
+    # }
+  }
 }
 
 num_train_epochs = 50
@@ -210,7 +213,7 @@ label_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if \
                            ('label' in data_config[d] and data_config[d]['label'])])
                  if 'label' in data_config[f] and data_config[f]['label']}
 
-model = LISAModel(args, model_config, task_config, feature_idx_map, label_idx_map, train_vocab)
+model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, label_idx_map, train_vocab)
 
 num_train_examples = 39832  # todo: compute this automatically
 evaluate_every_n_epochs = 5
@@ -223,7 +226,7 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 
 # validation_hook = ValidationHook(estimator, dev_input_fn, every_n_steps=save_and_eval_every)
 
-save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn, key="joint_pos_predicate_accuracy"),
+save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn, key=task_config['best_eval_key']),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
 eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, exporters=[save_best_exporter])
