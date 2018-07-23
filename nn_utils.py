@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 
 
-def leaky_relu(x): return tf.maximum(.1*x, x)
+def leaky_relu(x): return tf.maximum(0.1 * x, x)
 
 
 def layer_norm(inputs, epsilon=1e-6):
