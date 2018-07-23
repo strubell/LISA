@@ -41,7 +41,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     dataset = tf.data.Dataset.from_generator(lambda: conll_data_generator(data_filename, data_config),
                                              output_shapes=[None, None], output_types=tf.string)
 
-    dataset = dataset.take(3)
+    # dataset = dataset.take(3)
 
 
     # intmap the dataset
