@@ -11,7 +11,7 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   with tf.variable_scope('Classifier'):
     logits = nn_utils.MLP(mlp, num_labels, n_splits=1)
 
-  logits = tf.Print(logits, [logits], "joint softmax logits", summarize=500)
+  # logits = tf.Print(logits, [logits], "joint softmax logits", summarize=500)
   # logits = tf.Print(logits, [targets], "joint softmax targets", summarize=500)
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
@@ -19,12 +19,12 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   # squeezed_mask = tf.squeeze(tokens_to_keep, -1)
   # int_mask = tf.cast(squeezed_mask, tf.int32)
 
-  cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy), cross_entropy], "joint softmax cross_entropy", summarize=500)
+  # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy), cross_entropy], "joint softmax cross_entropy", summarize=500)
 
   cross_entropy *= tokens_to_keep
   loss = tf.reduce_sum(cross_entropy) / tf.reduce_sum(tokens_to_keep)
 
-  loss = tf.Print(loss, [loss], "joint softmax loss")
+  # loss = tf.Print(loss, [loss], "joint softmax loss")
 
   predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
   # predictions *= int_mask

@@ -211,6 +211,7 @@ def bilinear_noreshape(inputs1, inputs2, output_size, add_bias2=True, add_bias1=
 
     return bilin
 
+
 def bilinear_classifier_nary(inputs1, inputs2, n_classes, keep_prob, add_bias1=True, add_bias2=True, moving_params=None):
   """"""
 
