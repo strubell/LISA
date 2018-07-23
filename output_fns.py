@@ -12,7 +12,9 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
     logits = nn_utils.MLP(mlp, num_labels, n_splits=1)
 
   # logits = tf.Print(logits, [logits], "joint softmax logits", summarize=500)
-  logits = tf.Print(logits, [tf.shape(targets), targets], "joint softmax targets", summarize=500)
+  # logits = tf.Print(logits, [tf.shape(targets), targets], "joint softmax targets", summarize=500)
+
+  print(joint_maps)
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
@@ -39,7 +41,9 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   for map_name, label_comp_map in joint_maps.items():
     short_map_name = map_name.split('_to_')[-1]
     label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
+    label_comp_predictions = tf.Print(label_comp_predictions, [label_comp_predictions], "%s_predictions" % short_map_name, summarize=200)
     output["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
+
 
   return output
 
