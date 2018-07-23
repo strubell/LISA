@@ -2,7 +2,7 @@ import tensorflow as tf
 import nn_utils
 
 
-def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps):
+def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps):
 
   predicate_pred_mlp_size = model_config['predicate_pred_mlp_size']
 
@@ -45,7 +45,8 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   return output
 
 
-def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds, transition_params=None):
+def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds_train,
+                 predicate_preds_eval, transition_params=None):
     '''
 
     :param input: Tensor with dims: [batch_size, batch_seq_len, hidden_size]
@@ -66,6 +67,8 @@ def srl_bilinear(model_config, inputs, targets, num_labels, tokens_to_keep, pred
     label_smoothing = model_config['label_smoothing']
     # todo pass this in
     bilin_keep_prob = 1.0
+
+    predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
 
     # inputs = tf.Print(inputs, [tf.shape(targets)], "targets shape", summarize=20)
     # inputs = tf.Print(inputs, [predicate_preds], "predicate preds", summarize=200)
@@ -171,15 +174,17 @@ def dispatch(fn_name):
 
 
 # need to decide shape/form of train_outputs!
-def get_params(model_config, task_map, train_outputs, features, current_outputs, task_labels, num_labels, joint_lookup_maps,
+def get_params(mode, model_config, task_map, train_outputs, features, labels, current_outputs, task_labels, num_labels, joint_lookup_maps,
                tokens_to_keep):
-  params = {'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
+  params = {'mode': mode, 'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
             'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels}
   params_map = task_map['params']
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
     if 'maps' in param_values:
       params[param_name] = {map_name: joint_lookup_maps[map_name] for map_name in param_values['maps']}
+    elif 'label' in param_values:
+      params[param_name] = labels[param_values['label']]
     elif 'feature' in param_values:
       params[param_name] = features[param_values['feature']]
     # otherwise, this is a previous-prediction-type param, look those up and pass through

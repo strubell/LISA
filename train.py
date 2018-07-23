@@ -62,7 +62,6 @@ data_config = {
       'predicate': {
         'conll_idx': 9,
         'label': True,
-        'feature': True,
         'vocab': 'predicate',
         'converter': {
           'name': 'conll12_binary_predicates'
@@ -166,10 +165,12 @@ task_config = {
         'output_fn': {
           'name': 'srl_bilinear',
           'params': {
-            'predicate_preds': {
-              # 'layer': 'joint_pos_predicate',
-              # 'output': 'predicate_predictions'
-              'feature': 'predicate'
+            'predicate_preds_train': {
+              'label': 'predicate'
+            },
+            'predicate_preds_eval': {
+              'layer': 'joint_pos_predicate',
+              'output': 'predicate_predictions'
             }
           }
         },

@@ -3,10 +3,10 @@ from data_generator import conll_data_generator
 import constants
 
 
-def map_strings_to_ints(vocab_lookup_ops, data_config, data_names):
+def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
   def _mapper(d):
     intmapped = []
-    for i, datum_name in enumerate(data_names):
+    for i, datum_name in enumerate(feature_label_names):
       if 'vocab' in data_config[datum_name]:
         # todo this is a little clumsy -- is there a better way to pass this info through?
         if 'type' in data_config[datum_name] and data_config[datum_name]['type'] == 'range':
