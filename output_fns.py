@@ -19,12 +19,12 @@ def joint_softmax_classifier(model_config, inputs, targets, num_labels, tokens_t
   # squeezed_mask = tf.squeeze(tokens_to_keep, -1)
   # int_mask = tf.cast(squeezed_mask, tf.int32)
 
-  # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy), cross_entropy], "joint softmax cross_entropy", summarize=500)
+  cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy), cross_entropy], "joint softmax cross_entropy", summarize=500)
 
   cross_entropy *= tokens_to_keep
   loss = tf.reduce_sum(cross_entropy) / tf.reduce_sum(tokens_to_keep)
 
-  # loss = tf.Print(loss, [loss], "joint softmax loss")
+  loss = tf.Print(loss, [loss], "joint softmax loss")
 
   predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
   # predictions *= int_mask
