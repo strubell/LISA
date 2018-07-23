@@ -13,6 +13,8 @@ import tensorflow as tf
   """
 def best_model_compare_fn(best_eval_result, current_eval_result, key):
 
+  print("best eval result:", best_eval_result)
+
   if not best_eval_result or key not in best_eval_result:
     raise ValueError(
       'best_eval_result cannot be empty or no loss is found in it.')

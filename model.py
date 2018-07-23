@@ -79,6 +79,8 @@ class LISAModel:
       word_embeddings = tf.nn.embedding_lookup(word_embeddings_table, words)
 
       current_input = word_embeddings
+
+      # todo will estimators handle dropout for us or do we need to do it on our own?
       current_input = tf.nn.dropout(current_input, self.model_config['input_dropout'] if mode == tf.estimator.ModeKeys.TRAIN else 1.0)
 
       with tf.variable_scope('project_input'):
@@ -144,7 +146,7 @@ class LISAModel:
       #
       # loss = tf.reduce_sum(masked_loss) / tf.reduce_sum(pad_mask)
 
-      # todo
+      # todo pass hparams through
       # optimizer = tf.contrib.opt.NadamOptimizer()
       learning_rate = 0.04
       decay_rate = 1.5
@@ -172,6 +174,7 @@ class LISAModel:
 
       logging_hook = tf.train.LoggingTensorHook(items_to_log, every_n_iter=10)
 
+      # need to flatten the dict of predictions to make Estimator happy
       flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
 
       return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
