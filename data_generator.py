@@ -27,6 +27,7 @@ def conll_data_generator(filename, data_config):
           sents += 1
           yield buf
           buf = []
+        print()
     # catch the last one
     if buf:
       yield buf
