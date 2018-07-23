@@ -59,7 +59,7 @@ data_config = {
         }
       },
       'predicate': {
-        'conll_idx': 10,
+        'conll_idx': 9,
         'label': True,
         'vocab': 'predicate',
         'converter': {
@@ -67,7 +67,7 @@ data_config = {
         }
       },
       'joint_pos_predicate': {
-        'conll_idx': [5, 10],
+        'conll_idx': [5, 9],
         'label': True,
         'vocab': 'joint_pos_predicate',
         'converter': {
