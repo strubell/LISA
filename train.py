@@ -206,10 +206,12 @@ def dev_input_fn():
   return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
 
 
+# feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
+#                            ('feature' in data_config[d] and data_config[d]['feature']) or
+#                            ('label' in data_config[d] and data_config[d]['label'])])
+#                    if 'feature' in data_config[f] and data_config[f]['feature']}
 feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
-                           ('feature' in data_config[d] and data_config[d]['feature']) or
-                           ('label' in data_config[d] and data_config[d]['label'])])
-                   if 'feature' in data_config[f] and data_config[f]['feature']}
+                                               'feature' in data_config[d] and data_config[d]['feature']])}
 
 # label_idx_map = {f: (i, i+1) for i, f in enumerate([d for d in data_config.keys() if \
 #                            ('feature' in data_config[d] and data_config[d]['feature']) or \
@@ -218,9 +220,9 @@ feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
 
 label_idx_map = {}
 for i, f in enumerate([d for d in data_config.keys() if 'label' in data_config[d] and data_config[d]['label']]):
-  label_idx_map[f] = (i, i+1) if data_config[f]['type'] != 'range' else (i, data_config[f]['conll_idx'][1])
+  label_idx_map[f] = (i, i+1) if ('type' in data_config[f] and data_config[f]['type'] != 'range') else (i, data_config[f]['conll_idx'][1])
 
-    
+
 
 model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, label_idx_map, train_vocab)
 
