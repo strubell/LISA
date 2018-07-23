@@ -63,6 +63,7 @@ class LISAModel:
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
 
+      # todo fix masking -- do it in lookup table?
       words *= tf.cast(tokens_to_keep, tf.int32)
 
 
@@ -100,6 +101,7 @@ class LISAModel:
                                                     manual_attn)
             if i in self.task_config:
               for task, task_map in self.task_config[i].items():
+                # todo fix masking -- do it in lookup table?
                 task_labels = labels[task] * tf.cast(tokens_to_keep, tf.int32)
                 output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions,
                                                          current_input, task_labels, self.vocab.vocab_names_sizes[task],
@@ -121,7 +123,7 @@ class LISAModel:
                 # get the individual task loss and apply penalty
                 this_task_loss = task_outputs['loss'] * task_map['penalty']
 
-                this_task_loss = tf.Print(this_task_loss, [this_task_loss], task)
+                # this_task_loss = tf.Print(this_task_loss, [this_task_loss], task)
 
                 # log this task's loss
                 items_to_log['%s_loss' % task] = this_task_loss
