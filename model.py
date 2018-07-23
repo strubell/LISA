@@ -58,22 +58,19 @@ class LISAModel:
 
       words = feats['word']
 
+      # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
 
+      # todo fix masking -- do it in lookup table?
+      feats = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in feats.items()}
       labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
                 for l, idx in self.label_idx_map.items()}
 
       print(labels)
 
 
-      # words = tf.Print(words, [words], "words", summarize=500)
-
-      # for masking out padding tokens
-
-
-      # todo fix masking -- do it in lookup table?
-      words *= tf.cast(tokens_to_keep, tf.int32)
+      words = feats['word']
 
 
       # todo this is parse specific
