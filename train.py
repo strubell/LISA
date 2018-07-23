@@ -211,10 +211,16 @@ feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
                            ('label' in data_config[d] and data_config[d]['label'])])
                    if 'feature' in data_config[f] and data_config[f]['feature']}
 
-label_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if \
-                           ('feature' in data_config[d] and data_config[d]['feature']) or \
-                           ('label' in data_config[d] and data_config[d]['label'])])
-                 if 'label' in data_config[f] and data_config[f]['label']}
+# label_idx_map = {f: (i, i+1) for i, f in enumerate([d for d in data_config.keys() if \
+#                            ('feature' in data_config[d] and data_config[d]['feature']) or \
+#                            ('label' in data_config[d] and data_config[d]['label'])])
+#                  if 'label' in data_config[f] and data_config[f]['label']}
+
+label_idx_map = {}
+for i, f in enumerate([d for d in data_config.keys() if 'label' in data_config[d] and data_config[d]['label']]):
+  label_idx_map[f] = (i, i+1) if data_config[f]['type'] != 'range' else (i, data_config[f]['conll_idx'][1])
+
+    
 
 model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, label_idx_map, train_vocab)
 
