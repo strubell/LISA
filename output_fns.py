@@ -169,7 +169,7 @@ def dispatch(fn_name):
 
 
 # need to decide shape/form of train_outputs!
-def get_params(model_config, task_map, train_outputs, current_outputs, features, task_labels, num_labels, joint_lookup_maps,
+def get_params(model_config, task_map, train_outputs, features, current_outputs, task_labels, num_labels, joint_lookup_maps,
                tokens_to_keep):
   params = {'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
             'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels}
