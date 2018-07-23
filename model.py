@@ -116,7 +116,7 @@ class LISAModel:
 
                 # task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
 
-                output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions,
+                output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions, feats,
                                                          current_input, task_labels, self.vocab.vocab_names_sizes[task],
                                                          self.vocab.joint_label_lookup_maps, tokens_to_keep)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)

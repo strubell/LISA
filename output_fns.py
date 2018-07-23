@@ -169,7 +169,7 @@ def dispatch(fn_name):
 
 
 # need to decide shape/form of train_outputs!
-def get_params(model_config, task_map, train_outputs, current_outputs, task_labels, num_labels, joint_lookup_maps,
+def get_params(model_config, task_map, train_outputs, current_outputs, features, task_labels, num_labels, joint_lookup_maps,
                tokens_to_keep):
   params = {'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
             'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels}
@@ -178,6 +178,8 @@ def get_params(model_config, task_map, train_outputs, current_outputs, task_labe
     # if this is a map-type param, do map lookups and pass those through
     if 'maps' in param_values:
       params[param_name] = {map_name: joint_lookup_maps[map_name] for map_name in param_values['maps']}
+    elif 'features' in param_values:
+      params[param_name] = features[param_values['features']]
     # otherwise, this is a previous-prediction-type param, look those up and pass through
     else:
       outputs_layer = train_outputs[param_values['layer']]
