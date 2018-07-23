@@ -100,6 +100,7 @@ model_config = {
   'role_mlp_size': 200,
   'predicate_pred_mlp_size': 200,
   'word_embedding_size': 100,
+  'label_smoothing': 0.1,
   'layers': {
     'type': 'transformer',
     'num_heads': 8,
