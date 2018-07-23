@@ -100,7 +100,7 @@ class LISAModel:
                                                     manual_attn)
             if i in self.task_config:
               for task, task_map in self.task_config[i].items():
-                task_labels = labels[task]
+                task_labels = labels[task] * tf.cast(tokens_to_keep, tf.int32)
                 output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions,
                                                          current_input, task_labels, self.vocab.vocab_names_sizes[task],
                                                          self.vocab.joint_label_lookup_maps, tokens_to_keep)
