@@ -118,7 +118,6 @@ def MLP(inputs, output_size, func=leaky_relu, keep_prob=1.0, n_splits=1, moving_
   n_dims = len(input_shape)
   batch_size = tf.shape(inputs)[0]
   input_size = input_shape[-1]
-  print("n_dims", n_dims, input_size, output_size)
   shape_to_set = [tf.Dimension(None)] * (n_dims - 1) + [tf.Dimension(output_size)]
 
   if keep_prob < 1:
@@ -177,9 +176,10 @@ def bilinear_noreshape(inputs1, inputs2, output_size, add_bias2=True, add_bias1=
 
     # Get the matrix
     if initializer is None and moving_params is None:
-      mat = orthonormal_initializer(inputs1_size + add_bias1, inputs2_size + add_bias2)[:, None, :]
-      mat = np.concatenate([mat] * output_size, axis=1)
-      initializer = tf.constant_initializer(mat)
+      # mat = orthonormal_initializer(inputs1_size + add_bias1, inputs2_size + add_bias2)[:, None, :]
+      # mat = np.concatenate([mat] * output_size, axis=1)
+      # initializer = tf.constant_initializer(mat)
+      initializer = tf.initializers.orthogonal
     weights = tf.get_variable('Weights', [inputs1_size + add_bias1, output_size, inputs2_size + add_bias2],
                               initializer=initializer)
     if moving_params is not None:
