@@ -59,7 +59,7 @@ class LISAModel:
 
       words = feats['word']
 
-      words = tf.Print(words, [words], "words", summarize=500)
+      # words = tf.Print(words, [words], "words", summarize=500)
 
       # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
@@ -110,7 +110,7 @@ class LISAModel:
                 # todo fix masking -- do it in lookup table?
                 task_labels = labels[task] * tf.cast(tokens_to_keep, tf.int32)
 
-                task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
+                # task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
 
                 output_fn_params = output_fns.get_params(self.model_config, task_map['output_fn'], predictions,
                                                          current_input, task_labels, self.vocab.vocab_names_sizes[task],
@@ -162,12 +162,12 @@ class LISAModel:
       mu = 0.9
       nu = 0.98
       epsilon = 1e-12
-      # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=learning_rate, beta1=mu, beta2=nu, epsilon=epsilon)
-      optimizer = RadamOptimizer(learning_rate=learning_rate, mu=mu, nu=nu, epsilon=epsilon, decay_rate=decay_rate,
-                                 warmup_steps=warmup_steps, gradient_clip_norm=gradient_clip_norm,
-                                 global_step=tf.train.get_global_step())
-      train_op = optimizer.minimize(loss=loss)
-      # train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
+      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=learning_rate, beta1=mu, beta2=nu, epsilon=epsilon)
+      # optimizer = RadamOptimizer(learning_rate=learning_rate, mu=mu, nu=nu, epsilon=epsilon, decay_rate=decay_rate,
+      #                            warmup_steps=warmup_steps, gradient_clip_norm=gradient_clip_norm,
+      #                            global_step=tf.train.get_global_step())
+      # train_op = optimizer.minimize(loss=loss)
+      train_op = optimizer.minimize(loss=loss, global_step=tf.train.get_global_step())
 
 
       # preds = tf.argmax(scores, -1)
