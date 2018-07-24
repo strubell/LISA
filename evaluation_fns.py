@@ -49,6 +49,7 @@ def get_params(task_outputs, task_map, train_outputs, task_labels, tokens_to_kee
   targets = task_labels if 'targets' not in task_outputs else task_outputs['targets']
   mask = tokens_to_keep if 'mask' not in task_outputs else task_outputs['mask']
   params = {'predictions': task_outputs['predictions'], 'targets': targets, 'mask': mask}
+  print("task map", task_map)
   if 'params' in task_map:
     params_map = task_map['params']
     print("params", params)
