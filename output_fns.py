@@ -151,8 +151,8 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     # correct = tf.reduce_sum(tf.cast(tf.equal(predictions, srl_targets), tf.float32))
     # probabilities = tf.nn.softmax(srl_logits_transposed)
 
-    predictions = tf.Print(predictions, [tf.shape(predictions), predictions], "predictions", summarize=200)
-    predictions = tf.Print(predictions, [tf.shape(srl_targets), srl_targets], "srl_targets", summarize=200)
+    # predictions = tf.Print(predictions, [tf.shape(predictions), predictions], "predictions", summarize=200)
+    # predictions = tf.Print(predictions, [tf.shape(srl_targets), srl_targets], "srl_targets", summarize=200)
 
 
     output = {

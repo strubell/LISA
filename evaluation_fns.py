@@ -9,8 +9,8 @@ def accuracy(predictions, targets, mask):
 def srl_eval(predictions, targets, mask, gold_srl_eval_file):
 
   # need to do embedding_lookup int->string
-  # pass maps through
-  # pass eval file path through
+  # - create maps in train.py
+  # - pass maps through
 
 
   # write file w/ format:
