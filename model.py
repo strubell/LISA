@@ -168,8 +168,8 @@ class LISAModel:
       nu = 0.98
       epsilon = 1e-12
 
-      # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
-      optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
+      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
+      # optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
       gradients, variables = zip(*optimizer.compute_gradients(loss))
       gradients, _ = tf.clip_by_global_norm(gradients, gradient_clip_norm)
       train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
