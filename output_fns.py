@@ -195,8 +195,9 @@ def get_params(mode, model_config, task_map, train_outputs, features, labels, cu
     elif 'feature' in param_values:
       params[param_name] = features[param_values['feature']]
     # otherwise, this is a previous-prediction-type param, look those up and pass through
-    else:
+    elif 'layer' in param_values:
       outputs_layer = train_outputs[param_values['layer']]
       params[param_name] = outputs_layer[param_values['output']]
-
+    else:
+      params[param_name] = param_values['value']
   return params
