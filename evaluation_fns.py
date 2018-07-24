@@ -57,4 +57,6 @@ def get_params(task_outputs, task_map, train_outputs, task_labels, tokens_to_kee
         params[param_name] = outputs_layer[param_values['output']]
       else:
         params[param_name] = param_values['value']
+  print(params_map)
+  print(params)
   return params
