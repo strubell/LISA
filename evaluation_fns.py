@@ -1,4 +1,5 @@
 import tensorflow as tf
+from subprocess import check_output, CalledProcessError
 
 
 def accuracy(predictions, targets, tokens_to_keep):
@@ -9,12 +10,25 @@ def srl_eval(predictions, targets, tokens_to_keep):
 
   # need to do embedding_lookup int->string
   # pass maps through
+  # pass eval file path through
 
-  # write file:
+
+  # write file w/ format:
   #
+  # -        (A1*  (A1*
+  # -          *     *
+  # -          *)    *)
+  # -          *     *
+  # expected (V*)    *
+  # -        (C-A1*  *
+  # widen     *     (V*)
+  # -         *     (A4*
 
+  # srl_eval = check_output(["perl", "bin/srl-eval.pl", srl_gold_fname, srl_preds_fname], stderr=devnull)
+  # print(srl_eval)
+  # overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
 
-  return tf.metrics.accuracy(targets, predictions)
+  return 0.0
 
 
 dispatcher = {
