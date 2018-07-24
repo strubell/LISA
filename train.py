@@ -175,7 +175,7 @@ task_config = {
           }
         },
         'eval_fn': {
-          'name': 'accuracy',
+          'name': 'srl_eval',
           'params': {}
         }
       }

@@ -5,8 +5,13 @@ def accuracy(predictions, targets, tokens_to_keep):
   return tf.metrics.accuracy(targets, predictions, weights=tokens_to_keep)
 
 
+def srl_eval(predictions, targets, tokens_to_keep):
+  return tf.metrics.accuracy(targets, predictions)
+
+
 dispatcher = {
   'accuracy': accuracy,
+  'srl_eval': srl_eval,
 }
 
 
