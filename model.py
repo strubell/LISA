@@ -72,7 +72,7 @@ class LISAModel:
 
       words = feats['word']
 
-      words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
+      # words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
 
 
       # todo this is parse specific
