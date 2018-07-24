@@ -124,6 +124,7 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
 
     srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(predicate_counts, [-1])))
 
+    # num_predicates_in_batch x seq_len
     srl_targets = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
 
     if transition_params is not None:
@@ -157,7 +158,9 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     output = {
       'loss': loss,
       'predictions': predictions,
-      'scores': srl_logits_transposed
+      'scores': srl_logits_transposed,
+      'targets': srl_targets,
+      'mask': mask
     }
 
     return output

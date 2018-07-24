@@ -176,7 +176,9 @@ task_config = {
         },
         'eval_fn': {
           'name': 'srl_eval',
-          'params': {}
+          'params': {
+            'gold_srl_eval_file': '~/canvas/data/conll05st-release-new/conll2005-dev-gold-props.txt'
+          }
         }
       }
     }

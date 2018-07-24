@@ -128,7 +128,7 @@ class LISAModel:
                 predictions[task] = task_outputs
 
                 # do the evaluation
-                eval_fn_params = evaluation_fns.get_params(task_outputs['predictions'], task_map, predictions,
+                eval_fn_params = evaluation_fns.get_params(task_outputs, task_map, predictions,
                                                            task_labels, tokens_to_keep)
                 eval_result = evaluation_fns.dispatch(task_map['eval_fn']['name'])(**eval_fn_params)
                 eval_metric_ops['%s_%s' % (task, task_map['eval_fn']['name'])] = eval_result
