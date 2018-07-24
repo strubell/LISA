@@ -51,12 +51,12 @@ def get_params(task_outputs, task_map, train_outputs, task_labels, tokens_to_kee
   params = {'predictions': task_outputs['predictions'], 'targets': targets, 'mask': mask}
   if 'params' in task_map:
     params_map = task_map['params']
+    print(params_map)
     for param_name, param_values in params_map.items():
       if 'layer' in param_values:
         outputs_layer = train_outputs[param_values['layer']]
         params[param_name] = outputs_layer[param_values['output']]
       else:
         params[param_name] = param_values['value']
-  print(params_map)
   print(params)
   return params
