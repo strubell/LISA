@@ -25,6 +25,11 @@ data_config = {
       'word': {
         'conll_idx': 3,
         'feature': True,
+        'vocab': 'word',
+      },
+      'word_type': {
+        'conll_idx': 3,
+        'feature': True,
         'vocab': 'glove.6B.100d.txt',
         'converter':  {
           'name': 'lowercase'
@@ -179,6 +184,12 @@ task_config = {
           'params': {
             'gold_srl_eval_file': {
               'value': '~/canvas/data/conll05st-release-new/conll2005-dev-gold-props.txt'
+            },
+            'reverse_maps': {
+              'maps': [
+                'word',
+                'srl'
+              ]
             }
           }
         }

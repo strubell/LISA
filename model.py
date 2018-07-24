@@ -56,7 +56,7 @@ class LISAModel:
 
       feats = {f: features[:, :, idx] for f, idx in self.feature_idx_map.items()}
 
-      words = feats['word']
+      words = feats['word_type']
 
       # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
@@ -67,7 +67,7 @@ class LISAModel:
       labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
                 for l, idx in self.label_idx_map.items()}
 
-      words = feats['word']
+      words = feats['word_type']
 
       # words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
 
@@ -129,7 +129,7 @@ class LISAModel:
 
                 # do the evaluation
                 eval_fn_params = evaluation_fns.get_params(task_outputs, task_map['eval_fn'], predictions,
-                                                           task_labels, tokens_to_keep)
+                                                           task_labels, self.vocab.reverse_maps, tokens_to_keep)
                 eval_result = evaluation_fns.dispatch(task_map['eval_fn']['name'])(**eval_fn_params)
                 eval_metric_ops['%s_%s' % (task, task_map['eval_fn']['name'])] = eval_result
 

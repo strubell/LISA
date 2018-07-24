@@ -16,6 +16,7 @@ class Vocab:
 
     # self.vocab_sizes = {}
     self.joint_label_lookup_maps = {}
+    self.reverse_maps = {}
     self.vocab_lookups = None
 
     self.vocab_names_sizes = self.make_vocab_files(self.data_filename, self.data_config, self.save_dir)
@@ -92,6 +93,7 @@ class Vocab:
     vocabs = []
     vocabs_index = {}
     for d in data_config:
+      # only
       if 'vocab' in data_config[d] and data_config[d]['vocab'] == d:
         vocabs.append({})
         vocabs_index[d] = len(vocabs_index)
@@ -117,8 +119,14 @@ class Vocab:
                 this_vocab_map[this_datum] = 0
               this_vocab_map[this_datum] += 1
 
-    # check whether we need to build joint_label_lookup_maps, and build them if we do
+    # build reverse_maps, joint_label_lookup_maps
     for v in vocabs_index.keys():
+
+      # build reverse_lookup map, from int -> string
+      this_map = vocabs[vocabs_index[v]]
+      self.reverse_maps[v] = dict(zip(range(len(this_map.keys())), this_map.keys()))
+
+      # check whether we need to build joint_label_lookup_map
       if 'label_components' in self.data_config[v]:
         joint_vocab_map = vocabs[vocabs_index[v]]
         label_components = self.data_config[v]['label_components']
