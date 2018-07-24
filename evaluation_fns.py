@@ -6,6 +6,14 @@ def accuracy(predictions, targets, tokens_to_keep):
 
 
 def srl_eval(predictions, targets, tokens_to_keep):
+
+  # need to do embedding_lookup int->string
+  # pass maps through
+
+  # write file:
+  #
+
+
   return tf.metrics.accuracy(targets, predictions)
 
 

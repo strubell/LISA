@@ -156,7 +156,7 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
 
     output = {
       'loss': loss,
-      'predictions': tf.transpose(predictions, [0, 2, 1]),
+      'predictions': predictions,
       'scores': srl_logits_transposed
     }
 
