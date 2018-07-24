@@ -227,7 +227,6 @@ label_idx_map = {}
 for i, f in enumerate([d for d in data_config.keys() if
                            ('feature' in data_config[d] and data_config[d]['feature']) or
                            ('label' in data_config[d] and data_config[d]['label'])]):
-  print("train: ", f)
   if 'feature' in data_config[f] and data_config[f]['feature']:
     feature_idx_map[f] = i
   if 'label' in data_config[f] and data_config[f]['label']:
