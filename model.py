@@ -67,9 +67,6 @@ class LISAModel:
       labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
                 for l, idx in self.label_idx_map.items()}
 
-      print(labels)
-
-
       words = feats['word']
 
       # words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
@@ -171,7 +168,8 @@ class LISAModel:
       nu = 0.98
       epsilon = 1e-12
 
-      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
+      # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
+      optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
       gradients, variables = zip(*optimizer.compute_gradients(loss))
       gradients, _ = tf.clip_by_global_norm(gradients, gradient_clip_norm)
       train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
