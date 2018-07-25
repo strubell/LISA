@@ -193,6 +193,13 @@ task_config = {
                 'word',
                 'srl'
               ]
+            },
+            'words': {
+              'label': 'word',
+            },
+            'predicate_predictions': {
+              'layer': 'joint_pos_predicate',
+              'output': 'predicate_predictions'
             }
           }
         }
