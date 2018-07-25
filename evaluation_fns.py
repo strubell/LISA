@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 from subprocess import check_output, CalledProcessError
 
 
@@ -6,15 +7,14 @@ def accuracy(predictions, targets, mask):
   return tf.metrics.accuracy(targets, predictions, weights=mask)
 
 
-def srl_eval(predictions, targets, mask, reverse_maps, gold_srl_eval_file):
-
-  # need to do embedding_lookup int->string
-  # - create maps in train.py
-  # - pass maps through
+def conll_parse_eval(predictions, targets, mask, reverse_maps, gold_parse_eval_file, pred_parse_eval_file):
+  # TODO write this function
+  return tf.metrics.accuracy(targets, predictions, mask)
 
 
-  # write file w/ format:
-  #
+def conll_srl_eval(predictions, targets, mask, reverse_maps, gold_srl_eval_file, pred_srl_eval_file):
+
+  # First write predictions file w/ format:
   # -        (A1*  (A1*
   # -          *     *
   # -          *)    *)
@@ -23,6 +23,8 @@ def srl_eval(predictions, targets, mask, reverse_maps, gold_srl_eval_file):
   # -        (C-A1*  *
   # widen     *     (V*)
   # -         *     (A4*
+  with open(pred_srl_eval_file, 'w') as f:
+
 
   # srl_eval = check_output(["perl", "bin/srl-eval.pl", srl_gold_fname, srl_preds_fname], stderr=devnull)
   # print(srl_eval)
@@ -33,7 +35,9 @@ def srl_eval(predictions, targets, mask, reverse_maps, gold_srl_eval_file):
 
 dispatcher = {
   'accuracy': accuracy,
-  'srl_eval': srl_eval,
+  'conll_srl_eval': conll_srl_eval,
+  'conll_parse_eval': conll_parse_eval,
+
 }
 
 
