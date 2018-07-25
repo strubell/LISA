@@ -117,7 +117,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
     except CalledProcessError as e:
       print("Call to srl-eval.pl eval failed.")
 
-  return overall_f1
+  return overall_f1, overall_f1, overall_f1
 
 
 def create_metric_variable(name, shape, dtype):
@@ -128,9 +128,12 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, rev
                    pred_srl_eval_file):
 
   # create accumulator variables
-  correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int32)
-  excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int32)
-  missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int32)
+  # correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int32)
+  # excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int32)
+  # missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int32)
+  correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.float32)
+  excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.float32)
+  missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.float32)
 
   # first, use reverse maps to convert ints to strings
   # todo order of map.values() is probably not guaranteed; should prob sort by keys first
@@ -140,16 +143,22 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, rev
   # need to pass through the stuff for pyfunc
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, pred_srl_eval_file, gold_srl_eval_file]
   out_types = [tf.float32] # [tf.int32, tf.int32, tf.int32]
-  counts = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
+  correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
 
-  correct_count = tf.assign_add(correct_count, counts[0])
+  update_correct_op = tf.assign_add(correct_count, correct)
+  update_missed_op = tf.assign_add(missed_count, missed)
+  update_excess_op = tf.assign_add(excess_count, excess)
 
-  # need to call pyfunc to get cumulative scores
 
-  # need to also define how to compute f1 from those
+  precision = correct / (excess + correct)
+  recall = correct / (missed + correct)
+  f1 = 2 * precision * recall / (precision + recall)
 
-  # return tf.metrics.accuracy(targets, predictions, mask)
-  return correct_count, correct_count
+  precision_op = update_correct_op / (update_correct_op + update_excess_op)
+  recall_op = update_correct_op / (update_correct_op + update_missed_op)
+  f1_op = 2 * precision_op * recall_op / (precision_op + recall_op)
+
+  return f1, f1_op
 
 
 dispatcher = {
