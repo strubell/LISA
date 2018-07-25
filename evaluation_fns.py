@@ -107,7 +107,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
         predicate_str = word if predicate else '-'
         print("%s\t%s" % (predicate_str, '\t'.join(role_labels)), file=f)
 
-  overall_f1 = 0.
+  overall_f1 = 0.0
   with open(os.devnull, 'w') as devnull:
     try:
       srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
