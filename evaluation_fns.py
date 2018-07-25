@@ -143,12 +143,14 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, rev
   # need to pass through the stuff for pyfunc
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, pred_srl_eval_file, gold_srl_eval_file]
   out_types = [tf.float32] # [tf.int32, tf.int32, tf.int32]
-  correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
+  counts = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
+  correct = counts[0]
+  excess = counts[1]
+  missed = counts[2]
 
   update_correct_op = tf.assign_add(correct_count, correct)
-  update_missed_op = tf.assign_add(missed_count, missed)
   update_excess_op = tf.assign_add(excess_count, excess)
-
+  update_missed_op = tf.assign_add(missed_count, missed)
 
   precision = correct / (excess + correct)
   recall = correct / (missed + correct)
