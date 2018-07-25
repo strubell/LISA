@@ -139,7 +139,7 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, rev
 
   # need to pass through the stuff for pyfunc
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, pred_srl_eval_file, gold_srl_eval_file]
-  out_types = [tf.int32] # [tf.int32, tf.int32, tf.int32]
+  out_types = [tf.float32] # [tf.int32, tf.int32, tf.int32]
   counts = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
 
   correct_count = tf.assign_add(correct_count, counts)
