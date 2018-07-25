@@ -99,7 +99,9 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
     for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
       # first get number of predicates
       sent_num_predicates = np.sum(sent_predicates)
+      print("sent predicates", sent_predicates)
       print("sent num predicates", sent_num_predicates)
+      print("sent len", sent_lens)
 
       # grab those predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len tensor
