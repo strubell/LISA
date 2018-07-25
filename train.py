@@ -26,6 +26,7 @@ data_config = {
         'conll_idx': 3,
         'feature': True,
         'vocab': 'word',
+        'oov': True
       },
       'word_type': {
         'conll_idx': 3,

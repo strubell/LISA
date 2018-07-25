@@ -132,8 +132,9 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, rev
   missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int32)
 
   # first, use reverse maps to convert ints to strings
-  str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
-  str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
+  # todo order of map.values() is probably not guaranteed; should prob sort by keys first
+  str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions, name="str_srl_preds_lookup")
+  str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words, name="str_words_lookup")
 
   # need to pass through the stuff for pyfunc
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, pred_srl_eval_file, gold_srl_eval_file]
