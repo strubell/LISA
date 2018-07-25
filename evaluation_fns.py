@@ -83,6 +83,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
   # srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
 
   sent_lens = np.sum(mask, -1)
+  print("sent lens", sent_lens)
 
   # First write predictions file w/ format:
   # -        (A1*  (A1*
@@ -98,10 +99,12 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
     for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
       # first get number of predicates
       sent_num_predicates = np.sum(sent_predicates)
+      print("sent num predicates", sent_num_predicates)
 
       # grab those predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len tensor
       sent_role_preds_bio = predictions[predicate_start_idx: predicate_start_idx+sent_num_predicates]
+      print("sent role preds bio", sent_role_preds_bio)
       sent_role_preds = map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio]))
       for word, predicate, role_labels in zip(sent_words, sent_predicates, sent_role_preds):
         predicate_str = word if predicate else '-'
