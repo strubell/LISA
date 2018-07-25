@@ -142,7 +142,7 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, rev
   out_types = [tf.float32] # [tf.int32, tf.int32, tf.int32]
   counts = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
 
-  correct_count = tf.assign_add(correct_count, counts)
+  correct_count = tf.assign_add(correct_count, counts[0])
 
   # need to call pyfunc to get cumulative scores
 
