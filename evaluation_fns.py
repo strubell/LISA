@@ -62,6 +62,7 @@ def convert_bilou(bio_predicted_roles):
     started_types.pop()
   return converted
 
+
 def accuracy(predictions, targets, mask):
   return tf.metrics.accuracy(targets, predictions, weights=mask)
 

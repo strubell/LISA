@@ -160,7 +160,7 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
       'predictions': predictions,
       'scores': srl_logits_transposed,
       'targets': srl_targets,
-      'mask': mask
+      # 'mask': mask
     }
 
     return output
