@@ -125,6 +125,8 @@ class Vocab:
       # build reverse_lookup map, from int -> string
       this_map = vocabs[vocabs_index[v]]
       self.reverse_maps[v] = dict(zip(range(len(this_map.keys())), this_map.keys()))
+      if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
+        self.reverse_maps[v][len(self.reverse_maps[v])] = 'oov'
 
       # check whether we need to build joint_label_lookup_map
       if 'label_components' in self.data_config[v]:
