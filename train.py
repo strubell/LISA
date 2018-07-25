@@ -195,7 +195,7 @@ task_config = {
               ]
             },
             'words': {
-              'label': 'word',
+              'feature': 'word',
             },
             'predicate_predictions': {
               'layer': 'joint_pos_predicate',
