@@ -23,7 +23,7 @@ def conll_srl_eval(predictions, targets, mask, reverse_maps, gold_srl_eval_file,
   # -        (C-A1*  *
   # widen     *     (V*)
   # -         *     (A4*
-  with open(pred_srl_eval_file, 'w') as f:
+  # with open(pred_srl_eval_file, 'w') as f:
 
 
   # srl_eval = check_output(["perl", "bin/srl-eval.pl", srl_gold_fname, srl_preds_fname], stderr=devnull)
