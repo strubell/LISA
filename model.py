@@ -64,8 +64,22 @@ class LISAModel:
 
       # todo fix masking -- do it in lookup table?
       feats = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in feats.items()}
-      labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
-                for l, idx in self.label_idx_map.items()}
+
+      # labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
+      #           for l, idx in self.label_idx_map.items()}
+      labels = {}
+      for l, idx in self.label_idx_map.items():
+        these_labels = features[:, :, idx[0]:idx[1]] if idx[1] != -1 else features[:, :, idx[0]:]
+        these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
+        # check if we need to mask another dimension
+        if idx[1] == -1:
+          this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
+                               tf.zeros([batch_size, batch_seq_len], dtype=tf.int32),
+                               tf.ones([batch_size, batch_seq_len], dtype=tf.int32))
+          these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+        labels[l] = these_labels_masked
+
+
 
       words = feats['word_type']
 
