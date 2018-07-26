@@ -165,6 +165,7 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words, name="str_words_lookup")
   str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets, name="str_srl_targets_lookup")
 
+  str_predictions = tf.Print(str_predictions, [str_predictions], "str predictions")
 
   # need to pass through the stuff for pyfunc
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets, pred_srl_eval_file, gold_srl_eval_file]
@@ -182,15 +183,15 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   # recall = correct / (missed + correct)
   # f1 = 2 * precision * recall / (precision + recall)
 
-  precision_op = update_correct_op / (update_correct_op + update_excess_op)
-  recall_op = update_correct_op / (update_correct_op + update_missed_op)
-  f1_op = 2 * precision_op * recall_op / (precision_op + recall_op)
+  precision_update_op = update_correct_op / (update_correct_op + update_excess_op)
+  recall_update_op = update_correct_op / (update_correct_op + update_missed_op)
+  f1_update_op = 2 * precision_update_op * recall_update_op / (precision_update_op + recall_update_op)
 
   precision = correct_count / (correct_count + excess_count)
   recall = correct_count / (correct_count + missed_count)
   f1 = 2 * precision * recall / (precision + recall)
 
-  return f1, f1_op
+  return f1, f1_update_op
 
 
 dispatcher = {
