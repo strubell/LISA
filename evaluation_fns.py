@@ -84,62 +84,64 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   print("predictions shape", predictions.shape)
   print("targets shape", srl_targets.shape)
 
-
-  # Write targets file w/ format:
-  # -        (A1*  (A1*
-  # -          *     *
-  # -          *)    *)
-  # -          *     *
-  # expected (V*)    *
-  # -        (C-A1*  *
-  # widen     *     (V*)
-  # -         *     (A4*
-  # todo make a function that does this and reuse
-  with open(gold_srl_eval_file, 'w') as f:
-    role_preds_start_idx = 0
-    for sent_words, sent_predicates, sent_len in zip(words, predicate_targets, sent_lens):
-      # first get number of predicates
-      sent_num_predicates = np.sum(sent_predicates)
-
-      # grab those predicates and convert to conll format from bio
-      # this is a sent_num_predicates x batch_seq_len tensor
-      sent_role_preds_bio = srl_targets[role_preds_start_idx: role_preds_start_idx+sent_num_predicates]
-      sent_role_preds = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio])))
-      role_preds_start_idx += sent_num_predicates
-      for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
-        predicate_str = word if predicate else '-'
-        roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
-        print("%s\t%s" % (predicate_str, roles_str), file=f)
-      print(file=f)
-
-  # Write predictions file (same format)
-  with open(pred_srl_eval_file, 'w') as f:
-    predicate_start_idx = 0
-    for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
-      # first get number of predicates
-      sent_num_predicates = np.sum(sent_predicates)
-
-      # grab those predicates and convert to conll format from bio
-      # this is a sent_num_predicates x batch_seq_len tensor
-      sent_role_preds_bio = predictions[predicate_start_idx: predicate_start_idx+sent_num_predicates]
-      sent_role_preds = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio])))
-      for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
-        predicate_str = word if predicate else '-'
-        roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
-        print("%s\t%s" % (predicate_str, roles_str), file=f)
-      print(file=f)
-
-  # copy over relevant
-
   overall_f1 = 0.0
-  with open(os.devnull, 'w') as devnull:
-    try:
-      srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
-      print(srl_eval)
-      # todo actually, get all the cumulative counts
-      overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
-    except CalledProcessError as e:
-      print("Call to srl-eval.pl eval failed.")
+
+  if predictions.shape[0] > 0:
+
+    # Write targets file w/ format:
+    # -        (A1*  (A1*
+    # -          *     *
+    # -          *)    *)
+    # -          *     *
+    # expected (V*)    *
+    # -        (C-A1*  *
+    # widen     *     (V*)
+    # -         *     (A4*
+    # todo make a function that does this and reuse
+    with open(gold_srl_eval_file, 'w') as f:
+      role_labels_start_idx = 0
+      for sent_words, sent_predicates, sent_len in zip(words, predicate_targets, sent_lens):
+        # first get number of predicates
+        sent_num_predicates = np.sum(sent_predicates)
+
+        # grab those predicates and convert to conll format from bio
+        # this is a sent_num_predicates x batch_seq_len tensor
+        sent_role_labels_bio = srl_targets[role_labels_start_idx: role_labels_start_idx+sent_num_predicates]
+        sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
+        role_labels_start_idx += sent_num_predicates
+        for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
+          predicate_str = word if predicate else '-'
+          roles_str = '\t'.join(sent_role_labels[j]) if predicate else ''
+          print("%s\t%s" % (predicate_str, roles_str), file=f)
+        print(file=f)
+
+    # Write predictions file (same format)
+    with open(pred_srl_eval_file, 'w') as f:
+      predicate_start_idx = 0
+      for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
+        # first get number of predicates
+        sent_num_predicates = np.sum(sent_predicates)
+
+        # grab those predicates and convert to conll format from bio
+        # this is a sent_num_predicates x batch_seq_len tensor
+        sent_role_preds_bio = predictions[predicate_start_idx: predicate_start_idx+sent_num_predicates]
+        sent_role_preds = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio])))
+        for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
+          predicate_str = word if predicate else '-'
+          roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
+          print("%s\t%s" % (predicate_str, roles_str), file=f)
+        print(file=f)
+
+    # copy over relevant
+
+    with open(os.devnull, 'w') as devnull:
+      try:
+        srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
+        print(srl_eval)
+        # todo actually, get all the cumulative counts
+        overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
+      except CalledProcessError as e:
+        print("Call to srl-eval.pl eval failed.")
 
   return overall_f1, overall_f1, overall_f1
 
