@@ -94,7 +94,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
   # -        (C-A1*  *
   # widen     *     (V*)
   # -         *     (A4*
-  with open(pred_srl_eval_file, 'w') as f:
+  with open(pred_srl_eval_file, 'w', encoding='utf-8') as f:
     predicate_start_idx = 0
     for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
       # first get number of predicates
