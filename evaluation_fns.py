@@ -99,7 +99,9 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
         print("%s\t%s" % (predicate_str, roles_str), file=f)
       print(file=f)
 
-def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targets, predicate_targets, pred_srl_eval_file, gold_srl_eval_file):
+
+def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
+                      pred_srl_eval_file, gold_srl_eval_file):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
   # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
@@ -111,6 +113,13 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   print("predictions shape", predictions.shape)
   print("targets shape", srl_targets.shape)
 
+  print("predicate_predictions", predicate_predictions)
+  print("predicate_targets", predicate_targets)
+
+  print("predictions", predictions)
+  print("targets", srl_targets)
+
+
   overall_f1 = 0.0
 
   if predictions.shape[0] > 0:
@@ -121,6 +130,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
     # write predicted labels
     write_srl_eval(pred_srl_eval_file, words, predicate_predictions, sent_lens, predictions)
 
+    # run eval script
     with open(os.devnull, 'w') as devnull:
       try:
         srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
@@ -137,8 +147,9 @@ def create_metric_variable(name, shape, dtype):
   return tf.get_variable(name=name, shape=shape, dtype=dtype, collections=[tf.GraphKeys.LOCAL_VARIABLES,
                                                                            tf.GraphKeys.METRIC_VARIABLES])
 
-def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps, gold_srl_eval_file,
-                   pred_srl_eval_file):
+
+def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
+                   gold_srl_eval_file, pred_srl_eval_file):
 
   # create accumulator variables
   # correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int32)
