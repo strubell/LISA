@@ -111,7 +111,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
       for word, predicate, role_labels in zip(sent_words, sent_predicates, sent_role_preds):
         predicate_str = word if predicate else '-'
         print("%s\t%s" % (predicate_str, '\t'.join(role_labels)), file=f)
-
+        print("%s\t%s" % (predicate_str, '\t'.join(role_labels)))
   overall_f1 = 0.0
   with open(os.devnull, 'w') as devnull:
     try:
