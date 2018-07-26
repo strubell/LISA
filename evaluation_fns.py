@@ -96,6 +96,7 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       role_labels_start_idx += sent_num_predicates
       predicate_idx = 0
       print("sent num predicates", sent_num_predicates)
+      print(len(sent_role_labels))
       for word, predicate in zip(sent_words[:sent_len], sent_predicates[:sent_len]):
         predicate_str = word.decode('utf-8') if predicate else '-'
         roles_str = ('\t'.join(sent_role_labels[predicate_idx]) if predicate else '')
