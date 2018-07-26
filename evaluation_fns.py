@@ -109,7 +109,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         predicate_str = word if predicate else '-'
         roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
-        print("%s\t%s" % (predicate_str.decode('utf-8'), roles_str), file=f)
+        print("%s\t%s" % (predicate_str, roles_str), file=f)
       print(file=f)
 
   # Write predictions file (same format)
@@ -126,7 +126,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         predicate_str = word if predicate else '-'
         roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
-        print("%s\t%s" % (predicate_str.decode('utf-8'), roles_str), file=f)
+        print("%s\t%s" % (predicate_str, roles_str), file=f)
       print(file=f)
 
   # copy over relevant
