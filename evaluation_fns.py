@@ -99,6 +99,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
     for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
       # first get number of predicates
       sent_num_predicates = np.sum(sent_predicates)
+      print("sent words", sent_words)
       print("sent predicates", sent_predicates)
       print("sent num predicates", sent_num_predicates)
       print("sent len", sent_lens)
@@ -108,10 +109,12 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
       sent_role_preds_bio = predictions[predicate_start_idx: predicate_start_idx+sent_num_predicates]
       print("sent role preds bio", sent_role_preds_bio)
       sent_role_preds = map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio]))
-      for word, predicate, role_labels in zip(sent_words, sent_predicates, sent_role_preds):
+      print("sent role preds", sent_role_preds)
+      for j, (word, predicate, role_labels) in enumerate(zip(sent_words, sent_predicates)):
         predicate_str = word if predicate else '-'
-        print("%s\t%s" % (predicate_str, '\t'.join(role_labels)), file=f)
-        print("%s\t%s" % (predicate_str, '\t'.join(role_labels)))
+        roles_str = '\t'.join(role_labels[j]) if predicate else ''
+        print("%s\t%s" % (predicate_str, roles_str), file=f)
+        print("%s\t%s" % (predicate_str, roles_str))
   overall_f1 = 0.0
   with open(os.devnull, 'w') as devnull:
     try:
