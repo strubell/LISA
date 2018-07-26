@@ -96,7 +96,7 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
-        predicate_str = word if predicate else '-'
+        predicate_str = word.decode('utf-8') if predicate else '-'
         roles_str = '\t'.join(sent_role_labels[j]) if predicate else ''
         print("%s\t%s" % (predicate_str, roles_str), file=f)
       print(file=f)
