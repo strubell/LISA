@@ -70,7 +70,7 @@ class LISAModel:
       labels = {}
       for l, idx in self.label_idx_map.items():
         these_labels = features[:, :, idx[0]:idx[1]] if idx[1] != -1 else features[:, :, idx[0]:]
-        these_labels_masked = tf.squeeze(tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1)
+        these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
         # check if we need to mask another dimension
         if idx[1] == -1:
           last_dim = tf.shape(these_labels)[2]
@@ -79,6 +79,8 @@ class LISAModel:
                                tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
                                tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
           these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+        else:
+          these_labels_masked = tf.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
 
       words = feats['word_type']
