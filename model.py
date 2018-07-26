@@ -74,6 +74,7 @@ class LISAModel:
         # check if we need to mask another dimension
         if idx[1] == -1:
           last_dim = tf.shape(these_labels)[2]
+          print("these labels masked", these_labels_masked)
           this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
                                tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
                                tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
