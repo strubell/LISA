@@ -72,6 +72,33 @@ def conll_parse_eval(predictions, targets, mask, reverse_maps, gold_parse_eval_f
   return tf.metrics.accuracy(targets, predictions, mask)
 
 
+# Write targets file w/ format:
+# -        (A1*  (A1*
+# -          *     *
+# -          *)    *)
+# -          *     *
+# expected (V*)    *
+# -        (C-A1*  *
+# widen     *     (V*)
+# -         *     (A4*
+def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
+  with open(filename, 'w') as f:
+    role_labels_start_idx = 0
+    for sent_words, sent_predicates, sent_len in zip(words, predicates, sent_lens):
+      # first get number of predicates
+      sent_num_predicates = np.sum(sent_predicates)
+
+      # grab those predicates and convert to conll format from bio
+      # this is a sent_num_predicates x batch_seq_len tensor
+      sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+      sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
+      role_labels_start_idx += sent_num_predicates
+      for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
+        predicate_str = word if predicate else '-'
+        roles_str = '\t'.join(sent_role_labels[j]) if predicate else ''
+        print("%s\t%s" % (predicate_str, roles_str), file=f)
+      print(file=f)
+
 def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targets, predicate_targets, pred_srl_eval_file, gold_srl_eval_file):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
@@ -88,51 +115,11 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
 
   if predictions.shape[0] > 0:
 
-    # Write targets file w/ format:
-    # -        (A1*  (A1*
-    # -          *     *
-    # -          *)    *)
-    # -          *     *
-    # expected (V*)    *
-    # -        (C-A1*  *
-    # widen     *     (V*)
-    # -         *     (A4*
-    # todo make a function that does this and reuse
-    with open(gold_srl_eval_file, 'w') as f:
-      role_labels_start_idx = 0
-      for sent_words, sent_predicates, sent_len in zip(words, predicate_targets, sent_lens):
-        # first get number of predicates
-        sent_num_predicates = np.sum(sent_predicates)
+    # write gold labels
+    write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
 
-        # grab those predicates and convert to conll format from bio
-        # this is a sent_num_predicates x batch_seq_len tensor
-        sent_role_labels_bio = srl_targets[role_labels_start_idx: role_labels_start_idx+sent_num_predicates]
-        sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
-        role_labels_start_idx += sent_num_predicates
-        for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
-          predicate_str = word if predicate else '-'
-          roles_str = '\t'.join(sent_role_labels[j]) if predicate else ''
-          print("%s\t%s" % (predicate_str, roles_str), file=f)
-        print(file=f)
-
-    # Write predictions file (same format)
-    with open(pred_srl_eval_file, 'w') as f:
-      predicate_start_idx = 0
-      for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
-        # first get number of predicates
-        sent_num_predicates = np.sum(sent_predicates)
-
-        # grab those predicates and convert to conll format from bio
-        # this is a sent_num_predicates x batch_seq_len tensor
-        sent_role_preds_bio = predictions[predicate_start_idx: predicate_start_idx+sent_num_predicates]
-        sent_role_preds = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio])))
-        for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
-          predicate_str = word if predicate else '-'
-          roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
-          print("%s\t%s" % (predicate_str, roles_str), file=f)
-        print(file=f)
-
-    # copy over relevant
+    # write predicted labels
+    write_srl_eval(pred_srl_eval_file, words, predicate_predictions, sent_lens, predictions)
 
     with open(os.devnull, 'w') as devnull:
       try:
