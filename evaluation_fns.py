@@ -178,16 +178,17 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   update_excess_op = tf.assign_add(excess_count, excess)
   update_missed_op = tf.assign_add(missed_count, missed)
 
-  precision = correct / (excess + correct)
-  recall = correct / (missed + correct)
-  f1 = 2 * precision * recall / (precision + recall)
+  # precision = correct / (excess + correct)
+  # recall = correct / (missed + correct)
+  # f1 = 2 * precision * recall / (precision + recall)
 
-  # precision_op = update_correct_op / (update_correct_op + update_excess_op)
-  # recall_op = update_correct_op / (update_correct_op + update_missed_op)
-  # f1_op = 2 * precision_op * recall_op / (precision_op + recall_op)
-  precision_op = correct_count / (correct_count + excess_count)
-  recall_op = correct_count / (correct_count + missed_count)
+  precision_op = update_correct_op / (update_correct_op + update_excess_op)
+  recall_op = update_correct_op / (update_correct_op + update_missed_op)
   f1_op = 2 * precision_op * recall_op / (precision_op + recall_op)
+
+  precision = correct_count / (correct_count + excess_count)
+  recall = correct_count / (correct_count + missed_count)
+  f1 = 2 * precision * recall / (precision + recall)
 
   return f1, f1_op
 
