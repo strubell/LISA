@@ -82,7 +82,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
 
   # srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
 
-  sent_lens = np.sum(mask, -1)
+  sent_lens = np.sum(mask, -1).astype(np.int32)
   print("sent lens", sent_lens)
 
   # First write predictions file w/ format:
