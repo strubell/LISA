@@ -22,6 +22,10 @@ data_config = {
       'id': {
         'conll_idx': 2,
       },
+      'sent_id': {
+        'conll_idx': 1,
+        'label': True
+      },
       'word': {
         'conll_idx': 3,
         'feature': True,
@@ -184,7 +188,7 @@ task_config = {
           'name': 'conll_srl_eval',
           'params': {
             'gold_srl_eval_file': {
-              'value': '~/canvas/data/conll05st-release-new/conll2005-dev-gold-props.txt'
+              'value': 'save/srl_gold.txt'
             },
             'pred_srl_eval_file': {
               'value': 'save/srl_preds.txt'
@@ -194,6 +198,9 @@ task_config = {
                 'word',
                 'srl'
               ]
+            },
+            'predicate_targets': {
+              'label': 'predicate',
             },
             'words': {
               'feature': 'word',

@@ -72,20 +72,20 @@ def conll_parse_eval(predictions, targets, mask, reverse_maps, gold_parse_eval_f
   return tf.metrics.accuracy(targets, predictions, mask)
 
 
-def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_eval_file, gold_srl_eval_file):
+def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targets, predicate_targets, pred_srl_eval_file, gold_srl_eval_file):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
   # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
   # words: batch_size x batch_seq_len tensor of ints (0/1)
 
   # need to print for every word in every sentence
-
-  # srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
-
   sent_lens = np.sum(mask, -1).astype(np.int32)
-  print("sent lens", sent_lens)
 
-  # First write predictions file w/ format:
+  print("predictions shape", predictions.shape)
+  print("targets shape", srl_targets.shape)
+
+
+  # Write targets file w/ format:
   # -        (A1*  (A1*
   # -          *     *
   # -          *)    *)
@@ -94,29 +94,43 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, pred_srl_
   # -        (C-A1*  *
   # widen     *     (V*)
   # -         *     (A4*
-  with open(pred_srl_eval_file, 'w', encoding='utf-8') as f:
+  # todo make a function that does this and reuse
+  with open(gold_srl_eval_file, 'w') as f:
+    role_preds_start_idx = 0
+    for sent_words, sent_predicates, sent_len in zip(words, predicate_targets, sent_lens):
+      # first get number of predicates
+      sent_num_predicates = np.sum(sent_predicates)
+
+      # grab those predicates and convert to conll format from bio
+      # this is a sent_num_predicates x batch_seq_len tensor
+      sent_role_preds_bio = srl_targets[role_preds_start_idx: role_preds_start_idx+sent_num_predicates]
+      sent_role_preds = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio])))
+      role_preds_start_idx += sent_num_predicates
+      for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
+        predicate_str = word if predicate else '-'
+        roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
+        print("%s\t%s" % (predicate_str.decode('utf-8'), roles_str), file=f)
+      print(file=f)
+
+  # Write predictions file (same format)
+  with open(pred_srl_eval_file, 'w') as f:
     predicate_start_idx = 0
     for sent_words, sent_predicates, sent_len in zip(words, predicate_predictions, sent_lens):
       # first get number of predicates
       sent_num_predicates = np.sum(sent_predicates)
-      print("sent words", sent_words)
-      print("sent predicates", sent_predicates)
-      print("sent num predicates", sent_num_predicates)
-      print("sent len", sent_len)
 
       # grab those predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len tensor
       sent_role_preds_bio = predictions[predicate_start_idx: predicate_start_idx+sent_num_predicates]
-      print("sent role preds bio", sent_role_preds_bio)
-      sent_role_preds = map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio]))
-      print("sent role preds", sent_role_preds)
+      sent_role_preds = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_preds_bio])))
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
-        predicate_str = word #if predicate else '-'
+        predicate_str = word if predicate else '-'
         roles_str = '\t'.join(sent_role_preds[j]) if predicate else ''
-        print("%s\t%s" % (predicate_str, roles_str), file=f)
-        print("%s\t%s" % (predicate_str, roles_str))
+        print("%s\t%s" % (predicate_str.decode('utf-8'), roles_str), file=f)
       print(file=f)
-      print()
+
+  # copy over relevant
+
   overall_f1 = 0.0
   with open(os.devnull, 'w') as devnull:
     try:
@@ -134,7 +148,7 @@ def create_metric_variable(name, shape, dtype):
   return tf.get_variable(name=name, shape=shape, dtype=dtype, collections=[tf.GraphKeys.LOCAL_VARIABLES,
                                                                            tf.GraphKeys.METRIC_VARIABLES])
 
-def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, reverse_maps, gold_srl_eval_file,
+def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps, gold_srl_eval_file,
                    pred_srl_eval_file):
 
   # create accumulator variables
@@ -149,9 +163,11 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, rev
   # todo order of map.values() is probably not guaranteed; should prob sort by keys first
   str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions, name="str_srl_preds_lookup")
   str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words, name="str_words_lookup")
+  str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets, name="str_srl_targets_lookup")
+
 
   # need to pass through the stuff for pyfunc
-  py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, pred_srl_eval_file, gold_srl_eval_file]
+  py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets, pred_srl_eval_file, gold_srl_eval_file]
   out_types = [tf.float32, tf.float32, tf.float32] # [tf.int32, tf.int32, tf.int32]
   correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
   # correct = counts[0]
