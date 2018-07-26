@@ -113,6 +113,8 @@ class LISAModel:
                 # todo fix masking -- do it in lookup table?
                 task_labels = labels[task]
 
+                task_labels = tf.Print(task_labels, [task_labels], task, summarize=200)
+
                 # task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
 
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
