@@ -63,7 +63,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                         padding_values=constants.PAD_VALUE))
       dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*10, count=num_epochs))
     else:
-      dataset = dataset.batch(batch_size)
+      dataset = dataset.padded_batch(batch_size, padded_shapes=dataset.output_shapes)
 
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
