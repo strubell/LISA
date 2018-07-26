@@ -123,23 +123,22 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
 
   overall_f1 = 0.0
 
-  if predictions.shape[0] > 0:
 
-    # write gold labels
-    write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
+  # write gold labels
+  write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
 
-    # write predicted labels
-    write_srl_eval(pred_srl_eval_file, words, predicate_predictions, sent_lens, predictions)
+  # write predicted labels
+  write_srl_eval(pred_srl_eval_file, words, predicate_predictions, sent_lens, predictions)
 
-    # run eval script
-    with open(os.devnull, 'w') as devnull:
-      try:
-        srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
-        print(srl_eval)
-        # todo actually, get all the cumulative counts
-        overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
-      except CalledProcessError as e:
-        print("Call to srl-eval.pl eval failed.")
+  # run eval script
+  with open(os.devnull, 'w') as devnull:
+    try:
+      srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
+      print(srl_eval)
+      # todo actually, get all the cumulative counts
+      overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
+    except CalledProcessError as e:
+      print("Call to srl-eval.pl eval failed.")
 
   return overall_f1, overall_f1, overall_f1
 
