@@ -15,6 +15,7 @@ def convert_bilou(bio_predicted_roles):
   converted = []
   started_types = []
   for i, s in enumerate(bio_predicted_roles):
+    print(s, type(s))
     label_parts = s.split('/')
     curr_len = len(label_parts)
     combined_str = ''
