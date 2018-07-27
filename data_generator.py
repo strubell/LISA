@@ -20,14 +20,14 @@ def conll_data_generator(filename, data_config):
             converter_params = data_converters.get_params(data_config[d], split_line, datum_idx)
             data = data_converters.dispatch(converter_name)(**converter_params)
             data_vals.extend(data)
-        # print(tuple(data_vals))
+        print(tuple(data_vals))
         buf.append(tuple(data_vals))
       else:
         if buf:
           sents += 1
           yield buf
           buf = []
-        # print()
+        print()
     # catch the last one
     if buf:
       yield buf
