@@ -141,7 +141,7 @@ model_config = {
 # }
 # todo validate these files
 task_config = {
-  'best_eval_key': 'joint_pos_predicate_accuracy',
+  'best_eval_key': 'srl_f1',
   'layers': {
     3: {
       'joint_pos_predicate': {
