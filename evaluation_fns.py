@@ -89,17 +89,20 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       # first get number of predicates
       sent_num_predicates = np.sum(sent_predicates)
 
+      print("role labels shape", role_labels.shape)
+
       # grab those predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len tensor
       sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+      print("sent role labels shape", sent_role_labels_bio.shape)
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
       predicate_idx = 0
       print("sent num predicates", sent_num_predicates)
       print(len(sent_role_labels))
-      for word, predicate in zip(sent_words[:sent_len], sent_predicates[:sent_len]):
+      for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         predicate_str = word.decode('utf-8') if predicate else '-'
-        roles_str = ('\t'.join(sent_role_labels[predicate_idx]) if predicate else '')
+        roles_str = '\t'.join(sent_role_labels[j])
         predicate_idx += (1 if predicate else 0)
         print("%s\t%s" % (predicate_str, roles_str), file=f)
       print(file=f)
