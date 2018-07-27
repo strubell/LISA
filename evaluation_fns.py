@@ -85,20 +85,20 @@ def conll_parse_eval(predictions, targets, mask, reverse_maps, gold_parse_eval_f
 def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
   with open(filename, 'w') as f:
     role_labels_start_idx = 0
-    for sent_words, sent_predicates, sent_len in zip(words, predicates, sent_lens):
-      # first get number of predicates
-      sent_num_predicates = np.sum(sent_predicates)
-
-      # grab those predicates and convert to conll format from bio
+    num_predicates_per_sent = np.sum(predicates, -1)
+    # for each sentence in the batch
+    for sent_words, sent_predicates, sent_len, sent_num_predicates in zip(words, predicates, sent_lens,
+                                                                          num_predicates_per_sent):
+      # grab predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
-      if sent_num_predicates > 0:
-        sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
-      else:
-        sent_role_labels_bio = []
+      sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+
+      print(sent_role_labels_bio)
 
       # this is a list of sent_num_predicates lists of srl role labels
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
+      # for each token in the sentence
       for word, predicate, tok_role_labels in zip(sent_words[:sent_len], sent_predicates[:sent_len], sent_role_labels):
         predicate_str = word.decode('utf-8') if predicate else '-'
         roles_str = '\t'.join(tok_role_labels)
@@ -115,6 +115,10 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
 
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
+
+  np.set_printoptions(threshold=np.inf)
+  print("num srl predicates", np.sum(predicate_targets))
+  print("srl_targets_shape", srl_targets.shape)
 
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
