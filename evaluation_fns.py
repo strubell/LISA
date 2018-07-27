@@ -97,13 +97,19 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
       # for each token in the sentence
-      for word, predicate, tok_role_labels in zip(sent_words[:sent_len], sent_predicates[:sent_len], sent_role_labels):
+      # printed = False
+      for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
+        tok_role_labels = sent_role_labels[j] if sent_role_labels else []
         predicate_str = word.decode('utf-8') if predicate else '-'
         roles_str = '\t'.join(tok_role_labels)
         print("%s\t%s" % (predicate_str, roles_str), file=f)
+        # printed = True
         # print("%s\t%s" % (predicate_str, roles_str))
       # print()
-      print(file=f)
+      # if printed:
+      #   print(file=f)
+      # else:
+      #   print("sentence didn't print")
 
 
 def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
