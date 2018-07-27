@@ -2,7 +2,8 @@ import tensorflow as tf
 import nn_utils
 
 
-def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps):
+def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps,
+                             transition_params):
 
   predicate_pred_mlp_size = model_config['predicate_pred_mlp_size']
 
@@ -13,6 +14,11 @@ def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, to
 
   # logits = tf.Print(logits, [logits], "joint softmax logits", summarize=500)
   # logits = tf.Print(logits, [tf.shape(targets), targets], "joint softmax targets", summarize=500)
+
+  # todo implement this
+  if transition_params is not None:
+    print('Transition params not yet supported in joint_softmax_classifier')
+    exit(1)
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
@@ -46,7 +52,7 @@ def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, to
 
 
 def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds_train,
-                 predicate_preds_eval, predicate_targets, transition_params=None):
+                 predicate_preds_eval, predicate_targets, transition_params):
     '''
 
     :param input: Tensor with dims: [batch_size, batch_seq_len, hidden_size]
@@ -113,9 +119,6 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     # (p2) f3 f3 f3
     srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
 
-    # num_predicates_in_batch x seq_len
-    predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
-
     gold_predicate_counts = tf.reduce_sum(predicate_targets, -1)
     srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
@@ -126,9 +129,14 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
     srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
+    # num_predicates_in_batch x seq_len
+    predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
+
+    seq_lens = tf.reduce_sum(mask, 1)
     if transition_params is not None:
-      # todo if eval, produce crf predictions
-      seq_lens = tf.reduce_sum(mask, 1)
+      predictions, score = tf.contrib.crf.crf_decode(srl_logits_transposed, transition_params, seq_lens)
+
+    if transition_params is not None and mode == tf.estimator.ModeKeys.TRAIN:
       # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
       log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
                                                                             srl_targets_predicted_predicates,
@@ -149,13 +157,6 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
                                                                        labels=srl_targets_predicted_predicates)
         cross_entropy *= mask
         loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
-
-    # correct = tf.reduce_sum(tf.cast(tf.equal(predictions, srl_targets), tf.float32))
-    # probabilities = tf.nn.softmax(srl_logits_transposed)
-
-    # predictions = tf.Print(predictions, [tf.shape(predictions), predictions], "predictions", summarize=200)
-    # predictions = tf.Print(predictions, [tf.shape(srl_targets), srl_targets], "srl_targets", summarize=200)
-
 
     output = {
       'loss': loss,
@@ -183,10 +184,10 @@ def dispatch(fn_name):
 
 
 # need to decide shape/form of train_outputs!
-def get_params(mode, model_config, task_map, train_outputs, features, labels, current_outputs, task_labels, num_labels, joint_lookup_maps,
-               tokens_to_keep):
+def get_params(mode, model_config, task_map, train_outputs, features, labels, current_outputs, task_labels, num_labels,
+               joint_lookup_maps, tokens_to_keep, transition_params):
   params = {'mode': mode, 'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
-            'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels}
+            'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels, 'transition_params': transition_params}
   params_map = task_map['params']
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through

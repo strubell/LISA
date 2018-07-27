@@ -5,6 +5,7 @@ import transformer
 import nn_utils
 import output_fns
 import evaluation_fns
+from tensorflow.estimator import ModeKeys
 from radam_optimizer import RadamOptimizer
 
 
@@ -20,6 +21,13 @@ class LISAModel:
     # self.label_vocab_sizes = label_vocab_sizes
     self.vocab = vocab
 
+  def load_transitions(self, transition_statistics, num_classes, reverse_lookup):
+    transition_statistics_np = np.zeros((num_classes, num_classes))
+    with open(transition_statistics, 'r') as f:
+      for line in f:
+        tag1, tag2, prob = line.split("\t")
+        transition_statistics_np[reverse_lookup[tag1], reverse_lookup[tag2]] = float(prob)
+    return transition_statistics_np
 
   def load_pretrained_embeddings(self):
     tf.logging.log(tf.logging.INFO, "Loading pre-trained word embedding file: %s" % self.args.word_embedding_file)
@@ -45,6 +53,9 @@ class LISAModel:
     return word_embeddings_table
 
   def model_fn(self, features, mode):
+
+    # todo set up transition params for viterbi
+
 
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
@@ -124,14 +135,34 @@ class LISAModel:
                                                     layer_config['ff_hidden_size'],
                                                     manual_attn)
             if i in self.task_config:
+              # todo test a list of tasks for each layer
               for task, task_map in self.task_config[i].items():
-                # todo fix masking -- do it in lookup table?
                 task_labels = labels[task]
+                task_vocab_size = self.vocab.vocab_names_sizes[task]
+
+                # Set up CRF / Viterbi transition params if specified
+                with tf.variable_scope("crf"):  # to share parameters, change scope here
+                  transition_stats_file = self.model_config['transition_stats'] if 'transition_stats' \
+                                                                                   in self.model_config else None
+                  transition_stats = self.load_transitions(transition_stats_file) if transition_stats_file else None
+
+                  task_crf = 'crf' in task_map and task_map['crf']
+                  task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
+                  transition_params = None
+                  if mode == ModeKeys.TRAIN and task_crf:
+                    transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
+                                                        initializer=tf.constant_initializer(transition_stats))
+                    tf.logging.log(tf.logging.INFO, "Created transition params for training %s" % task)
+                  elif (mode == ModeKeys.EVAL or mode == ModeKeys.PREDICT) and task_viterbi_decode:
+                    transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
+                                                        initializer=tf.constant_initializer(transition_stats),
+                                                        trainable=False)
+                    tf.logging.log(tf.logging.INFO, "Created transition params for decoding %s" % task)
 
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
-                                                         feats, labels, current_input, task_labels,
-                                                         self.vocab.vocab_names_sizes[task],
-                                                         self.vocab.joint_label_lookup_maps, tokens_to_keep)
+                                                         feats, labels, current_input, task_labels, task_vocab_size,
+                                                         self.vocab.joint_label_lookup_maps, tokens_to_keep,
+                                                         transition_params)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
                 # want task_outputs to have:
@@ -211,7 +242,7 @@ class LISAModel:
       flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
 
       export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                          tf.estimator.export.PredictOutput(flat_predictions)}
+                        tf.estimator.export.PredictOutput(flat_predictions)}
 
       return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
                                         training_hooks=[logging_hook], export_outputs=export_outputs)

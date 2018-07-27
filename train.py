@@ -147,6 +147,7 @@ task_config = {
     3: {
       'joint_pos_predicate': {
         'penalty': 1.0,
+        'viterbi': True,
         'output_fn': {
           'name': 'joint_softmax_classifier',
           'params': {
