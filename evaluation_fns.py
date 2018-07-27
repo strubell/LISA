@@ -91,7 +91,10 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
 
       # grab those predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
-      sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+      if sent_num_predicates > 0:
+        sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+      else:
+        sent_role_labels_bio = []
 
       # this is a list of sent_num_predicates lists of srl role labels
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
