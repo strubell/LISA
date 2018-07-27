@@ -30,7 +30,8 @@ data_config = {
         'conll_idx': 3,
         'feature': True,
         'vocab': 'word',
-        'oov': True
+        'oov': False,
+        'updatable': True
       },
       'word_type': {
         'conll_idx': 3,
@@ -255,12 +256,14 @@ if not os.path.exists(args.save_dir):
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-train_vocab = Vocab(args.train_file, data_config, args.save_dir)
+vocab = Vocab(args.train_file, data_config, args.save_dir)
+vocab.update(args.dev_file)
+
 
 def get_input_fn(data_file, num_epochs, is_train):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
-  vocab_lookup_ops = train_vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
-    else train_vocab.create_vocab_lookup_ops()
+  vocab_lookup_ops = vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
+    else vocab.create_vocab_lookup_ops()
 
   return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
 

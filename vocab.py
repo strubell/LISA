@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import data_converters
 import constants
+import os
 
 
 class Vocab:
@@ -87,15 +88,23 @@ class Vocab:
   Returns:
     Map from vocab names to their sizes
   '''
-  def make_vocab_files(self, filename, data_config, save_dir):
+  def make_or_update_vocab_files(self, filename, data_config, save_dir, update_only=False):
 
     # init maps
     vocabs = []
     vocabs_index = {}
     for d in data_config:
-      # only
-      if 'vocab' in data_config[d] and data_config[d]['vocab'] == d:
-        vocabs.append({})
+      updatable = 'updatable' in data_config[d] and data_config[d]['updatable']
+      if 'vocab' in data_config[d] and data_config[d]['vocab'] == d and (updatable or not update_only):
+        this_vocab = {}
+        if update_only and updatable:
+          vocab_fname = "%s/%s.txt" % (save_dir, d)
+          if os.path.isfile(vocab_fname):
+            with open(vocab_fname, 'r') as f:
+              for line in f:
+                datum, count = line.split()
+                this_vocab[datum] = count
+        vocabs.append(this_vocab)
         vocabs_index[d] = len(vocabs_index)
 
     with open(filename, 'r') as f:
@@ -138,9 +147,6 @@ class Vocab:
         map_names = ["%s_to_%s" % (v, label_comp) for label_comp in label_components]
         joint_to_comp_maps = [np.zeros([len(joint_vocab_map), 1], dtype=np.int32) for _ in label_components]
         for joint_idx, joint_label in enumerate(joint_vocab_map.keys()):
-          # if pred_label in vocabs[4].SPECIAL_TOKENS:
-          #   postag = pred_label
-          # else:
           split_label = joint_label.split(constants.JOINT_LABEL_SEP)
           for label_comp, comp_map, joint_to_comp_map in zip(split_label, component_maps, joint_to_comp_maps):
             comp_idx = comp_map[label_comp]
@@ -157,3 +163,9 @@ class Vocab:
           print("%s\t%d" % (k, v), file=f)
 
     return {k: len(vocabs[vocabs_index[k]]) for k in vocabs_index.keys()}
+
+  def make_vocab_files(self, filename, data_config, save_dir):
+    return self.make_or_update_vocab_files(filename, data_config, save_dir, False)
+
+  def update(self, filename):
+    self.vocab_names_sizes = self.make_or_update_vocab_files(filename, self.data_config, self.save_dir, True)
