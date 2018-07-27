@@ -120,19 +120,24 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
     # num_predicates_in_batch x seq_len
-    srl_targets = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
+    srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
+
+    predicted_predicate_counts = tf.reduce_sum(predicate_preds, -1)
+    srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
+    srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
     if transition_params is not None:
       # todo if eval, produce crf predictions from here
       seq_lens = tf.reduce_sum(mask, 1)
       # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
-      log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed, srl_targets,
+      log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
+                                                                            srl_targets_predicted_predicates,
                                                                             seq_lens,
                                                                             transition_params=transition_params)
       loss = tf.reduce_mean(-log_likelihood)
     else:
       if label_smoothing > 0:
-        srl_targets_onehot = tf.one_hot(indices=srl_targets, depth=num_labels, axis=-1)
+        srl_targets_onehot = tf.one_hot(indices=srl_targets_predicted_predicates, depth=num_labels, axis=-1)
         loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(srl_logits_transposed, [-1, num_labels]),
                                                onehot_labels=tf.reshape(srl_targets_onehot, [-1, num_labels]),
                                                weights=tf.reshape(mask, [-1]),
@@ -140,7 +145,8 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
                                                reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
       else:
-        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=srl_logits_transposed, labels=srl_targets)
+        cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=srl_logits_transposed,
+                                                                       labels=srl_targets_predicted_predicates)
         cross_entropy *= mask
         loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
 
@@ -155,7 +161,7 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
       'loss': loss,
       'predictions': predictions,
       'scores': srl_logits_transposed,
-      'targets': srl_targets,
+      'targets': srl_targets_gold_predicates,
       # 'mask': mask
     }
 
