@@ -114,10 +114,10 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
 
-  np.set_printoptions(threshold=np.inf)
-  print("num srl predicates", np.sum(predicate_targets))
-  print("srl_targets_shape", srl_targets.shape)
-  print("srl targets", srl_targets)
+  # np.set_printoptions(threshold=np.inf)
+  # print("num srl predicates", np.sum(predicate_targets))
+  # print("srl_targets_shape", srl_targets.shape)
+  # print("srl targets", srl_targets)
 
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
