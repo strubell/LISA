@@ -104,7 +104,7 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       print(file=f)
 
 
-def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
+def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
                       pred_srl_eval_file, gold_srl_eval_file):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
@@ -114,16 +114,17 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
 
-  # np.set_printoptions(threshold=np.inf)
-  # print("num srl predicates", np.sum(predicate_targets))
-  # print("srl_targets_shape", srl_targets.shape)
-  # print("srl targets", srl_targets)
+  np.set_printoptions(threshold=np.inf)
+  print("words shape", words.shape)
+  print("srl_preds_shape", srl_predictions.shape)
+  print("srl predicate preds shape", predicate_predictions.shape)
+  # print("srl predicate preds", predicate_predictions)
 
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
 
   # write predicted labels
-  write_srl_eval(pred_srl_eval_file, words, predicate_predictions, sent_lens, predictions)
+  write_srl_eval(pred_srl_eval_file, words, predicate_predictions, sent_lens, srl_predictions)
 
   # run eval script
   correct, excess, missed = 0, 0, 0
@@ -159,6 +160,7 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
 
   # need to pass through the stuff for pyfunc
+  # pyfunc is necessary here since we need to write to disk
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
                     pred_srl_eval_file, gold_srl_eval_file]
   out_types = [tf.int64, tf.int64, tf.int64]

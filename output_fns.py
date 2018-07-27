@@ -85,14 +85,14 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
       # gathered_predicates: num_predicates_in_batch x 1 x predicate_mlp_size
       # role mlp: batch x seq_len x role_mlp_size
       # gathered roles: need a (batch_seq_len x role_mlp_size) role representation for each predicate,
-      # i.e. a (num_predicates_in_batch x bucket_size x role_mlp_size) tensor
+      # i.e. a (num_predicates_in_batch x batch_seq_len x role_mlp_size) tensor
       predicate_gather_indices = tf.where(tf.equal(predicate_preds, 1))
       gathered_predicates = tf.expand_dims(tf.gather_nd(predicate_mlp, predicate_gather_indices), 1)
       tiled_roles = tf.reshape(tf.tile(role_mlp, [1, batch_seq_len, 1]),
                                [batch_size, batch_seq_len, batch_seq_len, role_mlp_size])
       gathered_roles = tf.gather_nd(tiled_roles, predicate_gather_indices)
 
-      # now multiply them together to get (num_predicates_in_batch x bucket_size x num_srl_classes) tensor of scores
+      # now multiply them together to get (num_predicates_in_batch x batch_seq_len x num_srl_classes) tensor of scores
       srl_logits = nn_utils.bilinear_classifier_nary(gathered_predicates, gathered_roles, num_labels, bilin_keep_prob)
       srl_logits_transposed = tf.transpose(srl_logits, [0, 2, 1])
 
@@ -127,7 +127,7 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
     if transition_params is not None:
-      # todo if eval, produce crf predictions from here
+      # todo if eval, produce crf predictions
       seq_lens = tf.reduce_sum(mask, 1)
       # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
       log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
