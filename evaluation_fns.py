@@ -89,18 +89,13 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       # first get number of predicates
       sent_num_predicates = np.sum(sent_predicates)
 
-      print("role labels shape", role_labels.shape)
-
       # grab those predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
-      print("sent role labels shape", sent_role_labels_bio.shape)
 
       # this is a list of sent_num_predicates lists of srl role labels
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
-      print("sent num predicates", sent_num_predicates)
-      print("sent role labels len", len(sent_role_labels))
       for word, predicate, tok_role_labels in zip(sent_words[:sent_len], sent_predicates[:sent_len], sent_role_labels):
         predicate_str = word.decode('utf-8') if predicate else '-'
         roles_str = '\t'.join(tok_role_labels)
@@ -118,19 +113,6 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
 
-  # print("predictions shape", predictions.shape)
-  # print("targets shape", srl_targets.shape)
-  #
-  # print("predicate_predictions", predicate_predictions)
-  # print("predicate_targets", predicate_targets)
-  #
-  # print("predictions", predictions)
-  # print("targets", srl_targets)
-
-
-  overall_f1 = 0.0
-
-
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
 
@@ -138,17 +120,17 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   write_srl_eval(pred_srl_eval_file, words, predicate_predictions, sent_lens, predictions)
 
   # run eval script
+  correct, excess, missed = 0, 0, 0
   with open(os.devnull, 'w') as devnull:
     try:
       srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
       srl_eval = srl_eval.decode('utf-8')
       print(srl_eval)
-      # todo actually, get all the cumulative counts
-      overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
+      correct, excess, missed = map(int, srl_eval.split('\n')[6].split()[1:4])
     except CalledProcessError as e:
       print("Call to srl-eval.pl eval failed.")
 
-  return overall_f1, overall_f1, overall_f1
+  return correct, excess, missed
 
 
 def create_metric_variable(name, shape, dtype):
@@ -160,40 +142,25 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
                    gold_srl_eval_file, pred_srl_eval_file):
 
   # create accumulator variables
-  # correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int32)
-  # excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int32)
-  # missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int32)
-  correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.float64)
-  excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.float64)
-  missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.float64)
-
-  predictions = tf.Print(predictions, [predictions], "predictions")
+  correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int32)
+  excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int32)
+  missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int32)
 
   # first, use reverse maps to convert ints to strings
   # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-  str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions, name="str_srl_preds_lookup")
-  str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words, name="str_words_lookup")
-  str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets, name="str_srl_targets_lookup")
-
-  str_predictions = tf.Print(str_predictions, [tf.shape(str_predictions), str_predictions], "str predictions")
-  str_predictions = tf.Print(str_predictions, [tf.shape(str_targets), str_targets], "str predictions")
-
+  str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
+  str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
+  str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
 
   # need to pass through the stuff for pyfunc
-  py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets, pred_srl_eval_file, gold_srl_eval_file]
-  out_types = [tf.float64, tf.float64, tf.float64] # [tf.int32, tf.int32, tf.int32]
+  py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
+                    pred_srl_eval_file, gold_srl_eval_file]
+  out_types = [tf.int32, tf.int32, tf.int32]
   correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
-  # correct = counts[0]
-  # excess = counts[1]
-  # missed = counts[2]
 
   update_correct_op = tf.assign_add(correct_count, correct)
   update_excess_op = tf.assign_add(excess_count, excess)
   update_missed_op = tf.assign_add(missed_count, missed)
-
-  # precision = correct / (excess + correct)
-  # recall = correct / (missed + correct)
-  # f1 = 2 * precision * recall / (precision + recall)
 
   precision_update_op = update_correct_op / (update_correct_op + update_excess_op)
   recall_update_op = update_correct_op / (update_correct_op + update_missed_op)
