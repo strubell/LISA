@@ -142,9 +142,9 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
                    gold_srl_eval_file, pred_srl_eval_file):
 
   # create accumulator variables
-  correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int32)
-  excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int32)
-  missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int32)
+  correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int64)
+  excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int64)
+  missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int64)
 
   # first, use reverse maps to convert ints to strings
   # todo order of map.values() is probably not guaranteed; should prob sort by keys first
@@ -155,7 +155,7 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   # need to pass through the stuff for pyfunc
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
                     pred_srl_eval_file, gold_srl_eval_file]
-  out_types = [tf.int32, tf.int32, tf.int32]
+  out_types = [tf.int64, tf.int64, tf.int64]
   correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
 
   update_correct_op = tf.assign_add(correct_count, correct)
