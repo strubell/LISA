@@ -168,4 +168,8 @@ class Vocab:
     return self.make_or_update_vocab_files(filename, data_config, save_dir, False)
 
   def update(self, filename):
-    self.vocab_names_sizes = self.make_or_update_vocab_files(filename, self.data_config, self.save_dir, True)
+    vocab_names_sizes = self.make_or_update_vocab_files(filename, self.data_config, self.save_dir, True)
+
+    # merge new and old
+    for vocab_name, vocab_size in vocab_names_sizes.items():
+      self.vocab_names_sizes[vocab_name] = vocab_size
