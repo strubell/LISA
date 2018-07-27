@@ -103,7 +103,7 @@ class Vocab:
             with open(vocab_fname, 'r') as f:
               for line in f:
                 datum, count = line.split()
-                this_vocab[datum] = count
+                this_vocab[datum] = int(count)
         vocabs.append(this_vocab)
         vocabs_index[d] = len(vocabs_index)
 
