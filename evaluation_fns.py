@@ -141,6 +141,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   with open(os.devnull, 'w') as devnull:
     try:
       srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
+      srl_eval = srl_eval.decode('utf-8')
       print(srl_eval)
       # todo actually, get all the cumulative counts
       overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
