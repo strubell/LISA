@@ -305,7 +305,7 @@ for i, f in enumerate([d for d in data_config.keys() if
       label_idx_map[f] = (i, i+1)
 
 
-model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, label_idx_map, train_vocab)
+model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, label_idx_map, vocab)
 
 num_train_examples = 39832  # todo: compute this automatically
 evaluate_every_n_epochs = 100
