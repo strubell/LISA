@@ -175,6 +175,9 @@ task_config = {
         'output_fn': {
           'name': 'srl_bilinear',
           'params': {
+            'predicate_targets': {
+              'label': 'predicate'
+            },
             'predicate_preds_train': {
               'label': 'predicate'
             },

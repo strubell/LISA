@@ -46,7 +46,7 @@ def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, to
 
 
 def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds_train,
-                 predicate_preds_eval, transition_params=None):
+                 predicate_preds_eval, predicate_targets, transition_params=None):
     '''
 
     :param input: Tensor with dims: [batch_size, batch_seq_len, hidden_size]
@@ -116,18 +116,14 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     # num_predicates_in_batch x seq_len
     predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
 
-    predicate_counts = tf.reduce_sum(predicate_preds, -1)
-
-    # predicate_counts = tf.Print(predicate_counts, [predicate_preds], "predicate_preds", summarize=200)
-    #
-    # predicate_counts = tf.Print(predicate_counts, [batch_size, batch_seq_len, tf.shape(srl_targets_transposed), tf.shape(predicate_counts), predicate_counts], "predicate_counts", summarize=200)
-
-    srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(predicate_counts, [-1])))
+    gold_predicate_counts = tf.reduce_sum(predicate_targets, -1)
+    srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
     # num_predicates_in_batch x seq_len
     srl_targets = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
 
     if transition_params is not None:
+      # todo if eval, produce crf predictions from here
       seq_lens = tf.reduce_sum(mask, 1)
       # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
       log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed, srl_targets,

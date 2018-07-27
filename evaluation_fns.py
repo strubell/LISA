@@ -93,8 +93,6 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
 
-      print(sent_role_labels_bio)
-
       # this is a list of sent_num_predicates lists of srl role labels
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
@@ -119,6 +117,7 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
   np.set_printoptions(threshold=np.inf)
   print("num srl predicates", np.sum(predicate_targets))
   print("srl_targets_shape", srl_targets.shape)
+  print("srl targets", srl_targets)
 
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
