@@ -175,6 +175,8 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets, name="str_srl_targets_lookup")
 
   str_predictions = tf.Print(str_predictions, [tf.shape(str_predictions), str_predictions], "str predictions")
+  str_predictions = tf.Print(str_predictions, [tf.shape(str_targets), str_targets], "str predictions")
+
 
   # need to pass through the stuff for pyfunc
   py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets, pred_srl_eval_file, gold_srl_eval_file]
