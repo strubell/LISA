@@ -101,8 +101,8 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
         predicate_str = word.decode('utf-8') if predicate else '-'
         roles_str = '\t'.join(tok_role_labels)
         print("%s\t%s" % (predicate_str, roles_str), file=f)
-        print("%s\t%s" % (predicate_str, roles_str))
-      print()
+        # print("%s\t%s" % (predicate_str, roles_str))
+      # print()
       print(file=f)
 
 
@@ -116,10 +116,10 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
 
-  np.set_printoptions(threshold=np.inf)
-  print("words shape", words.shape)
-  print("srl_preds_shape", srl_predictions.shape)
-  print("srl predicate preds shape", predicate_predictions.shape)
+  # np.set_printoptions(threshold=np.inf)
+  # print("words shape", words.shape)
+  # print("srl_preds_shape", srl_predictions.shape)
+  # print("srl predicate preds shape", predicate_predictions.shape)
   # print("srl predicate preds", predicate_predictions)
 
   # write gold labels
