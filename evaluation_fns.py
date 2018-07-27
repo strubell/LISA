@@ -100,7 +100,7 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       for word, predicate in zip(sent_words[:sent_len], sent_predicates[:sent_len]):
         predicate_str = word.decode('utf-8') if predicate else '-'
         roles_str = ('\t'.join(sent_role_labels[predicate_idx]) if predicate else '')
-        predicate_idx += 1 if predicate else 0
+        predicate_idx += (1 if predicate else 0)
         print("%s\t%s" % (predicate_str, roles_str), file=f)
       print(file=f)
 
@@ -164,10 +164,6 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.float64)
 
   predictions = tf.Print(predictions, [predictions], "predictions")
-
-  predicate_counts = tf.reduce_sum(predicate_targets, -1)
-  srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(predicate_counts, [-1])))
-  targets = tf.gather_nd(targets, srl_targets_indices)
 
   # first, use reverse maps to convert ints to strings
   # todo order of map.values() is probably not guaranteed; should prob sort by keys first
