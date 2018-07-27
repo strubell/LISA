@@ -157,9 +157,31 @@ task_config = {
             }
           }
         },
-        'eval_fn': {
-          'name': 'accuracy',
-          'params': {}
+        'eval_fns': {
+          'predicate_acc': {
+            'name': 'accuracy',
+            'params': {
+              'predictions': {
+                'layer': 'joint_pos_predicate',
+                'output': 'predicate_predictions'
+              },
+              'targets': {
+                'label': 'predicate'
+              }
+            }
+          },
+          'pos_acc': {
+            'name': 'accuracy',
+            'params': {
+              'predictions': {
+                'layer': 'joint_pos_predicate',
+                'output': 'gold_pos_predictions'
+              },
+              'targets': {
+                'label': 'gold_pos'
+              }
+            }
+          }
         }
       }
     },
@@ -187,30 +209,36 @@ task_config = {
             }
           }
         },
-        'eval_fn': {
-          'name': 'conll_srl_eval',
-          'params': {
-            'gold_srl_eval_file': {
-              'value': 'save/srl_gold.txt'
-            },
-            'pred_srl_eval_file': {
-              'value': 'save/srl_preds.txt'
-            },
-            'reverse_maps': {
-              'maps': [
-                'word',
-                'srl'
-              ]
-            },
-            'predicate_targets': {
-              'label': 'predicate',
-            },
-            'words': {
-              'feature': 'word',
-            },
-            'predicate_predictions': {
-              'layer': 'joint_pos_predicate',
-              'output': 'predicate_predictions'
+        'eval_fns': {
+          'srl_f1': {
+            'name': 'conll_srl_eval',
+            'params': {
+              'gold_srl_eval_file': {
+                'value': 'save/srl_gold.txt'
+              },
+              'pred_srl_eval_file': {
+                'value': 'save/srl_preds.txt'
+              },
+              'reverse_maps': {
+                'maps': [
+                  'word',
+                  'srl'
+                ]
+              },
+              'targets': {
+                'layer': 'srl',
+                'output': 'targets'
+              },
+              'predicate_targets': {
+                'label': 'predicate',
+              },
+              'words': {
+                'feature': 'word',
+              },
+              'predicate_predictions': {
+                'layer': 'joint_pos_predicate',
+                'output': 'predicate_predictions'
+              }
             }
           }
         }
@@ -291,7 +319,7 @@ save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.be
                                                                   key=task_config['best_eval_key']),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=600, exporters=[save_best_exporter])
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=60, exporters=[save_best_exporter])
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 # estimator.train(input_fn=train_input_fn, steps=100000, hooks=[validation_hook])

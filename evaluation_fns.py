@@ -200,9 +200,11 @@ def dispatch(fn_name):
 
 
 def get_params(task_outputs, task_map, train_outputs, features, labels, task_labels, lookup_maps, tokens_to_keep):
-  targets = task_labels if 'targets' not in task_outputs else task_outputs['targets']
-  mask = tokens_to_keep if 'mask' not in task_outputs else task_outputs['mask']
-  params = {'predictions': task_outputs['predictions'], 'targets': targets, 'mask': mask}
+  # targets = task_labels if 'targets' not in task_outputs else task_outputs['targets']
+  # mask = tokens_to_keep if 'mask' not in task_outputs else task_outputs['mask']
+
+  # always pass through predictions, targets and mask
+  params = {'predictions': task_outputs['predictions'], 'targets': task_labels, 'mask': tokens_to_keep}
   if 'params' in task_map:
     params_map = task_map['params']
     for param_name, param_values in params_map.items():
