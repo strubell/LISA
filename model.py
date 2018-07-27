@@ -74,7 +74,6 @@ class LISAModel:
         # check if we need to mask another dimension
         if idx[1] == -1:
           last_dim = tf.shape(these_labels)[2]
-          print("these labels masked", these_labels_masked)
           this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
                                tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
                                tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
@@ -128,10 +127,6 @@ class LISAModel:
               for task, task_map in self.task_config[i].items():
                 # todo fix masking -- do it in lookup table?
                 task_labels = labels[task]
-
-                task_labels = tf.Print(task_labels, [task_labels], task, summarize=200)
-
-                # task_labels = tf.Print(task_labels, [task_labels], "%s labels" % task, summarize=500)
 
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
                                                          feats, labels, current_input, task_labels,
