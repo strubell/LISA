@@ -129,9 +129,6 @@ def conll_srl_eval_py(predictions, predicate_predictions, words, mask, srl_targe
 
 
   # write gold labels
-  predicate_counts = tf.reduce_sum(predicate_targets, -1)
-  srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(predicate_counts, [-1])))
-  predicate_targets = tf.gather_nd(predicate_targets, srl_targets_indices)
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
 
   # write predicted labels
@@ -167,6 +164,10 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
   missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.float64)
 
   predictions = tf.Print(predictions, [predictions], "predictions")
+
+  predicate_counts = tf.reduce_sum(predicate_targets, -1)
+  srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(predicate_counts, [-1])))
+  targets = tf.gather_nd(targets, srl_targets_indices)
 
   # first, use reverse maps to convert ints to strings
   # todo order of map.values() is probably not guaranteed; should prob sort by keys first
