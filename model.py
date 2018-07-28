@@ -21,12 +21,12 @@ class LISAModel:
     # self.label_vocab_sizes = label_vocab_sizes
     self.vocab = vocab
 
-  def load_transitions(self, transition_statistics, num_classes, reverse_lookup):
+  def load_transitions(self, transition_statistics, num_classes, lookup):
     transition_statistics_np = np.zeros((num_classes, num_classes))
     with open(transition_statistics, 'r') as f:
       for line in f:
         tag1, tag2, prob = line.split("\t")
-        transition_statistics_np[reverse_lookup[tag1], reverse_lookup[tag2]] = float(prob)
+        transition_statistics_np[lookup.lookup(tag1), lookup.lookup(tag2)] = float(prob)
     return transition_statistics_np
 
   def load_pretrained_embeddings(self):
@@ -143,10 +143,9 @@ class LISAModel:
                 # Set up CRF / Viterbi transition params if specified
                 with tf.variable_scope("crf"):  # to share parameters, change scope here
                   transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
-                  print(self.vocab.reverse_maps[task])
-                  transition_stats = self.load_transitions(transition_stats_file,
-                                                           task_vocab_size,
-                                                           self.vocab.reverse_maps[task]) if transition_stats_file else None
+                  transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
+                                                           self.vocab.vocab_lookups[task]) \
+                      if transition_stats_file else None
 
                   task_crf = 'crf' in task_map and task_map['crf']
                   task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
