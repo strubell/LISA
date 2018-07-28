@@ -143,7 +143,10 @@ class LISAModel:
                 # Set up CRF / Viterbi transition params if specified
                 with tf.variable_scope("crf"):  # to share parameters, change scope here
                   transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
-                  transition_stats = self.load_transitions(transition_stats_file) if transition_stats_file else None
+                  transition_stats = self.load_transitions(transition_stats_file,
+                                                           task_vocab_size,
+                                                           self.vocab.reverse_maps[task]) \
+                      if transition_stats_file else None
 
                   task_crf = 'crf' in task_map and task_map['crf']
                   task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
