@@ -149,8 +149,6 @@ task_config = {
     3: {
       'joint_pos_predicate': {
         'penalty': 1.0,
-        'viterbi': True,
-        'transition_stats': args.transition_stats,
         'output_fn': {
           'name': 'joint_softmax_classifier',
           'params': {
@@ -199,6 +197,8 @@ task_config = {
     11: {
       'srl': {
         'penalty': 1.0,
+        'viterbi': True,
+        'transition_stats': args.transition_stats,
         'output_fn': {
           'name': 'srl_bilinear',
           'params': {
