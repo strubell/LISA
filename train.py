@@ -14,6 +14,8 @@ arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
 arg_parser.add_argument('--dev_file', type=str, help='Development data file')
 arg_parser.add_argument('--save_dir', type=str, help='Training data file')
+arg_parser.add_argument('--transition_stats', type=str, help='Transition statistics between labels')
+
 arg_parser.add_argument('--word_embedding_file', type=str, help='File containing pre-trained word embeddings')
 
 args = arg_parser.parse_args()
@@ -148,6 +150,7 @@ task_config = {
       'joint_pos_predicate': {
         'penalty': 1.0,
         'viterbi': True,
+        'transition_stats': args.transition_stats,
         'output_fn': {
           'name': 'joint_softmax_classifier',
           'params': {
