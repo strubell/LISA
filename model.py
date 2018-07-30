@@ -161,6 +161,8 @@ class LISAModel:
                     transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
                                                         initializer=tf.constant_initializer(transition_stats),
                                                         trainable=task_crf)
+                    train_or_decode_str = "training" if task_crf else "decoding"
+                    tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
 
                   # if mode == ModeKeys.TRAIN and task_crf:
                   #   transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
