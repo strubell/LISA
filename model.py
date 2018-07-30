@@ -86,6 +86,7 @@ class LISAModel:
 
   def model_fn(self, features, mode):
 
+    # todo move this somewhere else?
     ema = tf.train.ExponentialMovingAverage(decay=self.model_config['moving_average_decay'])
     maintain_averages_op = ema.apply(tf.trainable_variables())
     tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, maintain_averages_op)
