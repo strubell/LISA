@@ -95,7 +95,9 @@ class LISAModel:
       averaged_var = ema.average(var)
       return averaged_var if averaged_var else var
 
-    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE, custom_getter=moving_average_getter):
+    getter = None if mode == ModeKeys.TRAIN else moving_average_getter
+
+    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE, custom_getter=getter):
 
       batch_shape = tf.shape(features)
       batch_size = batch_shape[0]
