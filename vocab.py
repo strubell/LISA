@@ -141,6 +141,7 @@ class Vocab:
       this_counts_map = vocabs[vocabs_index[v]]
       this_map = dict(zip(this_counts_map.keys(), range(len(this_counts_map.keys()))))
       reverse_map = dict(zip(range(len(this_counts_map.keys())), this_counts_map.keys()))
+      self.oovs[v] = False
       if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
         self.oovs[v] = True
         # reverse_map[len(reverse_map)] = constants.OOV_STRING
