@@ -135,7 +135,8 @@ class LISAModel:
                                                              pretrained_fname=input_pretrained_embeddings)
         else:
           num_embeddings = self.vocab.vocab_names_sizes[input_name]
-          input_include_oov = self.vocab.oovs[input_name]
+          # todo maybe shouldn't require that pretrained vocabs have OOV
+          input_include_oov = True
           input_embedding_lookup = self.get_embedding_lookup(input_name, input_embedding_dim,
                                                              input_values, input_include_oov,
                                                              num_embeddings=num_embeddings)
