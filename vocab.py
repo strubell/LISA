@@ -135,8 +135,9 @@ class Vocab:
     for v in vocabs_index.keys():
 
       # build reverse_lookup map, from int -> string
-      this_map = vocabs[vocabs_index[v]]
-      reverse_map = dict(zip(range(len(this_map.keys())), this_map.keys()))
+      this_counts_map = vocabs[vocabs_index[v]]
+      this_map = dict(zip(this_counts_map.keys(), range(len(this_counts_map.keys()))))
+      reverse_map = dict(zip(range(len(this_counts_map.keys())), this_counts_map.keys()))
       if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
         reverse_map[len(reverse_map)] = constants.OOV_STRING
         this_map[len(this_map)] = constants.OOV_STRING
