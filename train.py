@@ -269,6 +269,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 vocab = Vocab(args.train_file, data_config, args.save_dir)
 vocab.update(args.dev_file)
 
+print(vocab.vocab_names_sizes)
 
 def get_input_fn(data_file, num_epochs, is_train):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else

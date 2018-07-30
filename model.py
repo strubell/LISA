@@ -74,9 +74,6 @@ class LISAModel:
 
   def model_fn(self, features, mode):
 
-    # todo set up transition params for viterbi
-
-
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
       batch_shape = tf.shape(features)
