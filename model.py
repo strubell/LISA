@@ -29,14 +29,21 @@ class LISAModel:
         transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
     return transition_statistics_np
 
-  def get_embedding_lookup(self, name, num_embeddings, embedding_size, embedding_values, include_oov,
-                           pretrained_fname=None):
+  def get_embedding_lookup(self, name, embedding_size, embedding_values, include_oov,
+                           pretrained_fname=None, num_embeddings=None):
 
     with tf.variable_scope("%s_embeddings" % name):
       initializer = tf.random_normal_initializer()
       if pretrained_fname:
         pretrained_embeddings = self.load_pretrained_embeddings(pretrained_fname)
         initializer = tf.constant_initializer(pretrained_embeddings)
+        pretrained_num_embeddings = pretrained_embeddings.shape[0]
+        if num_embeddings and num_embeddings != pretrained_num_embeddings:
+          tf.logging.log(tf.logging.ERROR, "Number of pre-trained %s embeddings does not match"
+                                           " specified number of embeddings (%d vs %d)." % (name,
+                                                                                            pretrained_num_embeddings,
+                                                                                            num_embeddings))
+        num_embeddings = pretrained_num_embeddings
 
       embedding_table = tf.get_variable(name="embeddings", shape=[num_embeddings, embedding_size],
                                         initializer=initializer)
