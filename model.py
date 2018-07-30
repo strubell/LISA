@@ -86,7 +86,16 @@ class LISAModel:
 
   def model_fn(self, features, mode):
 
-    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
+    ema = tf.train.ExponentialMovingAverage(decay=self.model_config['moving_average_decay'])
+    maintain_averages_op = ema.apply(tf.trainable_variables())
+    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, maintain_averages_op)
+
+    def moving_average_getter(getter, name, *args, **kwargs):
+      var = getter(name, *args, **kwargs)
+      averaged_var = ema.average(var)
+      return averaged_var if averaged_var else var
+
+    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE, custom_getter=moving_average_getter):
 
       batch_shape = tf.shape(features)
       batch_size = batch_shape[0]

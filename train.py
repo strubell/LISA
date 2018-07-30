@@ -116,6 +116,7 @@ model_config = {
   'predicate_pred_mlp_size': 200,
   # 'word_embedding_size': 100,
   'label_smoothing': 0.1,
+  'moving_average_decay': 0.99,
   'layers': {
     'type': 'transformer',
     'num_heads': 8,
