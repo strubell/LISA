@@ -18,6 +18,7 @@ class Vocab:
     # self.vocab_sizes = {}
     self.joint_label_lookup_maps = {}
     self.reverse_maps = {}
+    self.vocab_maps = {}
     self.vocab_lookups = None
 
     self.vocab_names_sizes = self.make_vocab_files(self.data_filename, self.data_config, self.save_dir)
@@ -93,6 +94,8 @@ class Vocab:
     # init maps
     vocabs = []
     vocabs_index = {}
+    # todo since we now keep vocabs around, don't re-read the vocab. also, we need to
+    # make sure that the oov always stays at the end
     for d in data_config:
       updatable = 'updatable' in data_config[d] and data_config[d]['updatable']
       if 'vocab' in data_config[d] and data_config[d]['vocab'] == d and (updatable or not update_only):
@@ -136,7 +139,9 @@ class Vocab:
       reverse_map = dict(zip(range(len(this_map.keys())), this_map.keys()))
       if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
         reverse_map[len(reverse_map)] = constants.OOV_STRING
+        this_map[len(this_map)] = constants.OOV_STRING
       self.reverse_maps[v] = reverse_map
+      self.vocab_maps[v] = this_map
 
       # check whether we need to build joint_label_lookup_map
       if 'label_components' in self.data_config[v]:
