@@ -75,6 +75,7 @@ data_config = {
       'predicate': {
         'conll_idx': 9,
         'label': True,
+        'feature': True,
         'vocab': 'predicate',
         'converter': {
           'name': 'conll12_binary_predicates'
