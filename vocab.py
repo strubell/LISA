@@ -94,19 +94,21 @@ class Vocab:
     # init maps
     vocabs = []
     vocabs_index = {}
-    # todo since we now keep vocabs around, don't re-read the vocab. also, we need to
-    # make sure that the oov always stays at the end
     for d in data_config:
       updatable = 'updatable' in data_config[d] and data_config[d]['updatable']
       if 'vocab' in data_config[d] and data_config[d]['vocab'] == d and (updatable or not update_only):
         this_vocab = {}
-        if update_only and updatable:
-          vocab_fname = "%s/%s.txt" % (save_dir, d)
-          if os.path.isfile(vocab_fname):
-            with open(vocab_fname, 'r') as f:
-              for line in f:
-                datum, count = line.split()
-                this_vocab[datum] = int(count)
+        if update_only and updatable and d in self.vocab_maps:
+          # vocab_fname = "%s/%s.txt" % (save_dir, d)
+          # if os.path.isfile(vocab_fname):
+          #   with open(vocab_fname, 'r') as f:
+          #     for line in f:
+          #       datum, count = line.split()
+          #       this_vocab[datum] = int(count)
+          this_vocab = self.vocab_maps[d]
+          # make sure that the oov always stays at the end by removing it here (it will be added back later)
+          if constants.OOV_STRING in this_vocab:
+            del this_vocab[constants.OOV_STRING]
         vocabs.append(this_vocab)
         vocabs_index[d] = len(vocabs_index)
 
