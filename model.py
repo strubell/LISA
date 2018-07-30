@@ -96,6 +96,9 @@ class LISAModel:
       # todo concat all the inputs defined in model_config
       words = feats['word_type']
 
+
+      # current_input = tf.concat(inputs_list, axis=2)
+
       # words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
 
 
