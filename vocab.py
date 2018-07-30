@@ -20,6 +20,7 @@ class Vocab:
     self.reverse_maps = {}
     self.vocab_maps = {}
     self.vocab_lookups = None
+    self.oovs = {}
 
     self.vocab_names_sizes = self.make_vocab_files(self.data_filename, self.data_config, self.save_dir)
 
@@ -140,9 +141,10 @@ class Vocab:
       this_counts_map = vocabs[vocabs_index[v]]
       this_map = dict(zip(this_counts_map.keys(), range(len(this_counts_map.keys()))))
       reverse_map = dict(zip(range(len(this_counts_map.keys())), this_counts_map.keys()))
-      # if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
-      #   reverse_map[len(reverse_map)] = constants.OOV_STRING
-      #   this_map[len(this_map)] = constants.OOV_STRING
+      if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
+        self.oovs[v] = True
+        # reverse_map[len(reverse_map)] = constants.OOV_STRING
+        # this_map[len(this_map)] = constants.OOV_STRING
       self.reverse_maps[v] = reverse_map
       self.vocab_maps[v] = this_map
 
