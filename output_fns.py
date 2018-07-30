@@ -133,6 +133,7 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
 
     seq_lens = tf.reduce_sum(mask, 1)
+    print("seq_lens", seq_lens)
     if transition_params is not None:
       predictions, score = tf.contrib.crf.crf_decode(srl_logits_transposed, transition_params, seq_lens)
 

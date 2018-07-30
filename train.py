@@ -106,6 +106,7 @@ data_config = {
       },
     }
 
+# todo define model inputs here
 model_config = {
   # 'num_layers': 12,
   'input_dropout': 0.8,
@@ -122,7 +123,10 @@ model_config = {
     'attn_dropout': 0.9,
     'ff_dropout': 0.9,
     'prepost_dropout': 0.9,
-  }
+  },
+  'inputs': [
+    'word_type'
+  ]
 }
 
 # task_config = {

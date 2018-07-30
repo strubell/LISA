@@ -93,6 +93,7 @@ class LISAModel:
           these_labels_masked = tf.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
 
+      # todo concat all the inputs defined in model_config
       words = feats['word_type']
 
       # words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
@@ -112,7 +113,8 @@ class LISAModel:
       current_input = word_embeddings
 
       # todo will estimators handle dropout for us or do we need to do it on our own?
-      current_input = tf.nn.dropout(current_input, self.model_config['input_dropout'] if mode == tf.estimator.ModeKeys.TRAIN else 1.0)
+      input_dropout = self.model_config['input_dropout']
+      current_input = tf.nn.dropout(current_input, input_dropout if mode == tf.estimator.ModeKeys.TRAIN else 1.0)
 
       with tf.variable_scope('project_input'):
         current_input = nn_utils.MLP(current_input, sa_hidden_size, n_splits=1)
