@@ -33,7 +33,7 @@ class Vocab:
   Returns:
     Map from vocab names to tf.contrib.lookup ops, map from vocab names to vocab sizes
   '''
-  def create_vocab_lookup_ops(self, word_embedding_file):
+  def create_vocab_lookup_ops(self, embedding_files=[]):
 
     # Don't waste GPU memory with these lookup tables; tell tf to put it on CPU
     with tf.device('/cpu:0'):
@@ -49,9 +49,9 @@ class Vocab:
           # this_lookup_size = this_lookup.size()
           # self.vocab_sizes[v] = this_lookup_size
 
-      if word_embedding_file:
-        embeddings_name = word_embedding_file.split("/")[-1]
-        vocab_lookup_ops[embeddings_name] = tf.contrib.lookup.index_table_from_file(word_embedding_file,
+      for embedding_file in embedding_files:
+        embeddings_name = embedding_file #.split("/")[-1]
+        vocab_lookup_ops[embeddings_name] = tf.contrib.lookup.index_table_from_file(embedding_file,
                                                                                     num_oov_buckets=1,
                                                                                     key_column_index=0,
                                                                                     delimiter=' ')

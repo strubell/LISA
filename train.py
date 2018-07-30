@@ -38,7 +38,7 @@ data_config = {
       'word_type': {
         'conll_idx': 3,
         'feature': True,
-        'vocab': 'glove.6B.100d.txt',
+        'vocab': 'embeddings/glove.6B.100d.txt',
         'converter':  {
           'name': 'lowercase'
         },
@@ -126,7 +126,11 @@ model_config = {
   },
   'inputs': {
     'word_type': {
-      'size': 100
+      'embedding_dim': 100,
+      'pretrained_embeddings': 'embeddings/glove.6B.100d.txt'
+    },
+    'predicate': {
+      'embedding_dim': 100
     }
   }
 }

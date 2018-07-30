@@ -29,7 +29,7 @@ class LISAModel:
         transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
     return transition_statistics_np
 
-  def get_embedding_lookup(self, name, embedding_size, embedding_values, include_oov,
+  def get_embedding_lookup(self, name, embedding_dim, embedding_values, include_oov,
                            pretrained_fname=None, num_embeddings=None):
 
     with tf.variable_scope("%s_embeddings" % name):
@@ -37,7 +37,12 @@ class LISAModel:
       if pretrained_fname:
         pretrained_embeddings = self.load_pretrained_embeddings(pretrained_fname)
         initializer = tf.constant_initializer(pretrained_embeddings)
-        pretrained_num_embeddings = pretrained_embeddings.shape[0]
+        pretrained_num_embeddings, pretrained_embedding_dim = pretrained_embeddings.shape
+        if pretrained_embedding_dim != embedding_dim:
+          tf.logging.log(tf.logging.ERROR, "Pre-trained %s embedding dim does not match"
+                                           " specified dim (%d vs %d)." % (name,
+                                                                           pretrained_embedding_dim,
+                                                                           embedding_dim))
         if num_embeddings and num_embeddings != pretrained_num_embeddings:
           tf.logging.log(tf.logging.ERROR, "Number of pre-trained %s embeddings does not match"
                                            " specified number of embeddings (%d vs %d)." % (name,
@@ -45,11 +50,11 @@ class LISAModel:
                                                                                             num_embeddings))
         num_embeddings = pretrained_num_embeddings
 
-      embedding_table = tf.get_variable(name="embeddings", shape=[num_embeddings, embedding_size],
+      embedding_table = tf.get_variable(name="embeddings", shape=[num_embeddings, embedding_dim],
                                         initializer=initializer)
 
       if include_oov:
-        oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, embedding_size],
+        oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, embedding_dim],
                                         initializer=tf.random_normal_initializer())
         embedding_table = tf.concat([embedding_table, oov_embedding], axis=0,
                                     name="embeddings_table")
@@ -62,7 +67,7 @@ class LISAModel:
     # TODO: np.loadtxt refuses to work for some reason
     # pretrained_embeddings = np.loadtxt(self.args.word_embedding_file, usecols=range(1, word_embedding_size+1))
     pretrained_embeddings = []
-    with open(self.args.word_embedding_file, 'r') as f:
+    with open(pretrained_fname, 'r') as f:
       for line in f:
         split_line = line.split()
         embedding = list(map(float, split_line[1:]))
@@ -121,11 +126,19 @@ class LISAModel:
       for input_name, input_map in self.model_config['inputs'].items():
         # words = feats['word_type']
         input_values = feats[input_name]
-        input_embedding_dim = input_map['size']
-        input_size = self.vocab.vocab_names_sizes[input_name]
-        input_include_oov = self.vocab.oovs[input_name]
-        input_embedding_lookup = self.get_embedding_lookup(input_name, input_size, input_embedding_dim,
-                                                           input_values, input_include_oov)
+        input_embedding_dim = input_map['embedding_dim']
+        if 'pretrained_embeddings' in input_map:
+          input_pretrained_embeddings = input_map['pretrained_embeddings']
+          input_include_oov = self.vocab.oovs[input_pretrained_embeddings]
+          input_embedding_lookup = self.get_embedding_lookup(input_name, input_embedding_dim,
+                                                             input_values, input_include_oov,
+                                                             pretrained_fname=input_pretrained_embeddings)
+        else:
+          num_embeddings = self.vocab.vocab_names_sizes[input_name]
+          input_include_oov = self.vocab.oovs[input_name]
+          input_embedding_lookup = self.get_embedding_lookup(input_name, input_embedding_dim,
+                                                             input_values, input_include_oov,
+                                                             num_embeddings=num_embeddings)
         inputs_list.append(input_embedding_lookup)
 
       current_input = tf.concat(inputs_list, axis=2)
