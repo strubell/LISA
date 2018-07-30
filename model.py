@@ -21,12 +21,12 @@ class LISAModel:
     # self.label_vocab_sizes = label_vocab_sizes
     self.vocab = vocab
 
-  def load_transitions(self, transition_statistics, num_classes, lookup):
+  def load_transitions(self, transition_statistics, num_classes, vocab_map):
     transition_statistics_np = np.zeros((num_classes, num_classes))
     with open(transition_statistics, 'r') as f:
       for line in f:
         tag1, tag2, prob = line.split("\t")
-        transition_statistics_np[lookup.lookup(tag1), lookup.lookup(tag2)] = float(prob)
+        transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
     return transition_statistics_np
 
   def load_pretrained_embeddings(self):
