@@ -134,17 +134,17 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     # num_predicates_in_batch x seq_len
     predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
 
-    if transition_params is not None:
-      seq_lens = tf.cast(tf.reduce_sum(mask, 1), tf.int32)
-      if mode == ModeKeys.PREDICT or mode == ModeKeys.EVAL:
-        predictions, score = tf.contrib.crf.crf_decode(srl_logits_transposed, transition_params, seq_lens)
+    seq_lens = tf.cast(tf.reduce_sum(mask, 1), tf.int32)
 
-      if mode == ModeKeys.TRAIN and tf_utils.is_trainable(transition_params):
-        # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
-        log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
-                                                                              srl_targets_predicted_predicates,
-                                                                              seq_lens, transition_params)
-        loss = tf.reduce_mean(-log_likelihood)
+    if transition_params is not None and (mode == ModeKeys.PREDICT or mode == ModeKeys.EVAL):
+      predictions, score = tf.contrib.crf.crf_decode(srl_logits_transposed, transition_params, seq_lens)
+
+    if transition_params is not None and mode == ModeKeys.TRAIN and tf_utils.is_trainable(transition_params):
+      # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
+      log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
+                                                                            srl_targets_predicted_predicates,
+                                                                            seq_lens, transition_params)
+      loss = tf.reduce_mean(-log_likelihood)
     else:
       if label_smoothing > 0:
         srl_targets_onehot = tf.one_hot(indices=srl_targets_predicted_predicates, depth=num_labels, axis=-1)
