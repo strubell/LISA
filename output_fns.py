@@ -1,5 +1,7 @@
 import tensorflow as tf
+from tensorflow.estimator import ModeKeys
 import nn_utils
+import tf_utils
 
 
 def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps,
@@ -133,10 +135,10 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
     predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
 
     seq_lens = tf.cast(tf.reduce_sum(mask, 1), tf.int32)
-    if transition_params is not None:
+    if transition_params is not None and (mode == ModeKeys.PREDICT or mode == ModeKeys.EVALUATE):
       predictions, score = tf.contrib.crf.crf_decode(srl_logits_transposed, transition_params, seq_lens)
 
-    if transition_params is not None and mode == tf.estimator.ModeKeys.TRAIN:
+    if transition_params is not None and mode == ModeKeys.TRAIN and tf_utils.is_trainable(transition_params):
       # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
       log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
                                                                             srl_targets_predicted_predicates,

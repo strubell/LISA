@@ -153,18 +153,24 @@ class LISAModel:
                   transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
                                                            self.vocab.vocab_maps[task]) if transition_stats_file else None
 
+                  # create transition parameters if training or decoding with crf/viterbi
                   task_crf = 'crf' in task_map and task_map['crf']
                   task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
                   transition_params = None
-                  if mode == ModeKeys.TRAIN and task_crf:
-                    transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
-                                                        initializer=tf.constant_initializer(transition_stats))
-                    tf.logging.log(tf.logging.INFO, "Created transition params for training %s" % task)
-                  elif (mode == ModeKeys.EVAL or mode == ModeKeys.PREDICT) and task_viterbi_decode:
+                  if task_viterbi_decode or task_crf:
                     transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
                                                         initializer=tf.constant_initializer(transition_stats),
-                                                        trainable=False)
-                    tf.logging.log(tf.logging.INFO, "Created transition params for decoding %s" % task)
+                                                        trainable=task_crf)
+
+                  # if mode == ModeKeys.TRAIN and task_crf:
+                  #   transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
+                  #                                       initializer=tf.constant_initializer(transition_stats))
+                  #   tf.logging.log(tf.logging.INFO, "Created transition params for training %s" % task)
+                  # elif (mode == ModeKeys.EVAL or mode == ModeKeys.PREDICT) and task_viterbi_decode:
+                  #   transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
+                  #                                       initializer=tf.constant_initializer(transition_stats),
+                  #                                       trainable=False)
+                  #   tf.logging.log(tf.logging.INFO, "Created transition params for decoding %s" % task)
 
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
                                                          feats, labels, current_input, task_labels, task_vocab_size,
