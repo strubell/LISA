@@ -75,7 +75,7 @@ data_config = {
       'predicate': {
         'conll_idx': 9,
         'label': True,
-        'feature': True,
+        # 'feature': True,
         'vocab': 'predicate',
         'converter': {
           'name': 'conll12_binary_predicates'
@@ -130,9 +130,9 @@ model_config = {
       'embedding_dim': 100,
       'pretrained_embeddings': 'embeddings/glove.6B.100d.txt'
     },
-    'predicate': {
-      'embedding_dim': 100
-    }
+    # 'predicate': {
+    #   'embedding_dim': 100
+    # }
   }
 }
 
@@ -341,7 +341,7 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=task_config['best_eval_key']),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
-train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps_in_epoch*num_train_epochs)
+train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn) #max_steps=num_steps_in_epoch*num_train_epochs)
 eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=600, exporters=[save_best_exporter])
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
