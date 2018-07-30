@@ -230,10 +230,10 @@ task_config = {
             'name': 'conll_srl_eval',
             'params': {
               'gold_srl_eval_file': {
-                'value': 'save/srl_gold.txt'
+                'value': args.save_dir + '/srl_gold.txt'
               },
               'pred_srl_eval_file': {
-                'value': 'save/srl_preds.txt'
+                'value': args.save_dir + '/srl_preds.txt'
               },
               'reverse_maps': {
                 'maps': [
