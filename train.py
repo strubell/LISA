@@ -276,6 +276,7 @@ vocab.update(args.dev_file)
 print(vocab.vocab_names_sizes)
 
 embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values() if 'embedding' in input_map]
+print(embedding_files)
 
 
 def get_input_fn(data_file, num_epochs, is_train, embedding_files):
@@ -286,11 +287,11 @@ def get_input_fn(data_file, num_epochs, is_train, embedding_files):
 
 
 def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=num_train_epochs, is_train=True)
+  return get_input_fn(args.train_file, num_epochs=num_train_epochs, is_train=True, embedding_files=embedding_files)
 
 
 def dev_input_fn():
-  return get_input_fn(args.dev_file, num_epochs=1, is_train=False)
+  return get_input_fn(args.dev_file, num_epochs=1, is_train=False, embedding_files=embedding_files)
 
 
 # # feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
