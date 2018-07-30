@@ -275,7 +275,8 @@ vocab.update(args.dev_file)
 
 print(vocab.vocab_names_sizes)
 
-embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values() if 'embedding' in input_map]
+embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values()
+                   if 'pretrained_embeddings' in input_map]
 print(embedding_files)
 
 
