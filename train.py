@@ -275,10 +275,12 @@ vocab.update(args.dev_file)
 
 print(vocab.vocab_names_sizes)
 
-def get_input_fn(data_file, num_epochs, is_train):
+embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values() if 'embedding' in input_map]
+
+
+def get_input_fn(data_file, num_epochs, is_train, embedding_files):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
-  vocab_lookup_ops = vocab.create_vocab_lookup_ops(args.word_embedding_file) if args.word_embedding_file \
-    else vocab.create_vocab_lookup_ops()
+  vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
 
   return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
 
