@@ -107,8 +107,8 @@ class Vocab:
           #       this_vocab[datum] = int(count)
           this_vocab = self.vocab_maps[d]
           # make sure that the oov always stays at the end by removing it here (it will be added back later)
-          if constants.OOV_STRING in this_vocab:
-            del this_vocab[constants.OOV_STRING]
+          # if constants.OOV_STRING in this_vocab:
+          #   del this_vocab[constants.OOV_STRING]
         vocabs.append(this_vocab)
         vocabs_index[d] = len(vocabs_index)
 
@@ -140,9 +140,9 @@ class Vocab:
       this_counts_map = vocabs[vocabs_index[v]]
       this_map = dict(zip(this_counts_map.keys(), range(len(this_counts_map.keys()))))
       reverse_map = dict(zip(range(len(this_counts_map.keys())), this_counts_map.keys()))
-      if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
-        reverse_map[len(reverse_map)] = constants.OOV_STRING
-        this_map[len(this_map)] = constants.OOV_STRING
+      # if 'oov' in self.data_config[v] and self.data_config[v]['oov']:
+      #   reverse_map[len(reverse_map)] = constants.OOV_STRING
+      #   this_map[len(this_map)] = constants.OOV_STRING
       self.reverse_maps[v] = reverse_map
       self.vocab_maps[v] = this_map
 

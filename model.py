@@ -29,8 +29,28 @@ class LISAModel:
         transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
     return transition_statistics_np
 
-  def load_pretrained_embeddings(self):
-    tf.logging.log(tf.logging.INFO, "Loading pre-trained word embedding file: %s" % self.args.word_embedding_file)
+  def get_embedding_lookup(self, name, num_embeddings, embedding_size, embedding_values, include_oov,
+                           pretrained_fname=None):
+
+    with tf.variable_scope("%s_embeddings" % name):
+      initializer = tf.random_normal_initializer()
+      if pretrained_fname:
+        pretrained_embeddings = self.load_pretrained_embeddings(pretrained_fname)
+        initializer = tf.constant_initializer(pretrained_embeddings)
+
+      embedding_table = tf.get_variable(name="embeddings", shape=[num_embeddings, embedding_size],
+                                        initializer=initializer)
+
+      if include_oov:
+        oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, embedding_size],
+                                        initializer=tf.random_normal_initializer())
+        embedding_table = tf.concat([embedding_table, oov_embedding], axis=0,
+                                    name="embeddings_table")
+
+      return tf.nn.embedding_lookup(embedding_table, embedding_values)
+
+  def load_pretrained_embeddings(self, pretrained_fname):
+    tf.logging.log(tf.logging.INFO, "Loading pre-trained embedding file: %s" % pretrained_fname)
 
     # TODO: np.loadtxt refuses to work for some reason
     # pretrained_embeddings = np.loadtxt(self.args.word_embedding_file, usecols=range(1, word_embedding_size+1))
@@ -42,15 +62,15 @@ class LISAModel:
         pretrained_embeddings.append(embedding)
     pretrained_embeddings = np.array(pretrained_embeddings)
     pretrained_embeddings /= np.std(pretrained_embeddings)
-    oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, self.model_config['word_embedding_size']],
-                                    initializer=tf.random_normal_initializer())
-    pretrained_embeddings_tensor = tf.get_variable(name="word_embeddings", shape=pretrained_embeddings.shape,
-                                                   initializer=tf.constant_initializer(pretrained_embeddings))
+    # oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, self.model_config['word_embedding_size']],
+    #                                 initializer=tf.random_normal_initializer())
+    # pretrained_embeddings_tensor = tf.get_variable(name="pretrained_embeddings", shape=pretrained_embeddings.shape,
+    #                                                initializer=tf.constant_initializer(pretrained_embeddings))
 
     # last entry is OOV
-    word_embeddings_table = tf.concat([pretrained_embeddings_tensor, oov_embedding], axis=0,
-                                      name="word_embeddings_table")
-    return word_embeddings_table
+    # word_embeddings_table = tf.concat([pretrained_embeddings_tensor, oov_embedding], axis=0,
+    #                                   name="word_embeddings_table")
+    return pretrained_embeddings
 
   def model_fn(self, features, mode):
 
@@ -67,6 +87,7 @@ class LISAModel:
 
       feats = {f: features[:, :, idx] for f, idx in self.feature_idx_map.items()}
 
+      # todo this assumes that word_type is always passed in
       words = feats['word_type']
 
       # for masking out padding tokens
@@ -76,8 +97,6 @@ class LISAModel:
       # todo fix masking -- do it in lookup table?
       feats = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in feats.items()}
 
-      # labels = {l: tf.squeeze(tf.multiply(features[:, :, idx[0]:idx[1]], tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32)), -1) if idx[1] != -1 else features[:, :, idx[0]:]
-      #           for l, idx in self.label_idx_map.items()}
       labels = {}
       for l, idx in self.label_idx_map.items():
         these_labels = features[:, :, idx[0]:idx[1]] if idx[1] != -1 else features[:, :, idx[0]:]
@@ -94,10 +113,18 @@ class LISAModel:
         labels[l] = these_labels_masked
 
       # todo concat all the inputs defined in model_config
-      words = feats['word_type']
+      inputs_list = []
+      for input_name, input_map in self.model_config['inputs'].items():
+        # words = feats['word_type']
+        input_values = feats[input_name]
+        input_embedding_dim = input_map['size']
+        input_size = self.vocab.vocab_names_sizes[input_name]
+        input_include_oov = self.vocab.oovs[input_name]
+        input_embedding_lookup = self.get_embedding_lookup(input_name, input_size, input_embedding_dim,
+                                                           input_values, input_include_oov)
+        inputs_list.append(input_embedding_lookup)
 
-
-      # current_input = tf.concat(inputs_list, axis=2)
+      current_input = tf.concat(inputs_list, axis=2)
 
       # words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
 
@@ -110,10 +137,9 @@ class LISAModel:
       # mask2d = tokens_to_keep * tf.transpose(tokens_to_keep)
       # adj = adj * mask2d
 
-      word_embeddings_table = self.load_pretrained_embeddings()
-      word_embeddings = tf.nn.embedding_lookup(word_embeddings_table, words)
-
-      current_input = word_embeddings
+      # word_embeddings_table = self.load_pretrained_embeddings(self.args.word_embedding_file)
+      # word_embeddings = tf.nn.embedding_lookup(word_embeddings_table, words)
+      # current_input = word_embeddings
 
       # todo will estimators handle dropout for us or do we need to do it on our own?
       input_dropout = self.model_config['input_dropout']

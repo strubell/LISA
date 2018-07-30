@@ -113,7 +113,7 @@ model_config = {
   'predicate_mlp_size': 200,
   'role_mlp_size': 200,
   'predicate_pred_mlp_size': 200,
-  'word_embedding_size': 100,
+  # 'word_embedding_size': 100,
   'label_smoothing': 0.1,
   'layers': {
     'type': 'transformer',
@@ -124,9 +124,11 @@ model_config = {
     'ff_dropout': 0.9,
     'prepost_dropout': 0.9,
   },
-  'inputs': [
-    'word_type'
-  ]
+  'inputs': {
+    'word_type': {
+      'size': 100
+    }
+  }
 }
 
 # task_config = {
