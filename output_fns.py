@@ -53,7 +53,7 @@ def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, to
   return output
 
 
-def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds_train,
+def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds_train,
                  predicate_preds_eval, predicate_targets, transition_params):
     '''
 
@@ -72,9 +72,9 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
 
     predicate_mlp_size = model_config['predicate_mlp_size']
     role_mlp_size = model_config['role_mlp_size']
-    label_smoothing = model_config['label_smoothing']
+
     # todo pass this in
-    bilin_keep_prob = 1.0
+    # bilin_keep_prob = 1.0
 
     predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
 
@@ -101,7 +101,8 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
       gathered_roles = tf.gather_nd(tiled_roles, predicate_gather_indices)
 
       # now multiply them together to get (num_predicates_in_batch x batch_seq_len x num_srl_classes) tensor of scores
-      srl_logits = nn_utils.bilinear_classifier_nary(gathered_predicates, gathered_roles, num_labels, bilin_keep_prob)
+      srl_logits = nn_utils.bilinear_classifier_nary(gathered_predicates, gathered_roles, num_labels,
+                                                     hparams.bilin_keep_prob)
       srl_logits_transposed = tf.transpose(srl_logits, [0, 2, 1])
 
     # (3) compute loss
@@ -146,12 +147,12 @@ def srl_bilinear(mode, model_config, inputs, targets, num_labels, tokens_to_keep
                                                                             seq_lens, transition_params)
       loss = tf.reduce_mean(-log_likelihood)
     else:
-      if label_smoothing > 0:
+      if hparams.label_smoothing > 0:
         srl_targets_onehot = tf.one_hot(indices=srl_targets_predicted_predicates, depth=num_labels, axis=-1)
         loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(srl_logits_transposed, [-1, num_labels]),
                                                onehot_labels=tf.reshape(srl_targets_onehot, [-1, num_labels]),
                                                weights=tf.reshape(mask, [-1]),
-                                               label_smoothing=label_smoothing,
+                                               label_smoothing=hparams.label_smoothing,
                                                reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
       else:
