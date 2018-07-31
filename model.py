@@ -87,13 +87,13 @@ class LISAModel:
   def model_fn(self, features, mode):
 
     # todo move this somewhere else?
-    ema = tf.train.ExponentialMovingAverage(decay=self.model_config['moving_average_decay'])
-    maintain_averages_op = ema.apply(tf.trainable_variables())
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, maintain_averages_op)
+    moving_averager = tf.train.ExponentialMovingAverage(decay=self.model_config['moving_average_decay'])
+    moving_average_op = moving_averager.apply(tf.trainable_variables())
+    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
     def moving_average_getter(getter, name, *args, **kwargs):
       var = getter(name, *args, **kwargs)
-      averaged_var = ema.average(var)
+      averaged_var = moving_averager.average(var)
       return averaged_var if averaged_var else var
 
     getter = None if mode == ModeKeys.TRAIN else moving_average_getter
