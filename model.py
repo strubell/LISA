@@ -227,7 +227,7 @@ class LISAModel:
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
                                                          feats, labels, current_input, task_labels, task_vocab_size,
                                                          self.vocab.joint_label_lookup_maps, tokens_to_keep,
-                                                         transition_params)
+                                                         transition_params, hparams)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
                 # want task_outputs to have:

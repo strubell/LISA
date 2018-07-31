@@ -14,9 +14,6 @@ def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, to
   with tf.variable_scope('Classifier'):
     logits = nn_utils.MLP(mlp, num_labels, n_splits=1)
 
-  # logits = tf.Print(logits, [logits], "joint softmax logits", summarize=500)
-  # logits = tf.Print(logits, [tf.shape(targets), targets], "joint softmax targets", summarize=500)
-
   # todo implement this
   if transition_params is not None:
     print('Transition params not yet supported in joint_softmax_classifier')
@@ -24,18 +21,10 @@ def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, to
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
-  # squeezed_mask = tf.squeeze(tokens_to_keep, -1)
-  # int_mask = tf.cast(squeezed_mask, tf.int32)
-
-  # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy), cross_entropy], "joint softmax cross_entropy", summarize=500)
-
   cross_entropy *= tokens_to_keep
   loss = tf.reduce_sum(cross_entropy) / tf.reduce_sum(tokens_to_keep)
 
-  # loss = tf.Print(loss, [loss], "joint softmax loss")
-
   predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
-  # predictions *= int_mask
 
   output = {
     'loss': loss,
@@ -188,9 +177,10 @@ def dispatch(fn_name):
 
 # need to decide shape/form of train_outputs!
 def get_params(mode, model_config, task_map, train_outputs, features, labels, current_outputs, task_labels, num_labels,
-               joint_lookup_maps, tokens_to_keep, transition_params):
+               joint_lookup_maps, tokens_to_keep, transition_params, hparams):
   params = {'mode': mode, 'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
-            'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels, 'transition_params': transition_params}
+            'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels, 'transition_params': transition_params,
+            'hparams': hparams}
   params_map = task_map['params']
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
