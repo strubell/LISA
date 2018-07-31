@@ -4,7 +4,7 @@ import nn_utils
 import tf_utils
 
 
-def joint_softmax_classifier(mode, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps,
+def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps,
                              transition_params):
 
   predicate_pred_mlp_size = model_config['predicate_pred_mlp_size']
