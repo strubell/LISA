@@ -60,7 +60,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
 
     # shuffle and expand out epochs if training
     if is_train:
-      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*10, count=num_epochs))
+      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*100, count=num_epochs))
 
 
     # # shuffle and expand out epochs if training

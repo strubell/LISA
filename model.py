@@ -133,7 +133,6 @@ class LISAModel:
           these_labels_masked = tf.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
 
-      # todo concat all the inputs defined in model_config
       inputs_list = []
       for input_name, input_map in self.model_config['inputs'].items():
         # words = feats['word_type']
@@ -147,7 +146,6 @@ class LISAModel:
                                                              pretrained_fname=input_pretrained_embeddings)
         else:
           num_embeddings = self.vocab.vocab_names_sizes[input_name]
-          # todo maybe shouldn't require that pretrained vocabs have OOV
           input_include_oov = self.vocab.oovs[input_name]
           input_embedding_lookup = self.get_embedding_lookup(input_name, input_embedding_dim,
                                                              input_values, input_include_oov,
@@ -156,9 +154,6 @@ class LISAModel:
         tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
 
       current_input = tf.concat(inputs_list, axis=2)
-
-      # words = tf.Print(words, [labels['predicate']], 'predicate labels', summarize=200)
-
 
       # todo this is parse specific
       # compute targets adj matrix
