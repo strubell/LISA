@@ -7,6 +7,7 @@ import os
 from model import LISAModel
 from functools import partial
 import train_utils
+import constants
 import json
 import train_hooks
 
@@ -273,7 +274,7 @@ task_config = {
 
 # Create a HParams object specifying the names and values of the
 # model hyperparameters:
-hparams = tf.contrib.training.HParams(label_smoothing=0.0)
+hparams = tf.contrib.training.HParams(**constants.hparams)
 
 # First get default hyperparams from the model config
 if 'hparams' in model_config:
