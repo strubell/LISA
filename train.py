@@ -273,7 +273,7 @@ task_config = {
 
 # Create a HParams object specifying the names and values of the
 # model hyperparameters:
-hparams = tf.contrib.training.HParams()
+hparams = tf.contrib.training.HParams(label_smoothing=0.0)
 
 # First get default hyperparams from the model config
 if 'hparams' in model_config:
