@@ -7,6 +7,7 @@ import os
 from model import LISAModel
 from functools import partial
 import train_utils
+import json
 import train_hooks
 
 
@@ -276,7 +277,9 @@ hparams = tf.contrib.training.HParams()
 
 # First get default hyperparams from the model config
 if 'hparams' in model_config:
-  hparams.parse_json(model_config['hparams'])
+  # todo don't dump once this is actually json
+  hparams_json = json.dumps(model_config['hparams'])
+  hparams.parse_json(hparams_json)
 
 # Override those with command line hyperparams
 hparams.parse(args.hparams)
