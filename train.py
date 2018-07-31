@@ -331,7 +331,7 @@ model = LISAModel(args, model_config, task_config['layers'], feature_idx_map, la
 num_train_examples = 39832  # todo: compute this automatically
 evaluate_every_n_epochs = 100
 num_steps_in_epoch = int(num_train_examples / batch_size)
-eval_every_steps = 500
+eval_every_steps = 1000
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
 checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
