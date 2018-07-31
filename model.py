@@ -11,14 +11,12 @@ from radam_optimizer import RadamOptimizer
 
 class LISAModel:
 
-  def __init__(self, args, model_config, task_config, feature_idx_map, label_idx_map, vocab):
-    self.args = args
+  def __init__(self, hparams, model_config, task_config, feature_idx_map, label_idx_map, vocab):
+    self.hparams = hparams
     self.model_config = model_config
     self.task_config = task_config
     self.feature_idx_map = feature_idx_map
     self.label_idx_map = label_idx_map
-    # self.joint_label_lookup_maps = joint_label_lookup_maps
-    # self.label_vocab_sizes = label_vocab_sizes
     self.vocab = vocab
 
   def load_transitions(self, transition_statistics, num_classes, vocab_map):
@@ -87,7 +85,7 @@ class LISAModel:
   def model_fn(self, features, mode):
 
     # todo move this somewhere else?
-    moving_averager = tf.train.ExponentialMovingAverage(decay=self.model_config['moving_average_decay'])
+    moving_averager = tf.train.ExponentialMovingAverage(self.hparams.moving_average_decay)
     moving_average_op = moving_averager.apply(tf.trainable_variables())
     tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
@@ -168,7 +166,7 @@ class LISAModel:
       # current_input = word_embeddings
 
       # todo will estimators handle dropout for us or do we need to do it on our own?
-      input_dropout = self.model_config['input_dropout']
+      input_dropout = self.hparams.input_dropout
       current_input = tf.nn.dropout(current_input, input_dropout if mode == tf.estimator.ModeKeys.TRAIN else 1.0)
 
       with tf.variable_scope('project_input'):
@@ -271,18 +269,19 @@ class LISAModel:
 
       # todo pass hparams through
       # optimizer = tf.contrib.opt.NadamOptimizer()
-      learning_rate = 0.04
-      decay_rate = 1.5
-      warmup_steps = 8000
-      # gradient_clip_norm = 1.0
-      gradient_clip_norm = 5.0
-      mu = 0.9
-      nu = 0.98
-      epsilon = 1e-12
+      # learning_rate = 0.04
+      # decay_rate = 1.5
+      # warmup_steps = 8000
+      # # gradient_clip_norm = 1.0
+      # gradient_clip_norm = 5.0
+      # mu = 0.9
+      # nu = 0.98
+      # epsilon = 1e-12
 
-      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=0.0001, beta1=mu, beta2=0.999, epsilon=epsilon)
+      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
+                                                   beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
       gradients, variables = zip(*optimizer.compute_gradients(loss))
-      gradients, _ = tf.clip_by_global_norm(gradients, gradient_clip_norm)
+      gradients, _ = tf.clip_by_global_norm(gradients, self.hparams.gradient_clip_norm)
       train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
       # train_op = optimizer.minimize(loss=loss)
 

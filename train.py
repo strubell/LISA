@@ -15,8 +15,7 @@ arg_parser.add_argument('--train_file', type=str, help='Training data file')
 arg_parser.add_argument('--dev_file', type=str, help='Development data file')
 arg_parser.add_argument('--save_dir', type=str, help='Training data file')
 arg_parser.add_argument('--transition_stats', type=str, help='Transition statistics between labels')
-
-arg_parser.add_argument('--word_embedding_file', type=str, help='File containing pre-trained word embeddings')
+arg_parser.add_argument('--hparams', type=str, default='', help='Comma separated list of "name=value" pairs.')
 
 args = arg_parser.parse_args()
 
@@ -109,14 +108,21 @@ data_config = {
 
 # todo define model inputs here
 model_config = {
-  # 'num_layers': 12,
-  'input_dropout': 0.8,
   'predicate_mlp_size': 200,
   'role_mlp_size': 200,
   'predicate_pred_mlp_size': 200,
-  # 'word_embedding_size': 100,
-  'label_smoothing': 0.1,
-  'moving_average_decay': 0.999,
+  'hparams': {
+    'label_smoothing': 0.1,
+    'input_dropout': 0.8,
+    'moving_average_decay': 0.999,
+    'gradient_clip_norm': 5.0,
+    'learning_rate': 0.0001, # 0.04,
+    'decay_rate': 1.5,
+    'warmup_steps': 8000,
+    'beta1': 0.9,
+    'beta2': 0.999, #0.98,
+    'epsilon': 1e-12
+  },
   'layers': {
     'type': 'transformer',
     'num_heads': 8,
@@ -264,6 +270,17 @@ task_config = {
   }
 }
 
+# Create a HParams object specifying the names and values of the
+# model hyperparameters:
+hparams = tf.contrib.HParams()
+
+# First get default hyperparams from the model config
+if 'hparams' in model_config:
+  hparams.parse_json(model_config['hparams'])
+
+# Override those with command line hyperparams
+hparams.parse(args.hparams)
+
 num_train_epochs = 50
 batch_size = 256
 
@@ -296,18 +313,6 @@ def train_input_fn():
 def dev_input_fn():
   return get_input_fn(args.dev_file, num_epochs=1, is_train=False, embedding_files=embedding_files)
 
-
-# # feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
-# #                            ('feature' in data_config[d] and data_config[d]['feature']) or
-# #                            ('label' in data_config[d] and data_config[d]['label'])])
-# #                    if 'feature' in data_config[f] and data_config[f]['feature']}
-# feature_idx_map = {f: i for i, f in enumerate([d for d in data_config.keys() if
-#                                                'feature' in data_config[d] and data_config[d]['feature']])}
-
-# label_idx_map = {f: (i, i+1) for i, f in enumerate([d for d in data_config.keys() if \
-#                            ('feature' in data_config[d] and data_config[d]['feature']) or \
-#                            ('label' in data_config[d] and data_config[d]['label'])])
-#                  if 'label' in data_config[f] and data_config[f]['label']}
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
 feature_idx_map = {}
