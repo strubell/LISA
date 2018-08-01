@@ -42,15 +42,16 @@ data_config = {
         },
         'oov': True
       },
-      'auto_pos': {
-        'conll_idx': 4,
-        'vocab': 'gold_pos'
-      },
       'gold_pos': {
-        'conll_idx': 5,
+        'conll_idx': 4,
         'label': True,
         'vocab': 'gold_pos'
       },
+      'auto_pos': {
+        'conll_idx': 5,
+        'vocab': 'gold_pos'
+      },
+
       'parse_head': {
         'conll_idx': [6, 2],
         'label': True,
