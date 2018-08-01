@@ -29,12 +29,12 @@ class BaseOptimizer:
     self._global_step = kwargs.pop('global_step')
     self._accumulators = {}
 
-    self.initial_learning_rate = kwargs.pop('learning_rate', constants.DEFAULT_LEARNING_RATE)
-    self.decay_rate = kwargs.pop('decay_rate', constants.DEFAULT_DECAY_RATE)
-    self.decay_steps = kwargs.pop('decay_steps', constants.DEFAULT_DECAY_STEPS)
-    self.warmup_steps = kwargs.pop('warmup_steps', constants.DEFAULT_WARMUP_STEPS)
-    self.gradient_clip_norm = kwargs.pop('gradient_clip_norm', constants.DEFAULT_GRADIENT_CLIP_NORM)
-    self.chi = kwargs.pop('chi', constants.DEFAULT_CHI)
+    self.initial_learning_rate = kwargs.pop('learning_rate', constants.get_default('learning_rate'))
+    self.decay_rate = kwargs.pop('decay_rate', constants.get_default('decay_rate'))
+    self.decay_steps = kwargs.pop('decay_steps', constants.get_default('decay_steps'))
+    self.warmup_steps = kwargs.pop('warmup_steps', constants.get_default('warmup_steps'))
+    self.gradient_clip_norm = kwargs.pop('gradient_clip_norm', constants.get_default('gradient_clip_norm'))
+    self.chi = kwargs.pop('chi', constants.get_default('chi'))
 
   # =============================================================
   def minimize(self, loss, name=None):

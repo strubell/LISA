@@ -123,7 +123,8 @@ model_config = {
     'warmup_steps': 8000,
     'beta1': 0.9,
     'beta2': 0.999, #0.98,
-    'epsilon': 1e-12
+    'epsilon': 1e-12,
+    'batch_size': 256
   },
   'layers': {
     'type': 'transformer',
@@ -285,9 +286,6 @@ if 'hparams' in model_config:
 # Override those with command line hyperparams
 hparams.parse(args.hparams)
 
-num_train_epochs = 50
-batch_size = 256
-
 if not os.path.exists(args.save_dir):
     os.makedirs(args.save_dir)
 
@@ -296,22 +294,19 @@ tf.logging.set_verbosity(tf.logging.INFO)
 vocab = Vocab(args.train_file, data_config, args.save_dir)
 vocab.update(args.dev_file)
 
-print(vocab.vocab_names_sizes)
-
 embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values()
                    if 'pretrained_embeddings' in input_map]
-print(embedding_files)
 
 
 def get_input_fn(data_file, num_epochs, is_train, embedding_files):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
 
-  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train)
+  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, hparams.batch_size, num_epochs, is_train)
 
 
 def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=num_train_epochs, is_train=True, embedding_files=embedding_files)
+  return get_input_fn(args.train_file, num_epochs=hparams.num_train_epochs, is_train=True, embedding_files=embedding_files)
 
 
 def dev_input_fn():
@@ -339,7 +334,7 @@ model = LISAModel(hparams, model_config, task_config['layers'], feature_idx_map,
 
 num_train_examples = 39832  # todo: compute this automatically
 evaluate_every_n_epochs = 100
-num_steps_in_epoch = int(num_train_examples / batch_size)
+num_steps_in_epoch = int(num_train_examples / hparams.batch_size)
 eval_every_steps = 1000
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 

@@ -30,11 +30,10 @@ class RadamOptimizer(BaseOptimizer):
 
     self.name = "RadamOptimizer"
 
-    self.mu = kwargs.pop('mu', constants.DEFAULT_MU)
-    self.nu = kwargs.pop('mu', constants.DEFAULT_MU)
-    self.gamma = kwargs.pop('gamma', constants.DEFAULT_GAMMA)
-
-    self.epsilon = kwargs.pop('epsilon', constants.DEFAULT_EPSILON)
+    self.mu = kwargs.pop('mu', constants.get_default('beta1'))
+    self.nu = kwargs.pop('mu', constants.get_default('beta2'))
+    self.gamma = kwargs.pop('gamma', constants.get_default('gamma'))
+    self.epsilon = kwargs.pop('epsilon', constants.get_default('epsilon'))
 
 
   # =============================================================
