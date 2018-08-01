@@ -7,7 +7,6 @@ dev_file=$data_dir/dev-set.gz.parse.sdeps.combined.bio
 transition_stats=$data_dir/transition_probs.tsv
 
 params=${@:1}
-echo $params
 
 python3 train.py \
 --train_file $train_file \
