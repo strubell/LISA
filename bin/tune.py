@@ -48,7 +48,7 @@ def make_job_str(_setting):
     # setting_list = ['--%s %s' % (name, str(value)) for name, value in name_setting.items()]
     # _setting_str = ' '.join(setting_list)
     setting_list = ["%s=%s" % (name, str(value)) for name, value in name_setting.items()]
-    _setting_str = ','.join(setting_list)
+    _setting_str = "--hparams %s" % ','.join(setting_list)
     _log_str = '_'.join(map(str, name_setting.values()))
     return _log_str, _setting_str
 
