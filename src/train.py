@@ -284,7 +284,7 @@ if 'hparams' in model_config:
 hparams.parse(args.hparams)
 
 if not os.path.exists(args.save_dir):
-    os.makedirs(args.save_dir)
+  os.makedirs(args.save_dir)
 
 tf.logging.set_verbosity(tf.logging.INFO)
 

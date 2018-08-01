@@ -23,6 +23,9 @@ datetime_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 out_dir = os.path.join(args.output_dir, "tune-" + datetime_str)
 print("Writing to output dir: %s" % out_dir)
 
+if not os.path.exists(out_dir):
+  os.makedirs(out_dir)
+
 # if not base_cmd or not out_dir:
 #     print('CMD or OUT_DIR not set')
 #     sys.exit(1)
