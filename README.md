@@ -3,12 +3,15 @@
 ![](./lisa.jpg)
 
 Requirements:
+----
 - Python 3.
 - TensorFlow 1.9
 
-Get pre-trained word embeddings:
-```
-mkdir embeddings && cd embeddings
-wget http://nlp.stanford.edu/data/glove.6B.zip
-unzip glove.6B.zip
-```
+Data setup:
+----
+1. Get pre-trained word embeddings (GloVe):
+    ```
+    wget -P embeddings http://nlp.stanford.edu/data/glove.6B.zip
+    unzip -j embeddings/glove.6B.zip glove.6B.100d.txt -d embeddings
+    ```
+2. Get CoNLL-2005 data:
