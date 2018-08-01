@@ -1,4 +1,4 @@
-from src import data_converters
+import data_converters
 
 
 def conll_data_generator(filename, data_config):

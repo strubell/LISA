@@ -1,5 +1,5 @@
 import tensorflow as tf
-from src import nn_utils
+import nn_utils
 
 '''
 Much of this code is adapted from the Tensor2Tensor Transformer implementation:

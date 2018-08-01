@@ -1,4 +1,6 @@
 
+# __path__ = 'src/constants'
+
 PAD_VALUE = -1
 JOINT_LABEL_SEP = '/'
 

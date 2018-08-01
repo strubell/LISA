@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from src import constants, data_converters
+import constants
+import data_converters
 
 
 class Vocab:

@@ -2,7 +2,11 @@ import tensorflow as tf
 import argparse
 import os
 from functools import partial
-from src import constants, train_utils, dataset, vocab, model
+import constants
+import train_utils
+import dataset
+import vocab
+import model
 import json
 
 arg_parser = argparse.ArgumentParser(description='')

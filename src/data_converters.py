@@ -1,4 +1,4 @@
-from src import constants
+import constants
 
 
 def lowercase_converter(split_line, idx):

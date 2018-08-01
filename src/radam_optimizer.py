@@ -18,7 +18,7 @@
 import tensorflow as tf
 from src import constants, base_optimizer
 
-# ***************************************************************
+
 class RadamOptimizer(base_optimizer.BaseOptimizer):
   """"""
 

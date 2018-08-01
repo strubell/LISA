@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.estimator import ModeKeys
-from src import nn_utils, tf_utils
+import nn_utils
+import tf_utils
 
 
 def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps,

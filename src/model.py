@@ -1,7 +1,11 @@
 import tensorflow as tf
-import numpy as np
-from src import constants, evaluation_fns, output_fns, transformer, nn_utils
 from tensorflow.estimator import ModeKeys
+import numpy as np
+import constants
+import evaluation_fns
+import output_fns
+import transformer
+import nn_utils
 
 
 class LISAModel:
