@@ -113,9 +113,9 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
   # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
   # words: batch_size x batch_seq_len tensor of ints (0/1)
 
-  # import time
-  # gold_srl_eval_file = gold_srl_eval_file.decode('utf-8') + str(time.time())
-  # pred_srl_eval_file = pred_srl_eval_file.decode('utf-8') + str(time.time())
+  import time
+  gold_srl_eval_file = gold_srl_eval_file.decode('utf-8') + str(time.time())
+  pred_srl_eval_file = pred_srl_eval_file.decode('utf-8') + str(time.time())
 
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
