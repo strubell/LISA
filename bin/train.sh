@@ -8,7 +8,7 @@ transition_stats=$data_dir/transition_probs.tsv
 
 params=${@:1}
 
-python3 train.py \
+python3 src/train.py \
 --train_file $train_file \
 --dev_file $dev_file \
 --transition_stats $transition_stats \
