@@ -5,8 +5,8 @@ from functools import partial
 import constants
 import train_utils
 import dataset
-import vocab
-import model
+from vocab import Vocab
+from model import LISAModel
 import json
 
 arg_parser = argparse.ArgumentParser(description='')
@@ -288,7 +288,7 @@ if not os.path.exists(args.save_dir):
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
-vocab = vocab.Vocab(args.train_file, data_config, args.save_dir)
+vocab = Vocab(args.train_file, data_config, args.save_dir)
 vocab.update(args.dev_file)
 
 embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values()
@@ -327,7 +327,7 @@ for i, f in enumerate([d for d in data_config.keys() if
       label_idx_map[f] = (i, i+1)
 
 
-model = model.LISAModel(hparams, model_config, task_config['layers'], feature_idx_map, label_idx_map, vocab)
+model = LISAModel(hparams, model_config, task_config['layers'], feature_idx_map, label_idx_map, vocab)
 
 num_train_examples = 39832  # todo: compute this automatically
 evaluate_every_n_epochs = 100
