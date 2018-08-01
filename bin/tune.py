@@ -45,15 +45,16 @@ params = {
 
 def make_job_str(_setting):
     name_setting = {n: _s for n, _s in zip(names, _setting)}
-    setting_list = ['--%s %s' % (name, str(value)) for name, value in name_setting.items()]
-    _setting_str = ' '.join(setting_list)
+    # setting_list = ['--%s %s' % (name, str(value)) for name, value in name_setting.items()]
+    # _setting_str = ' '.join(setting_list)
+    setting_list = ["%s=%s" % (name, str(value)) for name, value in name_setting.items()]
+    _setting_str = ','.join(setting_list)
     _log_str = '_'.join(map(str, name_setting.values()))
     return _log_str, _setting_str
 
 
 def add_to_partition(_partition, _setting_str, _log_str):
     slurm_cmd = 'srun --gres=gpu:1 --partition=%s --mem=%s' % (_partition, args.cpu_memory)
-    full_cmd = '%s %s %s' % (slurm_cmd, args.script, _setting_str)
     # create dir for this specific job
     log_dir = '%s/%s' % (out_dir, _log_str)
     if not os.path.exists(log_dir):
@@ -61,7 +62,9 @@ def add_to_partition(_partition, _setting_str, _log_str):
     # write run cmd to file in logdir
     with open('%s/%s' % (log_dir, 'run.cmd'), 'w') as outf:
         outf.write('%s %s\n' % (args.script, _setting_str))
+    save_str = "--save_dir %s" % os.path.join(log_dir, "model")
     # create bash cmd which directs into a log
+    full_cmd = '%s %s %s %s' % (slurm_cmd, args.script, _setting_str, save_str)
     bash_cmd = '%s &> %s/train.log &' % (full_cmd, log_dir)
     print(bash_cmd)
     subprocess.call(bash_cmd, shell=True)

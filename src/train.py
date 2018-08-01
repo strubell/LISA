@@ -330,7 +330,7 @@ for i, f in enumerate([d for d in data_config.keys() if
 model = LISAModel(hparams, model_config, task_config['layers'], feature_idx_map, label_idx_map, vocab)
 
 num_train_examples = 39832  # todo: compute this automatically
-evaluate_every_n_epochs = 100
+# evaluate_every_n_epochs = 100
 num_steps_in_epoch = int(num_train_examples / hparams.batch_size)
 eval_every_steps = 1000
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
