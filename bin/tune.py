@@ -34,7 +34,7 @@ partition_maxjobs = [p.split(':') for p in args.partition.split(',')]
 partition_maxjobs = [(s, int(v)) for s, v in partition_maxjobs]
 
 params = {
-  'lr': [.001, .0005, 0.0001, 0.00005],
+  'learning_rate': [.001, .0005, 0.0001, 0.00005],
   'beta1': [0.9, 0.1],
   'beta2': [0.98, 0.99, 0.999],
   'epsilon': [1e-4, 1e-8, 1e-12],
