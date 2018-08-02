@@ -226,7 +226,9 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
                                        lr * m_bar_slice / denominator_slice,
                                        use_locking=self._use_locking)
 
-    return control_flow_ops.group(*[var_update, m_t, v_t])
+    # return control_flow_ops.group(*[var_update, m_t, v_t])
+    return control_flow_ops.group(*[var_update, m_bar, v_t])
+
 
   def _apply_sparse(self, grad, var, state):
     return self._apply_sparse_shared(
