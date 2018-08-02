@@ -123,7 +123,6 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     m = state.get_slot(var, "m")
     v = state.get_slot(var, "v")
     beta1_power, beta2_power = self._get_beta_accumulators(state)
-    # todo use nesterov
     return training_ops.apply_adam(
         var, m, v,
         math_ops.cast(beta1_power, var.dtype.base_dtype),
@@ -139,7 +138,6 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     m = state.get_slot(var, "m")
     v = state.get_slot(var, "v")
     beta1_power, beta2_power = self._get_beta_accumulators(state)
-    # todo use nesterov
     return training_ops.resource_apply_adam(
         var.handle, m.handle, v.handle,
         math_ops.cast(beta1_power, grad.dtype.base_dtype),
@@ -152,6 +150,9 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
         use_nesterov=self._use_nesterov)
 
   def _apply_sparse_shared(self, grad, var, indices, scatter_add, state):
+
+    # todo use nesterov here
+
     beta1_power, beta2_power = self._get_beta_accumulators(state)
     beta1_power = math_ops.cast(beta1_power, var.dtype.base_dtype)
     beta2_power = math_ops.cast(beta2_power, var.dtype.base_dtype)
@@ -160,7 +161,6 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     beta2_t = state.get_hyper("beta2", var.dtype.base_dtype)
     epsilon_t = state.get_hyper("epsilon", var.dtype.base_dtype)
 
-    # todo lr
     lr = (lr_t * math_ops.sqrt(1 - beta2_power) / (1 - beta1_power))
 
     # m_t = beta1 * m + (1 - beta1) * g_t
