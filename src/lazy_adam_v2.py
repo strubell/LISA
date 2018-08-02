@@ -92,13 +92,13 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     super(LazyAdamOptimizer, self).__init__(use_locking, name)
 
     # self._set_hyper("init_learning_rate", learning_rate)
-    self._set_hyper("learning_rate", self.learning_rate)
+    self._set_hyper("learning_rate", learning_rate)
     self._set_hyper("beta1", beta1)
     self._set_hyper("beta2", beta2)
     self._set_hyper("epsilon", epsilon)
-    self._set_hyper("warmup_steps", warmup_steps)
-    self._set_hyper("decay_rate", decay_rate)
-    self._set_hyper("decay_steps", decay_steps)
+    # self._set_hyper("warmup_steps", warmup_steps)
+    # self._set_hyper("decay_rate", decay_rate)
+    # self._set_hyper("decay_steps", decay_steps)
 
   def _get_beta_accumulators(self, state=None):
     if state is None:
