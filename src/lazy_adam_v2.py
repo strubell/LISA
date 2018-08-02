@@ -171,13 +171,19 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     #                        use_locking=self._use_locking)
     # with ops.control_dependencies([m_t]):
     #   m_t = scatter_add(m, indices, m_scaled_g_values)
+    #   # w/ Nesterov
+    #   m_bar = m_scaled_g_values + beta1_t * m_t
+
 
     # lazy Adam
     m = state.get_slot(var, "m")
+    m_scaled_g_values = grad * (1 - beta1_t)
     m_t = state_ops.scatter_update(m, indices,
                                    beta1_t * array_ops.gather(m, indices) +
-                                   (1 - beta1_t) * grad,
+                                   m_scaled_g_values,
                                    use_locking=self._use_locking)
+    m_bar = m_scaled_g_values + beta1_t * m_t
+
 
     # v_t = beta2 * v + (1 - beta2) * (g_t * g_t)
 
@@ -202,12 +208,22 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     #                                   lr * m_t / (v_sqrt + epsilon_t),
     #                                   use_locking=self._use_locking)
 
+    # w/ Nesterov
+    # var_update = state_ops.assign_sub(var,
+    #                                   lr * m_bar / (v_sqrt + epsilon_t),
+    #                                   use_locking=self._use_locking)
+    # return control_flow_ops.group(*[var_update, m_bar, v_t])
+
     # lazy Adam
-    m_t_slice = array_ops.gather(m_t, indices)
+    # m_t_slice = array_ops.gather(m_t, indices)
+    m_bar_slice = array_ops.gather(m_bar, indices)
     v_t_slice = array_ops.gather(v_t, indices)
     denominator_slice = math_ops.sqrt(v_t_slice) + epsilon_t
+    # var_update = state_ops.scatter_sub(var, indices,
+    #                                    lr * m_t_slice / denominator_slice,
+    #                                    use_locking=self._use_locking)
     var_update = state_ops.scatter_sub(var, indices,
-                                       lr * m_t_slice / denominator_slice,
+                                       lr * m_bar_slice / denominator_slice,
                                        use_locking=self._use_locking)
 
     return control_flow_ops.group(*[var_update, m_t, v_t])
