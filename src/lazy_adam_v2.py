@@ -35,8 +35,8 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
   """
 
   def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8,
-               warmup_steps=8000, decay_rate=1.5, decay_steps=5000, use_nesterov=False,
-               use_locking=False, name="Adam"):
+               warmup_steps=8000, decay_rate=1.5, decay_steps=5000, use_nesterov=True,
+               use_locking=False, name="Nadam"):
     """Construct a new Adam optimizer.
 
     Initialization:
@@ -182,7 +182,9 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
                                    beta1_t * array_ops.gather(m, indices) +
                                    m_scaled_g_values,
                                    use_locking=self._use_locking)
-    m_bar = m_scaled_g_values + beta1_t * m_t
+
+    # todo could this be better (do just one gather?)
+    m_bar = m_scaled_g_values + beta1_t * array_ops.gather(m_t, indices)
 
 
     # v_t = beta2 * v + (1 - beta2) * (g_t * g_t)
@@ -228,7 +230,6 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
 
     # return control_flow_ops.group(*[var_update, m_t, v_t])
     return control_flow_ops.group(*[var_update, m_bar, v_t])
-
 
   def _apply_sparse(self, grad, var, state):
     return self._apply_sparse_shared(
