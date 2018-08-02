@@ -16,6 +16,7 @@ hparams = {
   'beta2': 0.98,
   'gamma': 0,
   'epsilon': 1e-12,
+  'use_nesterov': True,
   'chi': 0,
   'batch_size': 256,
   'num_train_epochs': 100,

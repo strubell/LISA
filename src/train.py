@@ -114,14 +114,15 @@ model_config = {
   'hparams': {
     'label_smoothing': 0.1,
     'input_dropout': 0.8,
-    'moving_average_decay': 0.999,
+    'moving_average_decay': 0.9999,
     'gradient_clip_norm': 5.0,
-    'learning_rate': 0.0001, # 0.04,
+    'learning_rate': 0.04,
     'decay_rate': 1.5,
     'warmup_steps': 8000,
     'beta1': 0.9,
-    'beta2': 0.999, #0.98,
+    'beta2': 0.98,
     'epsilon': 1e-12,
+    'use_nesterov': True,
     'batch_size': 256
   },
   'layers': {

@@ -35,7 +35,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
   """
 
   def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8,
-               warmup_steps=8000, decay_rate=1.5, decay_steps=5000,
+               warmup_steps=8000, decay_rate=1.5, decay_steps=5000, use_nesterov=False,
                use_locking=False, name="Adam"):
     """Construct a new Adam optimizer.
 
@@ -96,6 +96,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     self._set_hyper("beta1", beta1)
     self._set_hyper("beta2", beta2)
     self._set_hyper("epsilon", epsilon)
+    self._set_hyper("use_nesterov", use_nesterov)
     # self._set_hyper("warmup_steps", warmup_steps)
     # self._set_hyper("decay_rate", decay_rate)
     # self._set_hyper("decay_steps", decay_steps)
@@ -122,6 +123,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     m = state.get_slot(var, "m")
     v = state.get_slot(var, "v")
     beta1_power, beta2_power = self._get_beta_accumulators(state)
+    # todo use nesterov
     return training_ops.apply_adam(
         var, m, v,
         math_ops.cast(beta1_power, var.dtype.base_dtype),
@@ -130,12 +132,14 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
         state.get_hyper("beta1", var.dtype.base_dtype),
         state.get_hyper("beta2", var.dtype.base_dtype),
         state.get_hyper("epsilon", var.dtype.base_dtype),
-        grad, use_locking=self._use_locking).op
+        grad, use_locking=self._use_locking,
+        use_nesterov=state.get_hyper("use_nesterov")).op
 
   def _resource_apply_dense(self, grad, var, state):
     m = state.get_slot(var, "m")
     v = state.get_slot(var, "v")
     beta1_power, beta2_power = self._get_beta_accumulators(state)
+    # todo use nesterov
     return training_ops.resource_apply_adam(
         var.handle, m.handle, v.handle,
         math_ops.cast(beta1_power, grad.dtype.base_dtype),
@@ -144,7 +148,8 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
         state.get_hyper("beta1", grad.dtype.base_dtype),
         state.get_hyper("beta2", grad.dtype.base_dtype),
         state.get_hyper("epsilon", grad.dtype.base_dtype),
-        grad, use_locking=self._use_locking)
+        grad, use_locking=self._use_locking,
+        use_nesterov=state.get_hyper("use_nesterov"))
 
   def _apply_sparse_shared(self, grad, var, indices, scatter_add, state):
     beta1_power, beta2_power = self._get_beta_accumulators(state)
