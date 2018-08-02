@@ -96,7 +96,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     self._set_hyper("beta1", beta1)
     self._set_hyper("beta2", beta2)
     self._set_hyper("epsilon", epsilon)
-    self._set_hyper("use_nesterov", use_nesterov)
+    self._use_nesterov = use_nesterov
     # self._set_hyper("warmup_steps", warmup_steps)
     # self._set_hyper("decay_rate", decay_rate)
     # self._set_hyper("decay_steps", decay_steps)
@@ -133,7 +133,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
         state.get_hyper("beta2", var.dtype.base_dtype),
         state.get_hyper("epsilon", var.dtype.base_dtype),
         grad, use_locking=self._use_locking,
-        use_nesterov=state.get_hyper("use_nesterov", tf.bool)).op
+        use_nesterov=self._use_nesterov).op
 
   def _resource_apply_dense(self, grad, var, state):
     m = state.get_slot(var, "m")
@@ -149,7 +149,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
         state.get_hyper("beta2", grad.dtype.base_dtype),
         state.get_hyper("epsilon", grad.dtype.base_dtype),
         grad, use_locking=self._use_locking,
-        use_nesterov=state.get_hyper("use_nesterov", tf.bool))
+        use_nesterov=self._use_nesterov)
 
   def _apply_sparse_shared(self, grad, var, indices, scatter_add, state):
     beta1_power, beta2_power = self._get_beta_accumulators(state)
