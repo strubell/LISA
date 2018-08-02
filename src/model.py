@@ -6,6 +6,7 @@ import evaluation_fns
 import output_fns
 import transformer
 import nn_utils
+from lazy_adam_v2 import LazyAdamOptimizer
 
 
 class LISAModel:
@@ -277,8 +278,10 @@ class LISAModel:
       # nu = 0.98
       # epsilon = 1e-12
 
-      optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
-                                                   beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
+      # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
+      #                                              beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
+      optimizer = LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
+                                    beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
       gradients, variables = zip(*optimizer.compute_gradients(loss))
       gradients, _ = tf.clip_by_global_norm(gradients, self.hparams.gradient_clip_norm)
       train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())

@@ -65,7 +65,8 @@ def convert_bilou(bio_predicted_roles):
 
 
 def accuracy(predictions, targets, mask):
-  return tf.metrics.accuracy(targets, predictions, weights=mask)
+  with tf.name_scope('accuracy'):
+    return tf.metrics.accuracy(targets, predictions, weights=mask)
 
 
 def conll_parse_eval(predictions, targets, mask, reverse_maps, gold_parse_eval_file, pred_parse_eval_file):
@@ -154,37 +155,39 @@ def create_metric_variable(name, shape, dtype):
 def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
                    gold_srl_eval_file, pred_srl_eval_file):
 
-  # create accumulator variables
-  correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int64)
-  excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int64)
-  missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int64)
+  with tf.name_scope('conll_srl_eval'):
 
-  # first, use reverse maps to convert ints to strings
-  # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-  str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
-  str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-  str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
+    # create accumulator variables
+    correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int64)
+    excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int64)
+    missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int64)
 
-  # need to pass through the stuff for pyfunc
-  # pyfunc is necessary here since we need to write to disk
-  py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
-                    pred_srl_eval_file, gold_srl_eval_file]
-  out_types = [tf.int64, tf.int64, tf.int64]
-  correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
+    # first, use reverse maps to convert ints to strings
+    # todo order of map.values() is probably not guaranteed; should prob sort by keys first
+    str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
+    str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
+    str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
 
-  update_correct_op = tf.assign_add(correct_count, correct)
-  update_excess_op = tf.assign_add(excess_count, excess)
-  update_missed_op = tf.assign_add(missed_count, missed)
+    # need to pass through the stuff for pyfunc
+    # pyfunc is necessary here since we need to write to disk
+    py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
+                      pred_srl_eval_file, gold_srl_eval_file]
+    out_types = [tf.int64, tf.int64, tf.int64]
+    correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
 
-  precision_update_op = update_correct_op / (update_correct_op + update_excess_op)
-  recall_update_op = update_correct_op / (update_correct_op + update_missed_op)
-  f1_update_op = 2 * precision_update_op * recall_update_op / (precision_update_op + recall_update_op)
+    update_correct_op = tf.assign_add(correct_count, correct)
+    update_excess_op = tf.assign_add(excess_count, excess)
+    update_missed_op = tf.assign_add(missed_count, missed)
 
-  precision = correct_count / (correct_count + excess_count)
-  recall = correct_count / (correct_count + missed_count)
-  f1 = 2 * precision * recall / (precision + recall)
+    precision_update_op = update_correct_op / (update_correct_op + update_excess_op)
+    recall_update_op = update_correct_op / (update_correct_op + update_missed_op)
+    f1_update_op = 2 * precision_update_op * recall_update_op / (precision_update_op + recall_update_op)
 
-  return f1, f1_update_op
+    precision = correct_count / (correct_count + excess_count)
+    recall = correct_count / (correct_count + missed_count)
+    f1 = 2 * precision * recall / (precision + recall)
+
+    return f1, f1_update_op
 
 
 dispatcher = {

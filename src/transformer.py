@@ -243,24 +243,25 @@ def multihead_attention(antecedent,
 def transformer(mode, inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
                 manual_attn=None):
 
-  mask = attention_bias_ignore_padding(seq_lengths)
+  with tf.name_scope('transformer_layer'):
+    mask = attention_bias_ignore_padding(seq_lengths)
 
-  hidden_size = head_size * num_heads
+    hidden_size = head_size * num_heads
 
-  if mode is not tf.estimator.ModeKeys.TRAIN:
-    attn_dropout = 1.0
-    relu_dropout = 1.0
-    prepost_dropout = 1.0
+    if mode is not tf.estimator.ModeKeys.TRAIN:
+      attn_dropout = 1.0
+      relu_dropout = 1.0
+      prepost_dropout = 1.0
 
-  with tf.variable_scope("self_attention"):
-    x = nn_utils.layer_norm(inputs)
-    y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout,
-                                          manual_attn)
-    x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
+    with tf.variable_scope("self_attention"):
+      x = nn_utils.layer_norm(inputs)
+      y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout,
+                                            manual_attn)
+      x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
-  with tf.variable_scope("ffnn"):
-    x = nn_utils.layer_norm(x)
-    y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout)
-    x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
+    with tf.variable_scope("ffnn"):
+      x = nn_utils.layer_norm(x)
+      y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout)
+      x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
-  return x
+    return x
