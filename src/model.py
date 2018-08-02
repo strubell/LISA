@@ -285,7 +285,8 @@ class LISAModel:
         if warmup_steps > 0:
 
           # todo do we still need to cast this?
-          global_step_float = tf.cast(global_step, tf.float32)
+          # add 1 to global_step so that we start at 1 instead of 0
+          global_step_float = tf.cast(global_step, tf.float32) + 1.
           lr *= tf.minimum(tf.rsqrt(global_step_float),
                            tf.multiply(global_step_float, warmup_steps ** -decay_rate))
           return lr
