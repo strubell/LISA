@@ -278,9 +278,27 @@ class LISAModel:
       # nu = 0.98
       # epsilon = 1e-12
 
+      def learning_rate(global_step):
+        lr = self.hparams.learning_rate
+        warmup_steps = self.hparams.warmup_steps
+        decay_rate = self.hparams.decay_rate
+        if warmup_steps > 0:
+
+          # todo do we still need to cast this?
+          global_step_float = tf.cast(global_step, tf.float32)
+          lr *= tf.minimum(tf.rsqrt(global_step_float),
+                           tf.multiply(global_step_float, warmup_steps ** -decay_rate))
+          return lr
+        else:
+          decay_steps = self.hparams.decay_steps
+          if decay_steps > 0:
+            return lr * decay_rate ** (global_step / decay_steps)
+          else:
+            return lr
+
       # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
       #                                              beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
-      optimizer = LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
+      optimizer = LazyAdamOptimizer(learning_rate=learning_rate(tf.train.get_global_step()), beta1=self.hparams.beta1,
                                     beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
       gradients, variables = zip(*optimizer.compute_gradients(loss))
       gradients, _ = tf.clip_by_global_norm(gradients, self.hparams.gradient_clip_norm)
