@@ -165,7 +165,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     m = state.get_slot(var, "m")
     m_t = state_ops.scatter_update(m, indices,
                                    beta1_t * array_ops.gather(m, indices) +
-                                   (1 - beta1_t) * grad.values,
+                                   (1 - beta1_t) * grad,
                                    use_locking=self._use_locking)
 
     # v_t = beta2 * v + (1 - beta2) * (g_t * g_t)
@@ -181,7 +181,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     v = state.get_slot(var, "v")
     v_t = state_ops.scatter_update(v, indices,
                                    beta2_t * array_ops.gather(v, indices) +
-                                   (1 - beta2_t) * math_ops.square(grad.values),
+                                   (1 - beta2_t) * math_ops.square(grad),
                                    use_locking=self._use_locking)
 
     # \\(variable -= learning_rate * m_t / (epsilon_t + sqrt(v_t))\\)
