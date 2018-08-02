@@ -267,7 +267,7 @@ task_config = {
               },
               'pos_predictions': {
                 'layer': 'joint_pos_predicate',
-                'output': 'pos_predictions'
+                'output': 'gold_pos_predictions'
               },
               'pos_targets': {
                 'label': 'gold_pos'
