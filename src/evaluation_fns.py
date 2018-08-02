@@ -131,7 +131,7 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
         word_str = word.decode('utf-8')
         predicate_str = str(predicate)
         roles_str = '\t'.join(tok_role_labels)
-        bio_roles_str = '\t'.join(bio_tok_role_labels)
+        bio_roles_str = '\t'.join(map(lambda d: d.decode('utf-8'), bio_tok_role_labels))
         print("%s\t%s\t%s\t%s\t%s\t%s" % (word_str, predicate_str, pos_targs, pos_preds, roles_str, bio_roles_str), file=f)
       print(file=f)
 
