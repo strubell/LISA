@@ -247,7 +247,8 @@ task_config = {
               'reverse_maps': {
                 'maps': [
                   'word',
-                  'srl'
+                  'srl',
+                  'gold_pos'
                 ]
               },
               'targets': {
@@ -263,6 +264,13 @@ task_config = {
               'predicate_predictions': {
                 'layer': 'joint_pos_predicate',
                 'output': 'predicate_predictions'
+              },
+              'pos_predictions': {
+                'layer': 'joint_pos_predicate',
+                'output': 'pos_predictions'
+              },
+              'pos_targets': {
+                'label': 'gold_pos'
               }
             }
           }

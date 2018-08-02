@@ -107,8 +107,37 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       print(file=f)
 
 
+def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_predictions, pos_targets):
+  with open(filename, 'w') as f:
+    role_labels_start_idx = 0
+    num_predicates_per_sent = np.sum(predicates, -1)
+    # for each sentence in the batch
+    for sent_words, sent_predicates, sent_len, sent_num_predicates, pos_preds, pos_targs in zip(words, predicates, sent_lens,
+                                                                          num_predicates_per_sent, pos_predictions,
+                                                                          pos_targets):
+      # grab predicates and convert to conll format from bio
+      # this is a sent_num_predicates x batch_seq_len array
+      sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+
+      # this is a list of sent_num_predicates lists of srl role labels
+      sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
+      role_labels_start_idx += sent_num_predicates
+      # for each token in the sentence
+      # printed = False
+      for j, (word, predicate, pos_p, pos_t) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len],
+                                                              pos_preds[:sent_len], pos_targs[:sent_len])):
+        tok_role_labels = sent_role_labels[j] if sent_role_labels else []
+        bio_tok_role_labels = sent_role_labels_bio[j][:sent_len] if sent_role_labels else []
+        word_str = word.decode('utf-8')
+        predicate_str = str(predicate)
+        roles_str = '\t'.join(tok_role_labels)
+        bio_roles_str = '\t'.join(bio_tok_role_labels)
+        print("%s\t%s\t%s\t%s\t%s\t%s" % (word_str, predicate_str, pos_targs, pos_preds, roles_str, bio_roles_str), file=f)
+      print(file=f)
+
+
 def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
-                      pred_srl_eval_file, gold_srl_eval_file):
+                      pred_srl_eval_file, gold_srl_eval_file, pos_predictions, pos_targets):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
   # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
@@ -126,6 +155,9 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
   # print("srl_preds_shape", srl_predictions.shape)
   # print("srl predicate preds shape", predicate_predictions.shape)
   # print("srl predicate preds", predicate_predictions)
+  import time
+  debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
+  write_srl_debug(debug_fname, words, predicate_targets, sent_lens, srl_targets, pos_predictions, pos_targets)
 
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
@@ -153,7 +185,7 @@ def create_metric_variable(name, shape, dtype):
 
 
 def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
-                   gold_srl_eval_file, pred_srl_eval_file):
+                   gold_srl_eval_file, pred_srl_eval_file, pos_predictions, pos_targets):
 
   with tf.name_scope('conll_srl_eval'):
 
@@ -168,10 +200,14 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
     str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
     str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
 
+    str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
+    str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+
+
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
     py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
-                      pred_srl_eval_file, gold_srl_eval_file]
+                      pred_srl_eval_file, gold_srl_eval_file, str_pos_predictions, str_pos_targets]
     out_types = [tf.int64, tf.int64, tf.int64]
     correct, excess, missed = tf.py_func(conll_srl_eval_py, py_eval_inputs, out_types, stateful=False)
 
