@@ -123,10 +123,12 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
 
-      sent_role_labels_bio = zip(*sent_role_labels_bio)
+      sent_role_labels_bio = list(zip(*sent_role_labels_bio))
 
+      pos_preds = map(lambda d: d.decode('utf-8'), pos_preds)
+      pos_preds = map(lambda d: d.decode('utf-8'), pos_targs)
       print("pos preds", pos_preds)
-      
+
 
       # for each token in the sentence
       # printed = False
