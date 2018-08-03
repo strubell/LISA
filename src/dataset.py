@@ -29,9 +29,6 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
   return _mapper
 
 
-'''
-TODO: comment
-'''
 def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train):
   with tf.device('/cpu:0'):
 
