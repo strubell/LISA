@@ -66,13 +66,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       predicate_mlp_size = model_config['predicate_mlp_size']
       role_mlp_size = model_config['role_mlp_size']
 
-      # todo pass this in
-      # bilin_keep_prob = 1.0
-
       predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
-
-      # inputs = tf.Print(inputs, [tf.shape(targets)], "targets shape", summarize=20)
-      # inputs = tf.Print(inputs, [predicate_preds], "predicate preds", summarize=200)
 
       # (1) project into predicate, role representations
       with tf.variable_scope('MLP'):
@@ -103,7 +97,6 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       # need to repeat each of these once for each target in the sentence
       mask_tiled = tf.reshape(tf.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
       mask = tf.gather_nd(mask_tiled, tf.where(tf.equal(predicate_preds, 1)))
-      count = tf.cast(tf.count_nonzero(mask), tf.float32)
 
       # now we have k sets of targets for the k frames
       # (p1) f1 f2 f3
@@ -140,26 +133,18 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
                                                                               seq_lens, transition_params)
         loss = tf.reduce_mean(-log_likelihood)
       else:
-        if hparams.label_smoothing > 0:
-          srl_targets_onehot = tf.one_hot(indices=srl_targets_predicted_predicates, depth=num_labels, axis=-1)
-          loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(srl_logits_transposed, [-1, num_labels]),
-                                                 onehot_labels=tf.reshape(srl_targets_onehot, [-1, num_labels]),
-                                                 weights=tf.reshape(mask, [-1]),
-                                                 label_smoothing=hparams.label_smoothing,
-                                                 reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
-
-        else:
-          cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=srl_logits_transposed,
-                                                                         labels=srl_targets_predicted_predicates)
-          cross_entropy *= mask
-          loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
+        srl_targets_onehot = tf.one_hot(indices=srl_targets_predicted_predicates, depth=num_labels, axis=-1)
+        loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(srl_logits_transposed, [-1, num_labels]),
+                                               onehot_labels=tf.reshape(srl_targets_onehot, [-1, num_labels]),
+                                               weights=tf.reshape(mask, [-1]),
+                                               label_smoothing=hparams.label_smoothing,
+                                               reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
       output = {
         'loss': loss,
         'predictions': predictions,
         'scores': srl_logits_transposed,
         'targets': srl_targets_gold_predicates,
-        # 'mask': mask
       }
 
       return output

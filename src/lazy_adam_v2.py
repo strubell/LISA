@@ -15,9 +15,7 @@
 
 """Adam optimizer for TensorFlow."""
 
-import tensorflow as tf
 from tensorflow.contrib import optimizer_v2
-# from tensorflow.contrib.optimizer_v2 import optimizer_v2
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
@@ -34,8 +32,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
   ([pdf](http://arxiv.org/pdf/1412.6980.pdf)).
   """
 
-  def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8,
-               warmup_steps=8000, decay_rate=1.5, decay_steps=5000, use_nesterov=True,
+  def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, use_nesterov=True,
                use_locking=False, name="Nadam"):
     """Construct a new Adam optimizer.
 
@@ -91,15 +88,11 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     """
     super(LazyAdamOptimizer, self).__init__(use_locking, name)
 
-    # self._set_hyper("init_learning_rate", learning_rate)
     self._set_hyper("learning_rate", learning_rate)
     self._set_hyper("beta1", beta1)
     self._set_hyper("beta2", beta2)
     self._set_hyper("epsilon", epsilon)
     self._use_nesterov = use_nesterov
-    # self._set_hyper("warmup_steps", warmup_steps)
-    # self._set_hyper("decay_rate", decay_rate)
-    # self._set_hyper("decay_steps", decay_steps)
 
   def _get_beta_accumulators(self, state=None):
     if state is None:
@@ -174,7 +167,6 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     #   # w/ Nesterov
     #   m_bar = m_scaled_g_values + beta1_t * m_t
 
-
     # lazy Adam
     m = state.get_slot(var, "m")
     m_scaled_g_values = grad * (1 - beta1_t)
@@ -185,7 +177,6 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
 
     # todo could this be better (do just one gather?)
     m_bar = m_scaled_g_values + beta1_t * array_ops.gather(m_t, indices)
-
 
     # v_t = beta2 * v + (1 - beta2) * (g_t * g_t)
 

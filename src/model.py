@@ -6,6 +6,7 @@ import evaluation_fns
 import output_fns
 import transformer
 import nn_utils
+import train_utils
 from lazy_adam_v2 import LazyAdamOptimizer
 
 
@@ -72,14 +73,6 @@ class LISAModel:
         pretrained_embeddings.append(embedding)
     pretrained_embeddings = np.array(pretrained_embeddings)
     pretrained_embeddings /= np.std(pretrained_embeddings)
-    # oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, self.model_config['word_embedding_size']],
-    #                                 initializer=tf.random_normal_initializer())
-    # pretrained_embeddings_tensor = tf.get_variable(name="pretrained_embeddings", shape=pretrained_embeddings.shape,
-    #                                                initializer=tf.constant_initializer(pretrained_embeddings))
-
-    # last entry is OOV
-    # word_embeddings_table = tf.concat([pretrained_embeddings_tensor, oov_embedding], axis=0,
-    #                                   name="word_embeddings_table")
     return pretrained_embeddings
 
   def model_fn(self, features, mode):
@@ -215,16 +208,6 @@ class LISAModel:
                     train_or_decode_str = "training" if task_crf else "decoding"
                     tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
 
-                  # if mode == ModeKeys.TRAIN and task_crf:
-                  #   transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
-                  #                                       initializer=tf.constant_initializer(transition_stats))
-                  #   tf.logging.log(tf.logging.INFO, "Created transition params for training %s" % task)
-                  # elif (mode == ModeKeys.EVAL or mode == ModeKeys.PREDICT) and task_viterbi_decode:
-                  #   transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
-                  #                                       initializer=tf.constant_initializer(transition_stats),
-                  #                                       trainable=False)
-                  #   tf.logging.log(tf.logging.INFO, "Created transition params for decoding %s" % task)
-
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
                                                          feats, labels, current_input, task_labels, task_vocab_size,
                                                          self.vocab.joint_label_lookup_maps, tokens_to_keep,
@@ -247,15 +230,13 @@ class LISAModel:
                 # get the individual task loss and apply penalty
                 this_task_loss = task_outputs['loss'] * task_map['penalty']
 
-                # this_task_loss = tf.Print(this_task_loss, [this_task_loss], task)
-
                 # log this task's loss
                 items_to_log['%s_loss' % task] = this_task_loss
 
                 # add this loss to the overall loss being minimized
                 loss += this_task_loss
 
-                # add the predictions to export_outputs
+                # todo add the predictions to export_outputs
                 # todo add un-joint predictions too?
                 # predict_output = tf.estimator.export.PredictOutput({'scores': task_outputs['scores'],
                 #                                                     'predictions': task_outputs['predictions']})
@@ -263,47 +244,11 @@ class LISAModel:
 
       items_to_log['loss'] = loss
 
-      # loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=scores, labels=labels)
-      # masked_loss = loss * pad_mask
-      #
-      # loss = tf.reduce_sum(masked_loss) / tf.reduce_sum(pad_mask)
-
-      # todo pass hparams through
-      # optimizer = tf.contrib.opt.NadamOptimizer()
-      # learning_rate = 0.04
-      # decay_rate = 1.5
-      # warmup_steps = 8000
-      # # gradient_clip_norm = 1.0
-      # gradient_clip_norm = 5.0
-      # mu = 0.9
-      # nu = 0.98
-      # epsilon = 1e-12
-
-      def learning_rate(global_step):
-        lr = self.hparams.learning_rate
-        warmup_steps = self.hparams.warmup_steps
-        decay_rate = self.hparams.decay_rate
-        if warmup_steps > 0:
-
-          # add 1 to global_step so that we start at 1 instead of 0
-          global_step_float = tf.cast(global_step, tf.float32) + 1.
-          lr *= tf.minimum(tf.rsqrt(global_step_float),
-                           tf.multiply(global_step_float, warmup_steps ** -decay_rate))
-          return lr
-        else:
-          decay_steps = self.hparams.decay_steps
-          if decay_steps > 0:
-            return lr * decay_rate ** (global_step / decay_steps)
-          else:
-            return lr
-
-      this_step_lr = learning_rate(tf.train.get_global_step())
-
+      # get learning rate w/ decay
+      this_step_lr = train_utils.learning_rate(tf.train.get_global_step())
       items_to_log['lr'] = this_step_lr
 
       # optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
-      #                                              beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
-      # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
       #                                              beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
       optimizer = LazyAdamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
                                     beta2=self.hparams.beta2, epsilon=self.hparams.epsilon,
@@ -311,22 +256,6 @@ class LISAModel:
       gradients, variables = zip(*optimizer.compute_gradients(loss))
       gradients, _ = tf.clip_by_global_norm(gradients, self.hparams.gradient_clip_norm)
       train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
-      # train_op = optimizer.minimize(loss=loss)
-
-      # optimizer = RadamOptimizer(learning_rate=learning_rate, mu=mu, nu=nu, epsilon=epsilon, decay_rate=decay_rate,
-      #                            warmup_steps=warmup_steps, gradient_clip_norm=gradient_clip_norm,
-      #                            global_step=tf.train.get_global_step())
-      # train_op = optimizer.minimize(loss=loss)
-
-      # items_to_log['learning_rate'] = optimizer.learning_rate
-
-
-      # preds = tf.argmax(scores, -1)
-      # predictions = {'scores': scores, 'preds': preds}
-
-      # eval_metric_ops = {
-      #   "acc": tf.metrics.accuracy(labels, preds, weights=pad_mask)
-      # }
 
       # export_outputs = {'predict_output': tf.estimator.export.PredictOutput({'scores': scores, 'preds': preds})}
 

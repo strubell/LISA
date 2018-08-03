@@ -141,7 +141,6 @@ def MLP(inputs, output_size, func=leaky_relu, keep_prob=1.0, n_splits=1, moving_
     return linear
 
 
-
 def bilinear_noreshape(inputs1, inputs2, output_size, add_bias2=True, add_bias1=True, add_bias=False, initializer=None,
              scope=None, moving_params=None):
   """"""
@@ -198,9 +197,6 @@ def bilinear_noreshape(inputs1, inputs2, output_size, add_bias2=True, add_bias1=
     bilin = tf.matmul(lin_reshape, inputs2, adjoint_b=True)
     # (bn x r x n)
     bilin = tf.reshape(bilin, tf.stack([-1, output_size, inputs2_bucket_size]))
-    # (b x n x r x n)
-    # bilin = tf.reshape(bilin, output_shape)
-    # bilin = tf.Print(bilin, [batch_size1, inputs2_bucket_size, output_size, tf.shape(bilin)], "bilin shape")
 
     # Get the bias
     if add_bias:
