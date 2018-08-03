@@ -354,7 +354,7 @@ save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.be
                                                                   key=task_config['best_eval_key']),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn) #max_steps=num_steps_in_epoch*num_train_epochs)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=600, exporters=[save_best_exporter])
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=60, exporters=[save_best_exporter])
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
 # estimator.train(input_fn=train_input_fn, steps=100000, hooks=[validation_hook])
