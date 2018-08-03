@@ -245,7 +245,7 @@ class LISAModel:
       items_to_log['loss'] = loss
 
       # get learning rate w/ decay
-      this_step_lr = train_utils.learning_rate(tf.train.get_global_step())
+      this_step_lr = train_utils.learning_rate(self.hparams, tf.train.get_global_step())
       items_to_log['lr'] = this_step_lr
 
       # optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
