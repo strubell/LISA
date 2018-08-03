@@ -24,7 +24,8 @@ hparams = {
   'label_smoothing': 0.1,
   'moving_average_decay': 0.999,
   'input_dropout': 1.0,
-  'bilin_keep_prob': 1.0
+  'bilin_keep_prob': 1.0,
+  'mlp_dropout': 1.0,
 }
 
 
