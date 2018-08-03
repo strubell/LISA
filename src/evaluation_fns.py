@@ -128,12 +128,6 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
       pos_preds = list(map(lambda d: d.decode('utf-8'), pos_preds))
       pos_targs = list(map(lambda d: d.decode('utf-8'), pos_targs))
 
-      print("pos preds", pos_preds[:sent_len])
-      print("pos preds", len(pos_preds[:sent_len]))
-      print(len(sent_words[:sent_len]))
-
-
-
       # for each token in the sentence
       # printed = False
       for j, (word, predicate, pos_p, pos_t) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len],
@@ -144,7 +138,7 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
         predicate_str = str(predicate)
         roles_str = '\t'.join(tok_role_labels)
         bio_roles_str = '\t'.join(map(lambda d: d.decode('utf-8'), bio_tok_role_labels))
-        print("%s\t%s\t%s\t%s\t%s\t%s" % (word_str, predicate_str, pos_targs, pos_preds, roles_str, bio_roles_str), file=f)
+        print("%s\t%s\t%s\t%s\t%s\t%s" % (word_str, predicate_str, pos_t, pos_p, roles_str, bio_roles_str), file=f)
       print(file=f)
 
 
