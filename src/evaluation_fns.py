@@ -119,13 +119,14 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
 
-      print("sent_role_labels_bio", sent_role_labels_bio)
-
       # this is a list of sent_num_predicates lists of srl role labels
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
 
-      sent_role_labels_bio = np.transpose(sent_role_labels_bio)
+      sent_role_labels_bio = zip(*sent_role_labels_bio)
+
+      print("pos preds", pos_preds)
+      
 
       # for each token in the sentence
       # printed = False
