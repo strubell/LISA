@@ -127,7 +127,11 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
 
       pos_preds = list(map(lambda d: d.decode('utf-8'), pos_preds))
       pos_targs = list(map(lambda d: d.decode('utf-8'), pos_targs))
-      print("pos preds", pos_preds)
+
+      print("pos preds", pos_preds[:sent_len])
+      print("pos preds", len(pos_preds[:sent_len]))
+      print(len(sent_words[:sent_len]))
+
 
 
       # for each token in the sentence
