@@ -125,8 +125,8 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
 
       sent_role_labels_bio = list(zip(*sent_role_labels_bio))
 
-      pos_preds = map(lambda d: d.decode('utf-8'), pos_preds)
-      pos_targs = map(lambda d: d.decode('utf-8'), pos_targs)
+      pos_preds = list(map(lambda d: d.decode('utf-8'), pos_preds))
+      pos_targs = list(map(lambda d: d.decode('utf-8'), pos_targs))
       print("pos preds", pos_preds)
 
 
