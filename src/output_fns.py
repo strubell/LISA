@@ -12,9 +12,9 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
     predicate_pred_mlp_size = model_config['predicate_pred_mlp_size']
 
     with tf.variable_scope('MLP'):
-      mlp = nn_utils.MLP(inputs, predicate_pred_mlp_size, n_splits=1)
+      mlp = nn_utils.MLP(inputs, predicate_pred_mlp_size, keep_prob=hparams.mlp_dropout, n_splits=1)
     with tf.variable_scope('Classifier'):
-      logits = nn_utils.MLP(mlp, num_labels, n_splits=1)
+      logits = nn_utils.MLP(mlp, num_labels, keep_prob=hparams.mlp_dropout, n_splits=1)
 
     # todo implement this
     if transition_params is not None:
@@ -70,7 +70,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 
       # (1) project into predicate, role representations
       with tf.variable_scope('MLP'):
-        predicate_role_mlp = nn_utils.MLP(inputs, predicate_mlp_size + role_mlp_size, n_splits=1)
+        predicate_role_mlp = nn_utils.MLP(inputs, predicate_mlp_size + role_mlp_size, keep_prob=hparams.mlp_dropout)
         predicate_mlp, role_mlp = predicate_role_mlp[:, :, :predicate_mlp_size], \
                                   predicate_role_mlp[:, :, predicate_mlp_size:]
 
@@ -89,7 +89,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 
         # now multiply them together to get (num_predicates_in_batch x batch_seq_len x num_srl_classes) tensor of scores
         srl_logits = nn_utils.bilinear_classifier_nary(gathered_predicates, gathered_roles, num_labels,
-                                                       hparams.bilin_keep_prob)
+                                                       hparams.bilinear_dropout)
         srl_logits_transposed = tf.transpose(srl_logits, [0, 2, 1])
 
       # (3) compute loss

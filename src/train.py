@@ -106,6 +106,10 @@ data_config = {
       },
     }
 
+
+
+# mlp_keep_prob = .9
+# info_keep_prob = .67
 # todo define model inputs here
 model_config = {
   'predicate_mlp_size': 200,
@@ -114,6 +118,8 @@ model_config = {
   'hparams': {
     'label_smoothing': 0.1,
     'input_dropout': 0.8,
+    'mlp_dropout': 0.9,
+    'bilinear_dropout': 0.9,
     'moving_average_decay': 0.9999,
     'gradient_clip_norm': 5.0,
     'learning_rate': 0.04,
@@ -132,7 +138,7 @@ model_config = {
     'ff_hidden_size': 800,
     'attn_dropout': 0.9,
     'ff_dropout': 0.9,
-    'prepost_dropout': 0.9,
+    'prepost_dropout': 0.8,
   },
   'inputs': {
     'word_type': {
@@ -166,7 +172,7 @@ model_config = {
 task_config = {
   'best_eval_key': 'srl_f1',
   'layers': {
-    3: {
+    2: {
       'joint_pos_predicate': {
         'penalty': 1.0,
         'output_fn': {
