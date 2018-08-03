@@ -301,13 +301,13 @@ class LISAModel:
 
       items_to_log['lr'] = this_step_lr
 
-      # optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
-      #                                              beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
+      optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
+                                                   beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
       # optimizer = tf.contrib.opt.LazyAdamOptimizer(learning_rate=self.hparams.learning_rate, beta1=self.hparams.beta1,
       #                                              beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
-      optimizer = LazyAdamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
-                                    beta2=self.hparams.beta2, epsilon=self.hparams.epsilon,
-                                    use_nesterov=self.hparams.use_nesterov)
+      # optimizer = LazyAdamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
+      #                               beta2=self.hparams.beta2, epsilon=self.hparams.epsilon,
+      #                               use_nesterov=self.hparams.use_nesterov)
       gradients, variables = zip(*optimizer.compute_gradients(loss))
       gradients, _ = tf.clip_by_global_norm(gradients, self.hparams.gradient_clip_norm)
       train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
