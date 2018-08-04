@@ -19,7 +19,7 @@ hparams = {
   'use_nesterov': True,
   'chi': 0,
   'batch_size': 256,
-  'num_train_epochs': 100,
+  'num_train_epochs': 10000,
   'gradient_clip_norm': 5.0,
   'label_smoothing': 0.1,
   'moving_average_decay': 0.999,
