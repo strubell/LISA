@@ -45,7 +45,7 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
     return output
 
 
-def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep):
+def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, transition_params):
   class_mlp_size = model_config['class_mlp_size']
   attn_mlp_size = model_config['attn_mlp_size']
 
@@ -78,7 +78,7 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
   return output
 
 
-def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep,
+def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, transition_params,
                          dep_rel_mlp, head_rel_mlp, parse_preds_train, parse_preds_eval):
 
   parse_preds = parse_preds_train if mode == ModeKeys.TRAIN else parse_preds_eval
