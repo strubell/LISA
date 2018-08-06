@@ -117,6 +117,8 @@ model_config = {
   'predicate_mlp_size': 200,
   'role_mlp_size': 200,
   'predicate_pred_mlp_size': 200,
+  'class_mlp_size': 100,
+  'attn_mlp_size': 500,
   'hparams': {
     'label_smoothing': 0.1,
     'input_dropout': 0.8,
@@ -217,10 +219,76 @@ task_config = {
       }
     },
 
-    # 5: {
-    #   'parse_head',
-    #   'parse_label'
-    # },
+    4: {
+      'parse_head': {
+        'penalty': 1.0,
+        'output_fn': {
+          'name': 'parse_bilinear',
+          'params': {
+          }
+        },
+      },
+      'parse_label': {
+        'penalty': 0.1,
+        'output_fn': {
+          'name': 'conditional_bilinear',
+          'params': {
+            'dep_rel_mlp': {
+              'layer': 'parse_head',
+              'output': 'dep_rel_mlp'
+            },
+            'head_rel_mlp': {
+              'layer': 'parse_head',
+              'output': 'head_rel_mlp'
+            },
+            'parse_preds_train': {
+              'label': 'parse_head'
+            },
+            'parse_preds_eval': {
+              'layer': 'parse_head',
+              'output': 'predictions'
+            },
+          }
+        },
+        'eval_fns': {
+          'parse_eval': {
+            'name': 'conll_parse_eval',
+            'params': {
+              'gold_parse_eval_file': {
+                'value': args.save_dir + '/parse_gold.txt'
+              },
+              'pred_parse_eval_file': {
+                'value': args.save_dir + '/parse_preds.txt'
+              },
+              'reverse_maps': {
+                'maps': [
+                  'word',
+                  'parse_label',
+                  'gold_pos'
+                ]
+              },
+              'parse_predictions': {
+                'layer': 'parse_head',
+                'output': 'predictions'
+              },
+              'parse_targets': {
+                'label': 'parse_head',
+              },
+              'words': {
+                'feature': 'word',
+              },
+              'pos_predictions': {
+                'layer': 'joint_pos_predicate',
+                'output': 'gold_pos_predictions'
+              },
+              'pos_targets': {
+                'label': 'gold_pos'
+              }
+            }
+          }
+        }
+      }
+    },
 
     11: {
       'srl': {

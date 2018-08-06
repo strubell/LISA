@@ -45,6 +45,63 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
     return output
 
 
+def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep):
+  class_mlp_size = model_config['class_mlp_size']
+  attn_mlp_size = model_config['attn_mlp_size']
+
+  with tf.variable_scope('parse_bilinear'):
+    with tf.variable_scope('MLP'):
+      dep_mlp, head_mlp = nn_utils.MLP(inputs, class_mlp_size + attn_mlp_size, n_splits=2,
+                                       keep_prob=hparams.mlp_dropout)
+      dep_arc_mlp, dep_rel_mlp = dep_mlp[:, :, :attn_mlp_size], dep_mlp[:, :, attn_mlp_size:]
+      head_arc_mlp, head_rel_mlp = head_mlp[:, :, :attn_mlp_size], head_mlp[:, :, attn_mlp_size:]
+
+    with tf.variable_scope('Arcs'):
+      # batch_size x batch_seq_len x batch_seq_len
+      arc_logits = nn_utils.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
+
+    num_tokens = tf.reduce_sum(tokens_to_keep)
+
+    predictions = tf.arg_max(arc_logits, -1)
+
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
+    loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
+
+    output = {
+      'loss': loss,
+      'predictions': predictions,
+      'scores': arc_logits,
+      'dep_rel_mlp': dep_rel_mlp,
+      'head_rel_mlp': head_rel_mlp
+    }
+
+  return output
+
+
+def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep,
+                         dep_rel_mlp, head_rel_mlp, parse_preds_train, parse_preds_eval):
+
+  parse_preds = parse_preds_train if mode == ModeKeys.TRAIN else parse_preds_eval
+  with tf.variable_scope('conditional_bilin'):
+    logits, _ = nn_utils.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, num_labels,
+                                                         hparams.bilinear_dropout, parse_preds)
+
+  predictions = tf.arg_max(logits, -1)
+
+  cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
+
+  n_tokens = tf.reduce_sum(tokens_to_keep)
+  loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / n_tokens
+
+  output = {
+    'loss': loss,
+    'logits': logits,
+    'predictions': predictions,
+  }
+
+  return output
+
+
 def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, predicate_preds_train,
                  predicate_preds_eval, predicate_targets, transition_params):
     '''
