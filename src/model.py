@@ -201,7 +201,7 @@ class LISAModel:
               # todo test a list of tasks for each layer
               for task, task_map in self.task_config[i].items():
                 task_labels = labels[task]
-                task_vocab_size = self.vocab.vocab_names_sizes[task]
+                task_vocab_size = self.vocab.vocab_names_sizes[task] if task in self.vocab.vocab_names_sizes else -1
 
                 # Set up CRF / Viterbi transition params if specified
                 with tf.variable_scope("crf"):  # to share parameters, change scope here
