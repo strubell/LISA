@@ -62,7 +62,7 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
 
     num_tokens = tf.reduce_sum(tokens_to_keep)
 
-    predictions = tf.arg_max(arc_logits, -1)
+    predictions = tf.argmax(arc_logits, -1)
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
     loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
@@ -84,9 +84,9 @@ def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_label
   parse_preds = parse_preds_train if mode == ModeKeys.TRAIN else parse_preds_eval
   with tf.variable_scope('conditional_bilin'):
     logits, _ = nn_utils.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, num_labels,
-                                                         hparams.bilinear_dropout, parse_preds)
+                                                         parse_preds, hparams.bilinear_dropout)
 
-  predictions = tf.arg_max(logits, -1)
+  predictions = tf.argmax(logits, -1)
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
