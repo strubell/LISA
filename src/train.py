@@ -15,8 +15,8 @@ arg_parser.add_argument('--dev_file', type=str, help='Development data file')
 arg_parser.add_argument('--save_dir', type=str, help='Training data file')
 arg_parser.add_argument('--transition_stats', type=str, help='Transition statistics between labels')
 arg_parser.add_argument('--hparams', type=str, default='', help='Comma separated list of "name=value" pairs.')
-arg_parser.add_argument('--debug', type=str, default=False, help='Set some training parameters to debugging mode')
-
+arg_parser.add_argument('--debug', dest='debug', action='store_true')
+arg_parser.set_defaults(debug=False)
 
 args = arg_parser.parse_args()
 
