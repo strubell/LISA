@@ -58,7 +58,7 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
 
     with tf.variable_scope('Arcs'):
       # batch_size x batch_seq_len x batch_seq_len
-      arc_logits = nn_utils.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
+      arc_logits = nn_utils.bilinear_classifier(dep_arc_mlp, head_arc_mlp, hparams.bilinear_dropout)
 
     num_tokens = tf.reduce_sum(tokens_to_keep)
 

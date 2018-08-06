@@ -258,7 +258,7 @@ def bilinear(inputs1, inputs2, output_size, add_bias2=True, add_bias1=True, add_
 #     return bilin
 
 
-def bilinear_classifier(inputs1, inputs2, add_bias1=True, add_bias2=False, keep_prob=None):
+def bilinear_classifier(inputs1, inputs2, keep_prob, add_bias1=True, add_bias2=False):
   """"""
 
   input_shape = tf.shape(inputs1)
