@@ -240,8 +240,8 @@ def multihead_attention(antecedent,
     return x, attn_weights
 
 
-def transformer(mode, inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
-                manual_attn=None):
+def transformer(mode, inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dropout, prepost_dropout,
+                relu_hidden_size, manual_attn=None):
 
   with tf.name_scope('transformer_layer'):
     mask = attention_bias_ignore_padding(seq_lengths)

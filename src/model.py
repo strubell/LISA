@@ -77,6 +77,11 @@ class LISAModel:
 
   def model_fn(self, features, mode):
 
+    if mode != ModeKeys.TRAIN:
+      for hparam in self.hparams:
+        if 'dropout' in hparam:
+          self.hparams[hparam] = 1.0
+
     # todo move this somewhere else?
     moving_averager = tf.train.ExponentialMovingAverage(self.hparams.moving_average_decay)
     moving_average_op = moving_averager.apply(tf.trainable_variables())
@@ -184,6 +189,12 @@ class LISAModel:
                                                     layer_config['ff_hidden_size'],
                                                     manual_attn)
             if i in self.task_config:
+
+              # if normalization is done in layer_preprocess, then it should also be done
+              # on the output, since the output can grow very large, being the sum of
+              # a whole stack of unnormalized layer outputs.
+              current_input = nn_utils.layer_norm(current_input)
+
               # todo test a list of tasks for each layer
               for task, task_map in self.task_config[i].items():
                 task_labels = labels[task]

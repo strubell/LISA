@@ -9,10 +9,13 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
 
   with tf.name_scope('joint_softmax_classifier'):
 
-    predicate_pred_mlp_size = model_config['predicate_pred_mlp_size']
+    # todo pass this as initial proj dim (which is optional)
+    projection_dim = model_config['predicate_pred_mlp_size']
+
+    tf.logging.log(tf.logging.INFO, "Using projection dropout: %g" % hparams.mlp_dropout)
 
     with tf.variable_scope('MLP'):
-      mlp = nn_utils.MLP(inputs, predicate_pred_mlp_size, keep_prob=hparams.mlp_dropout, n_splits=1)
+      mlp = nn_utils.MLP(inputs, projection_dim, keep_prob=hparams.mlp_dropout, n_splits=1)
     with tf.variable_scope('Classifier'):
       logits = nn_utils.MLP(mlp, num_labels, keep_prob=hparams.mlp_dropout, n_splits=1)
 
