@@ -154,26 +154,12 @@ def dot_product_attention(q, k, v,
     if bias is not None:
       logits += bias
     weights = tf.nn.softmax(logits, -1)
-    # first num_capsule_heads capsuled, rest regular
-    # weights1 = tf.nn.softmax(logits[:, :num_capsule_heads, :, :], dim=2)
-    # weights2 = tf.nn.softmax(logits[:, num_capsule_heads:, :, :], dim=3)
-    # weights = tf.concat([weights1, weights2], axis=1, name="attention_weights")
-    # weights is batch x heads x seq_len x seq_len
     if manual_attn is not None:
       # heads x batch x seq_len x seq_len
       weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
       weights_rest = weights_transpose[1:]
       weights_comb = tf.concat([tf.expand_dims(manual_attn, 0), weights_rest], axis=0)
       weights = tf.transpose(weights_comb, [1, 0, 2, 3])
-    # if hard_attn:
-    #   # heads x batch x seq_len x seq_len
-    #   weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
-    #   weights_rest = weights_transpose[1:]
-    #   w = weights_transpose[0]
-    #   hard_weights = tf.where(tf.equal(w, tf.tile(tf.expand_dims(tf.reduce_max(w, axis=-1), -1), [1, 1, tf.shape(w)[-1]])), tf.ones_like(w), tf.zeros_like(w))
-    #   weights_comb = tf.concat([tf.expand_dims(hard_weights, 0), weights_rest], axis=0)
-    #   weights = tf.transpose(weights_comb, [1, 0, 2, 3])
-    # dropping out the attention links for each of the heads
     weights_drop = tf.nn.dropout(weights, dropout_rate)
     return tf.matmul(weights_drop, v), logits
 
