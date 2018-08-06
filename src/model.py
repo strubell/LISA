@@ -186,7 +186,7 @@ class LISAModel:
         current_input = transformer.add_timing_signal_1d(current_input)
         for i in range(num_layers):
           with tf.variable_scope('layer%d' % i):
-            current_input = transformer.transformer(mode, current_input, tokens_to_keep, layer_config['head_dim'],
+            current_input = transformer.transformer(current_input, tokens_to_keep, layer_config['head_dim'],
                                                     layer_config['num_heads'], hparams.attn_dropout,
                                                     hparams.ff_dropout, hparams.prepost_dropout,
                                                     layer_config['ff_hidden_size'],

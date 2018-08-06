@@ -2,7 +2,7 @@ import tensorflow as tf
 
 
 def copy_without_dropout(hparams):
-  new_hparams = {k: 1.0 if 'dropout' in k else v for k, v in hparams.values()}
+  new_hparams = {k: 1.0 if 'dropout' in k else v for k, v in hparams.values().items()}
   return tf.contrib.training.HParams(**new_hparams)
 
 
