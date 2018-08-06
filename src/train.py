@@ -15,6 +15,8 @@ arg_parser.add_argument('--dev_file', type=str, help='Development data file')
 arg_parser.add_argument('--save_dir', type=str, help='Training data file')
 arg_parser.add_argument('--transition_stats', type=str, help='Transition statistics between labels')
 arg_parser.add_argument('--hparams', type=str, default='', help='Comma separated list of "name=value" pairs.')
+arg_parser.add_argument('--debug', type=str, default=False, help='Set some training parameters to debugging mode')
+
 
 args = arg_parser.parse_args()
 
@@ -120,6 +122,9 @@ model_config = {
     'input_dropout': 0.8,
     'mlp_dropout': 0.9,
     'bilinear_dropout': 0.9,
+    'attn_dropout': 0.9,
+    'ff_dropout': 0.9,
+    'prepost_dropout': 0.8,
     'moving_average_decay': 0.9999,
     'gradient_clip_norm': 5.0,
     'learning_rate': 0.04,
@@ -136,9 +141,6 @@ model_config = {
     'num_heads': 8,
     'head_dim': 25,
     'ff_hidden_size': 800,
-    'attn_dropout': 0.9,
-    'ff_dropout': 0.9,
-    'prepost_dropout': 0.8,
   },
   'inputs': {
     'word_type': {
@@ -310,16 +312,30 @@ vocab.update(args.dev_file)
 embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values()
                    if 'pretrained_embeddings' in input_map]
 
+shuffle_buffer_multiplier = 100
+eval_throttle_secs = 1000
+eval_every_steps = 1000
+num_train_examples = 39832  # todo: compute this automatically
+# evaluate_every_n_epochs = 100
+num_steps_in_epoch = int(num_train_examples / hparams.batch_size)
+if args.debug:
+  shuffle_buffer_multiplier = 10
+  eval_throttle_secs = 60
+  eval_every_steps = 100
+tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
+
 
 def get_input_fn(data_file, num_epochs, is_train, embedding_files):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
 
-  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, hparams.batch_size, num_epochs, is_train)
+  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, hparams.batch_size, num_epochs, is_train,
+                                   shuffle_buffer_multiplier)
 
 
 def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=hparams.num_train_epochs, is_train=True, embedding_files=embedding_files)
+  return get_input_fn(args.train_file, num_epochs=hparams.num_train_epochs, is_train=True,
+                      embedding_files=embedding_files)
 
 
 def dev_input_fn():
@@ -345,12 +361,6 @@ for i, f in enumerate([d for d in data_config.keys() if
 
 model = LISAModel(hparams, model_config, task_config['layers'], feature_idx_map, label_idx_map, vocab)
 
-num_train_examples = 39832  # todo: compute this automatically
-# evaluate_every_n_epochs = 100
-num_steps_in_epoch = int(num_train_examples / hparams.batch_size)
-eval_every_steps = 1000
-tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
-
 checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
@@ -360,7 +370,8 @@ save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.be
                                                                   key=task_config['best_eval_key']),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn) #max_steps=num_steps_in_epoch*num_train_epochs)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=60, exporters=[save_best_exporter])
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=eval_throttle_secs,
+                                  exporters=[save_best_exporter])
 
 # eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=1000, exporters=[save_best_exporter])
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)

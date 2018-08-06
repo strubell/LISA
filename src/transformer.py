@@ -248,10 +248,10 @@ def transformer(mode, inputs, seq_lengths, head_size, num_heads, attn_dropout, r
 
     hidden_size = head_size * num_heads
 
-    if mode is not tf.estimator.ModeKeys.TRAIN:
-      attn_dropout = 1.0
-      relu_dropout = 1.0
-      prepost_dropout = 1.0
+    # if mode is not tf.estimator.ModeKeys.TRAIN:
+    #   attn_dropout = 1.0
+    #   relu_dropout = 1.0
+    #   prepost_dropout = 1.0
 
     with tf.variable_scope("self_attention"):
       x = nn_utils.layer_norm(inputs)

@@ -29,7 +29,8 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
   return _mapper
 
 
-def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train):
+def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train,
+                      shuffle_buffer_multiplier):
   with tf.device('/cpu:0'):
 
     # get the names of data fields in data_config that correspond to features or labels,
@@ -57,7 +58,8 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
 
     # shuffle and expand out epochs if training
     if is_train:
-      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*100, count=num_epochs))
+      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*shuffle_buffer_multiplier,
+                                                                 count=num_epochs))
 
 
     # todo should the buffer be bigger?

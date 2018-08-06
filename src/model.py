@@ -78,9 +78,9 @@ class LISAModel:
   def model_fn(self, features, mode):
 
     if mode != ModeKeys.TRAIN:
-      for hparam in self.hparams:
+      for hparam in self.hparams.values().keys():
         if 'dropout' in hparam:
-          self.hparams[hparam] = 1.0
+          self.hparams.set_hparam(hparam, 1.0)
 
     # todo move this somewhere else?
     moving_averager = tf.train.ExponentialMovingAverage(self.hparams.moving_average_decay)
@@ -184,8 +184,8 @@ class LISAModel:
         for i in range(num_layers):
           with tf.variable_scope('layer%d' % i):
             current_input = transformer.transformer(mode, current_input, tokens_to_keep, layer_config['head_dim'],
-                                                    layer_config['num_heads'], layer_config['attn_dropout'],
-                                                    layer_config['ff_dropout'], layer_config['prepost_dropout'],
+                                                    layer_config['num_heads'], self.hparams.attn_dropout,
+                                                    self.hparams.ff_dropout, self.hparams.prepost_dropout,
                                                     layer_config['ff_hidden_size'],
                                                     manual_attn)
             if i in self.task_config:
