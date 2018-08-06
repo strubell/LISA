@@ -211,6 +211,8 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 dispatcher = {
   'srl_bilinear': srl_bilinear,
   'joint_softmax_classifier': joint_softmax_classifier,
+  'parse_bilinear': parse_bilinear,
+  'conditional_bilinear': conditional_bilinear,
 }
 
 
