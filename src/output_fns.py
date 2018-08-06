@@ -12,8 +12,6 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
     # todo pass this as initial proj dim (which is optional)
     projection_dim = model_config['predicate_pred_mlp_size']
 
-    tf.logging.log(tf.logging.INFO, "Using projection dropout: %g" % hparams.mlp_dropout)
-
     with tf.variable_scope('MLP'):
       mlp = nn_utils.MLP(inputs, projection_dim, keep_prob=hparams.mlp_dropout, n_splits=1)
     with tf.variable_scope('Classifier'):

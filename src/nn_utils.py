@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 
 
 def leaky_relu(x): return tf.maximum(0.1 * x, x)
