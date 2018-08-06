@@ -1,6 +1,11 @@
 import tensorflow as tf
 
 
+def copy_without_dropout(hparams):
+  new_hparams = {k: 1.0 if 'dropout' in k else v for k, v in hparams.values()}
+  return tf.contrib.training.HParams(**new_hparams)
+
+
 def learning_rate(hparams, global_step):
   lr = hparams.learning_rate
   warmup_steps = hparams.warmup_steps

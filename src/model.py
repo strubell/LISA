@@ -13,12 +13,19 @@ from lazy_adam_v2 import LazyAdamOptimizer
 class LISAModel:
 
   def __init__(self, hparams, model_config, task_config, feature_idx_map, label_idx_map, vocab):
-    self.hparams = hparams
+    self.train_hparams = hparams
+    self.test_hparams = train_utils.copy_without_dropout(hparams)
+
     self.model_config = model_config
     self.task_config = task_config
     self.feature_idx_map = feature_idx_map
     self.label_idx_map = label_idx_map
     self.vocab = vocab
+
+  def hparams(self, mode):
+    if mode == ModeKeys.TRAIN:
+      return self.train_hparams
+    return self.test_hparams
 
   def load_transitions(self, transition_statistics, num_classes, vocab_map):
     transition_statistics_np = np.zeros((num_classes, num_classes))
@@ -77,13 +84,10 @@ class LISAModel:
 
   def model_fn(self, features, mode):
 
-    if mode != ModeKeys.TRAIN:
-      for hparam in self.hparams.values().keys():
-        if 'dropout' in hparam:
-          self.hparams.set_hparam(hparam, 1.0)
+    hparams = self.hparams(mode)
 
     # todo move this somewhere else?
-    moving_averager = tf.train.ExponentialMovingAverage(self.hparams.moving_average_decay)
+    moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay)
     moving_average_op = moving_averager.apply(tf.trainable_variables())
     tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
@@ -164,8 +168,7 @@ class LISAModel:
       # current_input = word_embeddings
 
       # todo will estimators handle dropout for us or do we need to do it on our own?
-      input_dropout = self.hparams.input_dropout
-      current_input = tf.nn.dropout(current_input, input_dropout if mode == tf.estimator.ModeKeys.TRAIN else 1.0)
+      current_input = tf.nn.dropout(current_input, hparams.input_dropout)
 
       with tf.variable_scope('project_input'):
         current_input = nn_utils.MLP(current_input, sa_hidden_size, n_splits=1)
@@ -184,8 +187,8 @@ class LISAModel:
         for i in range(num_layers):
           with tf.variable_scope('layer%d' % i):
             current_input = transformer.transformer(mode, current_input, tokens_to_keep, layer_config['head_dim'],
-                                                    layer_config['num_heads'], self.hparams.attn_dropout,
-                                                    self.hparams.ff_dropout, self.hparams.prepost_dropout,
+                                                    layer_config['num_heads'], hparams.attn_dropout,
+                                                    hparams.ff_dropout, hparams.prepost_dropout,
                                                     layer_config['ff_hidden_size'],
                                                     manual_attn)
             if i in self.task_config:
@@ -222,7 +225,7 @@ class LISAModel:
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
                                                          feats, labels, current_input, task_labels, task_vocab_size,
                                                          self.vocab.joint_label_lookup_maps, tokens_to_keep,
-                                                         transition_params, self.hparams)
+                                                         transition_params, hparams)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
                 # want task_outputs to have:
@@ -256,16 +259,16 @@ class LISAModel:
       items_to_log['loss'] = loss
 
       # get learning rate w/ decay
-      this_step_lr = train_utils.learning_rate(self.hparams, tf.train.get_global_step())
+      this_step_lr = train_utils.learning_rate(hparams, tf.train.get_global_step())
       items_to_log['lr'] = this_step_lr
 
-      # optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
-      #                                              beta2=self.hparams.beta2, epsilon=self.hparams.epsilon)
-      optimizer = LazyAdamOptimizer(learning_rate=this_step_lr, beta1=self.hparams.beta1,
-                                    beta2=self.hparams.beta2, epsilon=self.hparams.epsilon,
-                                    use_nesterov=self.hparams.use_nesterov)
+      # optimizer = tf.contrib.opt.NadamOptimizer(learning_rate=this_step_lr, beta1=hparams.beta1,
+      #                                              beta2=hparams.beta2, epsilon=hparams.epsilon)
+      optimizer = LazyAdamOptimizer(learning_rate=this_step_lr, beta1=hparams.beta1,
+                                    beta2=hparams.beta2, epsilon=hparams.epsilon,
+                                    use_nesterov=hparams.use_nesterov)
       gradients, variables = zip(*optimizer.compute_gradients(loss))
-      gradients, _ = tf.clip_by_global_norm(gradients, self.hparams.gradient_clip_norm)
+      gradients, _ = tf.clip_by_global_norm(gradients, hparams.gradient_clip_norm)
       train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
 
       # export_outputs = {'predict_output': tf.estimator.export.PredictOutput({'scores': scores, 'preds': preds})}
