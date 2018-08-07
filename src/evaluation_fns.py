@@ -302,7 +302,7 @@ def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, 
     # pyfunc is necessary here since we need to write to disk
     py_eval_inputs = [str_predictions, parse_head_predictions, str_words, mask, str_targets, parse_head_targets,
                       pred_parse_eval_file, gold_parse_eval_file, str_pos_predictions, str_pos_targets]
-    out_types = [tf.int64, tf.int64, tf.int64, tf.int64]
+    out_types = [tf.int64, tf.int64] #, tf.int64, tf.int64]
     total, corrects = tf.py_func(conll_parse_eval_py, py_eval_inputs, out_types, stateful=False)
 
     update_total_count_op = tf.assign_add(total_count, total)
