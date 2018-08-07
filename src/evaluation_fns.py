@@ -305,7 +305,7 @@ def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, 
     out_types = [tf.int64, tf.int64, tf.int64, tf.int64]
     total, labeled, unlabeled, label = tf.py_func(conll_parse_eval_py, py_eval_inputs,
                                                                           out_types, stateful=False)
-    correct = tf.concat([labeled, unlabeled, label])
+    correct = tf.concat([labeled, unlabeled, label], axis=0)
 
     update_total_count_op = tf.assign_add(total_count, total)
     update_correct_op = tf.assign_add(correct_count, labeled)
