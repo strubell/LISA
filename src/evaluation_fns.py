@@ -120,8 +120,8 @@ def write_parse_eval(filename, words, parse_heads, sent_lens, parse_labels, pos_
                                                                        sent_parse_labels[:sent_len],
                                                                        sent_pos_tags[:sent_len])):
         parse_head = 0 if j == parse_head else parse_head + 1
-        token_outputs = [j] + list(map(lambda s: s.decode('utf-8'), [word, pos_tag, parse_head, parse_label]))
-        print("%d\t%s\t_\t%s\t_\t_\t%s\t%s" % tuple(token_outputs), file=f)
+        token_outputs = (j, word.decode('utf-8'), pos_tag.decode('utf-8'), int(parse_head), parse_label.decode('utf-8'))
+        print("%d\t%s\t_\t%s\t_\t_\t%d\t%s" % token_outputs, file=f)
       print(file=f)
 
 
@@ -161,7 +161,7 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
 
 
 def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
-                      pred_parse_eval_file, gold_srl_eval_file, pos_predictions, pos_targets):
+                      pred_srl_eval_file, gold_srl_eval_file, pos_predictions, pos_targets):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
   # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
