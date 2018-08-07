@@ -256,44 +256,44 @@ task_config = {
           }
         },
         'eval_fns': {
-          'label_accuracy': {
-            'name': 'accuracy'
-          }
-          # 'parse_eval': {
-          #   'name': 'conll_parse_eval',
-          #   'params': {
-          #     'gold_parse_eval_file': {
-          #       'value': args.save_dir + '/parse_gold.txt'
-          #     },
-          #     'pred_parse_eval_file': {
-          #       'value': args.save_dir + '/parse_preds.txt'
-          #     },
-          #     'reverse_maps': {
-          #       'maps': [
-          #         'word',
-          #         'parse_label',
-          #         'gold_pos'
-          #       ]
-          #     },
-          #     'parse_predictions': {
-          #       'layer': 'parse_head',
-          #       'output': 'predictions'
-          #     },
-          #     'parse_targets': {
-          #       'label': 'parse_head',
-          #     },
-          #     'words': {
-          #       'feature': 'word',
-          #     },
-          #     'pos_predictions': {
-          #       'layer': 'joint_pos_predicate',
-          #       'output': 'gold_pos_predictions'
-          #     },
-          #     'pos_targets': {
-          #       'label': 'gold_pos'
-          #     }
-          #   }
+          # 'label_accuracy': {
+          #   'name': 'accuracy'
           # }
+          'parse_eval': {
+            'name': 'conll_parse_eval',
+            'params': {
+              'gold_parse_eval_file': {
+                'value': args.save_dir + '/parse_gold.txt'
+              },
+              'pred_parse_eval_file': {
+                'value': args.save_dir + '/parse_preds.txt'
+              },
+              'reverse_maps': {
+                'maps': [
+                  'word',
+                  'parse_label',
+                  'gold_pos'
+                ]
+              },
+              'parse_predictions': {
+                'layer': 'parse_head',
+                'output': 'predictions'
+              },
+              'parse_targets': {
+                'label': 'parse_head',
+              },
+              'words': {
+                'feature': 'word',
+              },
+              'pos_predictions': {
+                'layer': 'joint_pos_predicate',
+                'output': 'gold_pos_predictions'
+              },
+              'pos_targets': {
+                'label': 'gold_pos'
+              }
+            }
+          }
         }
       }
     },

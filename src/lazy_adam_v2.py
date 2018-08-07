@@ -215,9 +215,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
     # var_update = state_ops.scatter_sub(var, indices,
     #                                    lr * m_t_slice / denominator_slice,
     #                                    use_locking=self._use_locking)
-    var_update = state_ops.scatter_sub(var, indices,
-                                       lr * m_bar_slice / denominator_slice,
-                                       use_locking=self._use_locking)
+    var_update = scatter_add(var, indices, -lr * m_bar_slice / denominator_slice, use_locking=self._use_locking)
 
     # return control_flow_ops.group(*[var_update, m_t, v_t])
     return control_flow_ops.group(*[var_update, m_bar, v_t])
