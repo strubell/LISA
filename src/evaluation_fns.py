@@ -119,6 +119,7 @@ def write_parse_eval(filename, words, parse_heads, sent_lens, parse_labels, pos_
                                                                        sent_parse_heads[:sent_len],
                                                                        sent_parse_labels[:sent_len],
                                                                        sent_pos_tags[:sent_len])):
+        parse_head = 0 if j == parse_head else parse_head + 1
         token_outputs = [j] + list(map(lambda s: s.decode('utf-8'), [word, pos_tag, parse_head, parse_label]))
         print("%d\t%s\t_\t%s\t_\t_\t%s\t%s" % tuple(token_outputs), file=f)
       print(file=f)
