@@ -161,7 +161,7 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
 
 
 def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
-                      pred_srl_eval_file, gold_srl_eval_file, pos_predictions, pos_targets):
+                      pred_parse_eval_file, gold_srl_eval_file, pos_predictions, pos_targets):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
   # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
@@ -279,7 +279,7 @@ def conll_parse_eval_py(parse_label_predictions, parse_head_predictions, words, 
 
 # todo share computation with srl eval
 def conll_parse_eval(predictions, targets, parse_predictions, words, mask, predicate_targets, reverse_maps,
-                   gold_srl_eval_file, pred_srl_eval_file, pos_predictions, pos_targets):
+                   gold_parse_eval_file, pred_parse_eval_file, pos_predictions, pos_targets):
 
   with tf.name_scope('conll_parse_eval'):
 
@@ -301,7 +301,7 @@ def conll_parse_eval(predictions, targets, parse_predictions, words, mask, predi
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
     py_eval_inputs = [str_predictions, parse_predictions, str_words, mask, str_targets, predicate_targets,
-                      pred_srl_eval_file, gold_srl_eval_file, str_pos_predictions, str_pos_targets]
+                      pred_parse_eval_file, gold_parse_eval_file, str_pos_predictions, str_pos_targets]
     out_types = [tf.int64, tf.int64, tf.int64, tf.int64]
     total, labeled, unlabeled, label = tf.py_func(conll_parse_eval_py, py_eval_inputs,
                                                                           out_types, stateful=False)
@@ -326,7 +326,6 @@ dispatcher = {
   'accuracy': accuracy,
   'conll_srl_eval': conll_srl_eval,
   'conll_parse_eval': conll_parse_eval,
-
 }
 
 
