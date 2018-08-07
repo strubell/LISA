@@ -86,6 +86,9 @@ def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_label
     logits, _ = nn_utils.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, num_labels,
                                                          parse_preds, hparams.bilinear_dropout)
 
+
+  print(logits)
+
   predictions = tf.argmax(logits, -1)
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
