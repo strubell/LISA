@@ -350,7 +350,7 @@ def conditional_bilinear_classifier(inputs1, inputs2, n_classes, probs, keep_pro
                    initializer=tf.zeros_initializer())
   bilin = tf.Print(bilin, [tf.shape(bilin)], "bilin", summarize=10)
   bilin = tf.Print(bilin, [tf.shape(bilin)], "bilin", summarize=10)
-  bilin = tf.reshape(bilin, [batch_size, bucket_size, input_size])
+  bilin = tf.reshape(bilin, [batch_size, bucket_size, input_size, bucket_size])
   weighted_bilin = tf.squeeze(tf.matmul(bilin, tf.expand_dims(probs, 3)), -1)
   # weighted_bilin = tf.matmul(bilin, probs)
 
