@@ -308,7 +308,7 @@ def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, 
     correct = tf.concat([labeled, unlabeled, label], axis=0)
 
     update_total_count_op = tf.assign_add(total_count, total)
-    update_correct_op = tf.assign_add(correct_count, labeled)
+    update_correct_op = tf.assign_add(correct_count, correct)
 
     update_op = update_correct_op / update_total_count_op
 
