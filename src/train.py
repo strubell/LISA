@@ -275,7 +275,7 @@ task_config = {
                   'gold_pos'
                 ]
               },
-              'parse_predictions': {
+              'parse_head_predictions': {
                 'layer': 'parse_head',
                 'output': 'predictions'
               },

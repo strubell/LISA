@@ -278,7 +278,7 @@ def conll_parse_eval_py(parse_label_predictions, parse_head_predictions, words, 
 
 
 # todo share computation with srl eval
-def conll_parse_eval(predictions, targets, parse_predictions, words, mask, predicate_targets, reverse_maps,
+def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, parse_head_targets, reverse_maps,
                    gold_parse_eval_file, pred_parse_eval_file, pos_predictions, pos_targets):
 
   with tf.name_scope('conll_parse_eval'):
@@ -300,7 +300,7 @@ def conll_parse_eval(predictions, targets, parse_predictions, words, mask, predi
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
-    py_eval_inputs = [str_predictions, parse_predictions, str_words, mask, str_targets, predicate_targets,
+    py_eval_inputs = [str_predictions, parse_head_predictions, str_words, mask, str_targets, parse_head_targets,
                       pred_parse_eval_file, gold_parse_eval_file, str_pos_predictions, str_pos_targets]
     out_types = [tf.int64, tf.int64, tf.int64, tf.int64]
     total, labeled, unlabeled, label = tf.py_func(conll_parse_eval_py, py_eval_inputs,
