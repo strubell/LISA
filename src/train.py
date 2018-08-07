@@ -279,7 +279,7 @@ task_config = {
                 'layer': 'parse_head',
                 'output': 'predictions'
               },
-              'parse_targets': {
+              'parse_head_targets': {
                 'label': 'parse_head',
               },
               'words': {
