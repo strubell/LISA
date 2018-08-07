@@ -273,7 +273,7 @@ def conll_parse_eval_py(parse_label_predictions, parse_head_predictions, words, 
     except CalledProcessError as e:
       print("Call to eval.pl eval failed.")
 
-  return total, labeled_correct, unlabeled_correct, label_correct
+  return total, np.array([labeled_correct, unlabeled_correct, label_correct])
 
 
 # todo share computation with srl eval
@@ -303,16 +303,14 @@ def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, 
     py_eval_inputs = [str_predictions, parse_head_predictions, str_words, mask, str_targets, parse_head_targets,
                       pred_parse_eval_file, gold_parse_eval_file, str_pos_predictions, str_pos_targets]
     out_types = [tf.int64, tf.int64, tf.int64, tf.int64]
-    total, labeled, unlabeled, label = tf.py_func(conll_parse_eval_py, py_eval_inputs,
-                                                                          out_types, stateful=False)
-    correct = tf.concat([labeled, unlabeled, label], axis=0)
+    total, corrects = tf.py_func(conll_parse_eval_py, py_eval_inputs, out_types, stateful=False)
 
     update_total_count_op = tf.assign_add(total_count, total)
-    update_correct_op = tf.assign_add(correct_count, correct)
+    update_correct_op = tf.assign_add(correct_count, corrects)
 
     update_op = update_correct_op / update_total_count_op
 
-    accuracies = correct / total
+    accuracies = corrects / total
 
     # update_total_count_op = tf.assign_add(total_count, total)
     # update_labeled_correct_op = tf.assign_add(labeled_correct, labeled)
