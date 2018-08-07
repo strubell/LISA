@@ -262,7 +262,6 @@ def conll_parse_eval_py(parse_label_predictions, parse_head_predictions, words, 
     try:
       eval = check_output(["perl", "bin/eval.pl", "-g", gold_eval_file, "-s", pred_eval_file], stderr=devnull)
       eval = eval.decode('utf-8')
-      print(eval)
 
       # Labeled attachment score: 26444 / 29058 * 100 = 91.00 %
       # Unlabeled attachment score: 27251 / 29058 * 100 = 93.78 %
@@ -285,9 +284,10 @@ def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, 
 
     # create accumulator variables
     total_count = create_metric_variable("total_count", shape=[], dtype=tf.int64)
-    labeled_correct = create_metric_variable("labeled_correct", shape=[], dtype=tf.int64)
-    unlabeled_correct = create_metric_variable("unlabeled_correct", shape=[], dtype=tf.int64)
-    label_correct = create_metric_variable("label_correct", shape=[], dtype=tf.int64)
+    # labeled_correct = create_metric_variable("labeled_correct", shape=[], dtype=tf.int64)
+    # unlabeled_correct = create_metric_variable("unlabeled_correct", shape=[], dtype=tf.int64)
+    # label_correct = create_metric_variable("label_correct", shape=[], dtype=tf.int64)
+    correct_count = create_metric_variable("label_correct", shape=[3], dtype=tf.int64)
 
     # first, use reverse maps to convert ints to strings
     # todo order of map.values() is probably not guaranteed; should prob sort by keys first
@@ -305,21 +305,29 @@ def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, 
     out_types = [tf.int64, tf.int64, tf.int64, tf.int64]
     total, labeled, unlabeled, label = tf.py_func(conll_parse_eval_py, py_eval_inputs,
                                                                           out_types, stateful=False)
+    correct = tf.concat([labeled, unlabeled, label])
 
     update_total_count_op = tf.assign_add(total_count, total)
-    update_labeled_correct_op = tf.assign_add(labeled_correct, labeled)
-    update_unlabeled_correct_op = tf.assign_add(unlabeled_correct, unlabeled)
-    update_label_correct_op = tf.assign_add(label_correct, label)
+    update_correct_op = tf.assign_add(correct_count, labeled)
 
-    uas_update_op = update_labeled_correct_op / update_total_count_op
-    las_update_op = update_unlabeled_correct_op / update_total_count_op
-    ls_update_op = update_label_correct_op / update_total_count_op
+    update_op = update_correct_op / update_total_count_op
 
-    uas = labeled_correct / total_count
-    las = unlabeled_correct / total_count
-    ls = label_correct / total_count
+    accuracies = correct / total
 
-    return las, las_update_op
+    # update_total_count_op = tf.assign_add(total_count, total)
+    # update_labeled_correct_op = tf.assign_add(labeled_correct, labeled)
+    # update_unlabeled_correct_op = tf.assign_add(unlabeled_correct, unlabeled)
+    # update_label_correct_op = tf.assign_add(label_correct, label)
+
+    # uas_update_op = update_labeled_correct_op / update_total_count_op
+    # las_update_op = update_unlabeled_correct_op / update_total_count_op
+    # ls_update_op = update_label_correct_op / update_total_count_op
+
+    # uas = labeled_correct / total_count
+    # las = unlabeled_correct / total_count
+    # ls = label_correct / total_count
+
+    return accuracies, update_op
 
 
 dispatcher = {
