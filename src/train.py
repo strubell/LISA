@@ -23,97 +23,94 @@ arg_parser.set_defaults(debug=False)
 args = arg_parser.parse_args()
 
 data_config = {
-      'id': {
-        'conll_idx': 2,
-      },
-      'sent_id': {
-        'conll_idx': 1,
-        'label': True
-      },
-      'word': {
-        'conll_idx': 3,
-        'feature': True,
-        'vocab': 'word',
-        'oov': False,
-        'updatable': True
-      },
-      'word_type': {
-        'conll_idx': 3,
-        'feature': True,
-        'vocab': 'embeddings/glove.6B.100d.txt',
-        'converter':  {
-          'name': 'lowercase'
-        },
-        'oov': True
-      },
-      'gold_pos': {
-        'conll_idx': 4,
-        'label': True,
-        'vocab': 'gold_pos'
-      },
-      'auto_pos': {
-        'conll_idx': 5,
-        'vocab': 'gold_pos'
-      },
+  'id': {
+    'conll_idx': 2,
+  },
+  'sent_id': {
+    'conll_idx': 1,
+    'label': True
+  },
+  'word': {
+    'conll_idx': 3,
+    'feature': True,
+    'vocab': 'word',
+    'oov': False,
+    'updatable': True
+  },
+  'word_type': {
+    'conll_idx': 3,
+    'feature': True,
+    'vocab': 'embeddings/glove.6B.100d.txt',
+    'converter':  {
+      'name': 'lowercase'
+    },
+    'oov': True
+  },
+  'gold_pos': {
+    'conll_idx': 4,
+    'label': True,
+    'vocab': 'gold_pos'
+  },
+  'auto_pos': {
+    'conll_idx': 5,
+    'vocab': 'gold_pos'
+  },
 
-      'parse_head': {
-        'conll_idx': [6, 2],
-        'label': True,
-        'converter':  {
-          'name': 'parse_roots_self_loop'
-        }
-      },
-      'parse_label': {
-        'conll_idx': 7,
-        'label': True,
-        'vocab': 'parse_label'
-      },
-      'domain': {
-        'conll_idx': 0,
-        'vocab': 'domain',
-        'converter': {
-          'name': 'strip_conll12_domain'
-        }
-      },
-      'predicate': {
-        'conll_idx': 9,
-        'label': True,
-        # 'feature': True,
-        'vocab': 'predicate',
-        'converter': {
-          'name': 'conll12_binary_predicates'
-        }
-      },
-      'joint_pos_predicate': {
-        'conll_idx': [4, 9],
-        'label': True,
-        'vocab': 'joint_pos_predicate',
-        'converter': {
-          'name': 'joint_converter',
-          'params': {
-            'component_converters': ['default_converter', 'conll12_binary_predicates']
-          }
-        },
-        'label_components': [
-          'gold_pos',
-          'predicate'
-        ]
-      },
-      'srl': {
-        'conll_idx': [14, -1],
-        'type': 'range',
-        'label': True,
-        'vocab': 'srl',
-        'converter': {
-          'name': 'idx_range_converter'
-        }
-      },
+  'parse_head': {
+    'conll_idx': [6, 2],
+    'label': True,
+    'converter':  {
+      'name': 'parse_roots_self_loop'
     }
+  },
+  'parse_label': {
+    'conll_idx': 7,
+    'label': True,
+    'vocab': 'parse_label'
+  },
+  'domain': {
+    'conll_idx': 0,
+    'vocab': 'domain',
+    'converter': {
+      'name': 'strip_conll12_domain'
+    }
+  },
+  'predicate': {
+    'conll_idx': 9,
+    'label': True,
+    # 'feature': True,
+    'vocab': 'predicate',
+    'converter': {
+      'name': 'conll12_binary_predicates'
+    }
+  },
+  'joint_pos_predicate': {
+    'conll_idx': [4, 9],
+    'label': True,
+    'vocab': 'joint_pos_predicate',
+    'converter': {
+      'name': 'joint_converter',
+      'params': {
+        'component_converters': ['default_converter', 'conll12_binary_predicates']
+      }
+    },
+    'label_components': [
+      'gold_pos',
+      'predicate'
+    ]
+  },
+  'srl': {
+    'conll_idx': [14, -1],
+    'type': 'range',
+    'label': True,
+    'vocab': 'srl',
+    'converter': {
+      'name': 'idx_range_converter'
+    }
+  },
+}
 
 
-
-# mlp_keep_prob = .9
-# info_keep_prob = .67
 # todo define model inputs here
 model_config = {
   'predicate_mlp_size': 200,
@@ -157,23 +154,6 @@ model_config = {
   }
 }
 
-# task_config = {
-#   'gold_pos': {
-#     'layer': 3,
-#   },
-#   'predicate': {
-#     'layer': 3,
-#   },
-#   'parse_head': {
-#     'layer': 5,
-#   },
-#   'parse_label': {
-#     'layer': 5,
-#   },
-#   'srl': {
-#     'layer': 12
-#   },
-# }
 # todo validate these files
 task_config = {
   'best_eval_key': 'srl_f1',
@@ -359,6 +339,12 @@ task_config = {
         }
       }
     }
+  }
+}
+
+attention_config = {
+  5: {
+
   }
 }
 

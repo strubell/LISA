@@ -154,6 +154,8 @@ def dot_product_attention(q, k, v,
     if bias is not None:
       logits += bias
     weights = tf.nn.softmax(logits, -1)
+
+    # todo: still want to concat here, don't need to remove anything because q and k will be smaller
     if manual_attn is not None:
       # heads x batch x seq_len x seq_len
       weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
@@ -167,8 +169,8 @@ def dot_product_attention(q, k, v,
 def compute_qkv(antecedent, total_key_depth, total_value_depth):
   """Computes query, key and value.
   Args:
-    total_key_depth: an integer
-    total_value_depth: and integer
+    total_key_depth: num_heads * key_dim
+    total_value_depth: num_heads * value_dim
   Returns:
     q, k, v : [batch, length, depth] tensors
   """
@@ -215,6 +217,7 @@ def multihead_attention(antecedent,
     q = split_heads(q, num_heads)
     k = split_heads(k, num_heads)
     v = split_heads(v, num_heads)
+    # todo concat manual v here
     key_depth_per_head = total_key_depth // num_heads
     q *= key_depth_per_head**-0.5
     x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate, manual_attn)

@@ -65,7 +65,6 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
       dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*shuffle_buffer_multiplier,
                                                                  count=num_epochs))
 
-
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
 
