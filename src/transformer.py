@@ -151,13 +151,9 @@ def dot_product_attention(q, k, v,
     # [batch, num_heads, query_length, memory_length]
     logits = tf.matmul(q, k, transpose_b=True)
 
-    logits = tf.Print(logits, [tf.shape(special_attention)], "special attn shape", summarize=10)
-    logits = tf.Print(logits, [tf.shape(special_attention)], "special attn shape", summarize=10)
-
-
     # concat special_attention to end of logits
     if special_attention:
-      logits = tf.concat([logits, tf.expand_dims(special_attention, 1)], axis=1)
+      logits = tf.concat([logits] + list(map(lambda x: tf.expand_dims(x, 1), special_attention)), axis=1)
 
     if bias is not None:
       logits += bias

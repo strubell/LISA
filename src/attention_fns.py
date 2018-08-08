@@ -6,7 +6,6 @@ def copy_from_predicted(mode, train_attention_to_copy, eval_attention_to_copy):
   if len(attention_to_copy.get_shape()) < 3:
     attention_to_copy = tf.one_hot(attention_to_copy, tf.shape(attention_to_copy)[-1])
 
-  print("sttn shaper", attention_to_copy.get_shape())
   return tf.cast(attention_to_copy, tf.float32)
 
 
