@@ -30,8 +30,9 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
 
 
 def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train,
-                      shuffle_buffer_multiplier, bucket_boundaries):
+                      shuffle_buffer_multiplier):
 
+  bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
   bucket_batch_sizes = [batch_size] * (len(bucket_boundaries) + 1)
 
   with tf.device('/cpu:0'):

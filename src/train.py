@@ -399,26 +399,27 @@ if args.debug:
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
 
-bucket_boundaries, test_bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES, constants.DEFAULT_BUCKET_BOUNDARIES
-if args.bucket_boundaries != '':
-  bucket_boundaries = np.loadtxt(args.bucket_boundaries, dtype=np.int32)
-  test_bucket_boundaries = [9, 13, 17, 20, 24, 28, 33, 40, 49, 116]
+# bucket_boundaries, test_bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES, constants.DEFAULT_BUCKET_BOUNDARIES
+# if args.bucket_boundaries != '':
+#   bucket_boundaries = np.loadtxt(args.bucket_boundaries, dtype=np.int32)
+#   test_bucket_boundaries = [9, 13, 17, 20, 24, 28, 33, 40, 49, 116]
 
-def get_input_fn(data_file, num_epochs, is_train, embedding_files, bucket_boundaries):
+
+def get_input_fn(data_file, num_epochs, is_train, embedding_files):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
 
   return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, hparams.batch_size, num_epochs, is_train,
-                                   shuffle_buffer_multiplier, bucket_boundaries)
+                                   shuffle_buffer_multiplier)
 
 
 def train_input_fn():
   return get_input_fn(args.train_file, num_epochs=hparams.num_train_epochs, is_train=True,
-                      embedding_files=embedding_files, bucket_boundaries=bucket_boundaries)
+                      embedding_files=embedding_files)
 
 
 def dev_input_fn():
-  return get_input_fn(args.dev_file, num_epochs=1, is_train=False, embedding_files=embedding_files, bucket_boundaries=test_bucket_boundaries)
+  return get_input_fn(args.dev_file, num_epochs=1, is_train=False, embedding_files=embedding_files)
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
