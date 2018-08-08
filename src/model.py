@@ -3,6 +3,8 @@ from tensorflow.estimator import ModeKeys
 import numpy as np
 import constants
 import evaluation_fns
+import attention_fns
+import value_fns
 import output_fns
 import transformer
 import nn_utils
@@ -12,12 +14,13 @@ from lazy_adam_v2 import LazyAdamOptimizer
 
 class LISAModel:
 
-  def __init__(self, hparams, model_config, task_config, feature_idx_map, label_idx_map, vocab):
+  def __init__(self, hparams, model_config, task_config, attention_config, feature_idx_map, label_idx_map, vocab):
     self.train_hparams = hparams
     self.test_hparams = train_utils.copy_without_dropout(hparams)
 
     self.model_config = model_config
     self.task_config = task_config
+    self.attention_config = attention_config
     self.feature_idx_map = feature_idx_map
     self.label_idx_map = label_idx_map
     self.vocab = vocab
@@ -173,7 +176,6 @@ class LISAModel:
       with tf.variable_scope('project_input'):
         current_input = nn_utils.MLP(current_input, sa_hidden_size, n_splits=1)
 
-      manual_attn = None
       predictions = {}
       eval_metric_ops = {}
       export_outputs = {}
@@ -186,11 +188,28 @@ class LISAModel:
         current_input = transformer.add_timing_signal_1d(current_input)
         for i in range(num_layers):
           with tf.variable_scope('layer%d' % i):
+
+            special_attn = []
+            special_values = []
+            if i in self.attention_config:
+              this_layer_attn_config = self.attention_config[i]
+
+              if 'attention_fns' in this_layer_attn_config:
+                for attn_fn, attn_fn_map in this_layer_attn_config['attention_fns']:
+                  attention_fn_params = attention_fns.get_params(mode, attn_fn_map, predictions, feats, labels)
+                  this_special_attn = attention_fns.dispatch(attn_fn_map['name'])(attention_fn_params)
+                  special_attn.append(this_special_attn)
+
+              # if 'value_fns' in this_layer_attn_config:
+              #   for value_fn, value_fn_map in this_layer_attn_config['value_fns']:
+              #     value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels)
+              #     this_special_values = attention_fns.dispatch(value_fn_map['name'])(value_fn_params)
+              #     special_values.append(this_special_values)
+
             current_input = transformer.transformer(current_input, tokens_to_keep, layer_config['head_dim'],
                                                     layer_config['num_heads'], hparams.attn_dropout,
                                                     hparams.ff_dropout, hparams.prepost_dropout,
-                                                    layer_config['ff_hidden_size'],
-                                                    manual_attn)
+                                                    layer_config['ff_hidden_size'], special_attn, special_values)
             if i in self.task_config:
 
               # if normalization is done in layer_preprocess, then it should also be done

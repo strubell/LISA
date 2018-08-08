@@ -343,8 +343,51 @@ task_config = {
 }
 
 attention_config = {
+  3: {
+    'value_fns': {
+      'pos': {
+        'name': 'label_attention',
+        'params': {
+          'train_labels': {
+            'label': 'gold_pos'
+          },
+          'eval_labels': {
+            'layer': 'joint_pos_predicate',
+            'output': 'gold_pos_predictions'
+          }
+        }
+      }
+    }
+  },
   5: {
-
+    'attention_fns': {
+      'parse_heads': {
+        'name': '',
+        'params': {
+          'train_attention_to_copy': {
+            'label': 'parse_head'
+          },
+          'eval_attention_to_copy': {
+            'layer': 'parse_head',
+            'output': 'scores'
+          }
+        }
+      }
+    },
+    'value_fns': {
+      'parse_label': {
+        'name': 'label_attention',
+        'params': {
+          'train_labels': {
+            'label': 'parse_label'
+          },
+          'eval_labels': {
+            'layer': 'parse_label',
+            'output': 'scores'
+          }
+        }
+      }
+    }
   }
 }
 
@@ -425,7 +468,7 @@ for i, f in enumerate([d for d in data_config.keys() if
       label_idx_map[f] = (i, i+1)
 
 
-model = LISAModel(hparams, model_config, task_config['layers'], feature_idx_map, label_idx_map, vocab)
+model = LISAModel(hparams, model_config, task_config['layers'], attention_config, feature_idx_map, label_idx_map, vocab)
 
 checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)

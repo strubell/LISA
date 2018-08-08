@@ -134,9 +134,8 @@ def conv_hidden_relu(inputs,
 
 def dot_product_attention(q, k, v,
                           bias,
-                          dropout_rate=1.0,
-                          manual_attn=None,
-                          name=None):
+                          special_attention,
+                          dropout_rate=1.0):
   """dot-product attention.
   Args:
     q: a Tensor with shape [batch, heads, length_q, depth_k]
@@ -148,20 +147,16 @@ def dot_product_attention(q, k, v,
   Returns:
     A Tensor.
   """
-  with tf.variable_scope(name, default_name="dot_product_attention", values=[q, k, v]):
+  with tf.variable_scope("dot_product_attention", values=[q, k, v]):
     # [batch, num_heads, query_length, memory_length]
     logits = tf.matmul(q, k, transpose_b=True)
+
+    # concat special_attention to end of logits
+    logits = tf.concat([logits, tf.expand_dims(special_attention, 1)], axis=1)
+
     if bias is not None:
       logits += bias
     weights = tf.nn.softmax(logits, -1)
-
-    # todo: still want to concat here, don't need to remove anything because q and k will be smaller
-    if manual_attn is not None:
-      # heads x batch x seq_len x seq_len
-      weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
-      weights_rest = weights_transpose[1:]
-      weights_comb = tf.concat([tf.expand_dims(manual_attn, 0), weights_rest], axis=0)
-      weights = tf.transpose(weights_comb, [1, 0, 2, 3])
     weights_drop = tf.nn.dropout(weights, dropout_rate)
     return tf.matmul(weights_drop, v), logits
 
@@ -184,13 +179,11 @@ def compute_qkv(antecedent, total_key_depth, total_value_depth):
 
 def multihead_attention(antecedent,
                         bias,
-                        total_key_depth,
-                        total_value_depth,
-                        output_depth,
                         num_heads,
+                        head_size,
                         dropout_rate,
-                        manual_attn=None,
-                        name=None):
+                        special_attention,
+                        special_values):
   """Multihead scaled-dot-product attention with input/output transformations.
   Args:
     bias: bias Tensor (see attention_bias())
@@ -206,23 +199,37 @@ def multihead_attention(antecedent,
     ValueError: if the key depth or value depth are not divisible by the
       number of attention heads.
   """
-  if total_key_depth % num_heads != 0:
-    raise ValueError("Key depth (%d) must be divisible by the number of "
-                     "attention heads (%d)." % (total_key_depth, num_heads))
-  if total_value_depth % num_heads != 0:
-    raise ValueError("Value depth (%d) must be divisible by the number of "
-                     "attention heads (%d)." % (total_value_depth, num_heads))
-  with tf.variable_scope(name, default_name="multihead_attention", values=[antecedent]):
-    q, k, v = compute_qkv(antecedent, total_key_depth, total_value_depth)
-    q = split_heads(q, num_heads)
-    k = split_heads(k, num_heads)
-    v = split_heads(v, num_heads)
-    # todo concat manual v here
-    key_depth_per_head = total_key_depth // num_heads
-    q *= key_depth_per_head**-0.5
-    x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate, manual_attn)
+  # if total_key_depth % num_heads != 0:
+  #   raise ValueError("Key depth (%d) must be divisible by the number of "
+  #                    "attention heads (%d)." % (total_key_depth, num_heads))
+  # if total_value_depth % num_heads != 0:
+  #   raise ValueError("Value depth (%d) must be divisible by the number of "
+  #                    "attention heads (%d)." % (total_value_depth, num_heads))
+  with tf.variable_scope("multihead_attention", values=[antecedent]):
+
+    total_output_size = head_size * num_heads
+
+    num_basic_attention_heads = num_heads - len(special_attention)
+    num_basic_value_heads = num_heads - len(special_values)
+
+    total_basic_key_size = num_basic_attention_heads * head_size
+    total_basic_value_size = num_basic_value_heads * head_size
+
+    q, k, v = compute_qkv(antecedent, total_basic_key_size, total_basic_value_size)
+    q = split_heads(q, num_basic_attention_heads)
+    k = split_heads(k, num_basic_attention_heads)
+    v = split_heads(v, num_basic_value_heads)
+
+    # concat special_values to beginning of values; first k attention heads
+    # will attend to k special values
+    special_values = list(map(lambda x: tf.expand_dims(x, 1), special_values))
+    v = tf.concat(special_values + [v], axis=1)
+
+    # key_depth_per_head = total_key_depth // num_heads
+    q *= head_size**-0.5
+    x, attn_weights = dot_product_attention(q, k, v, bias, special_attention, dropout_rate)
     x = combine_heads(x)
-    params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
+    params = tf.get_variable("final_proj", [1, 1, total_output_size, total_output_size])
     x = tf.expand_dims(x, 1)
     x = tf.nn.conv2d(x, params, [1, 1, 1, 1], "SAME")
     x = tf.squeeze(x, 1)
@@ -230,22 +237,22 @@ def multihead_attention(antecedent,
 
 
 def transformer(inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dropout, prepost_dropout,
-                relu_hidden_size, manual_attn=None):
+                relu_hidden_size, special_attention, special_values):
+
+  # todo deal with special_attention, special_values
 
   with tf.name_scope('transformer_layer'):
     mask = attention_bias_ignore_padding(seq_lengths)
 
-    hidden_size = head_size * num_heads
-
     with tf.variable_scope("self_attention"):
       x = nn_utils.layer_norm(inputs)
-      y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout,
-                                            manual_attn)
+      y, attn_weights = multihead_attention(x, mask, num_heads, head_size, attn_dropout, special_attention,
+                                            special_values)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     with tf.variable_scope("ffnn"):
       x = nn_utils.layer_norm(x)
-      y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout)
+      y = conv_hidden_relu(x, relu_hidden_size, num_heads * head_size, relu_dropout)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     return x

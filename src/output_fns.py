@@ -98,7 +98,7 @@ def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_label
 
   output = {
     'loss': loss,
-    'logits': logits,
+    'scores': logits,
     'predictions': predictions,
   }
 
