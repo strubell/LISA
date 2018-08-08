@@ -287,10 +287,6 @@ task_config = {
               'words': {
                 'feature': 'word',
               },
-              'pos_predictions': {
-                'layer': 'joint_pos_predicate',
-                'output': 'gold_pos_predictions'
-              },
               'pos_targets': {
                 'label': 'gold_pos'
               }
