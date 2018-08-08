@@ -2,7 +2,8 @@ import tensorflow as tf
 
 
 def copy_from_predicted(mode, train_attention_to_copy, eval_attention_to_copy):
-  return train_attention_to_copy if mode == tf.estimator.ModeKeys.TRAIN else eval_attention_to_copy
+  ret = train_attention_to_copy if mode == tf.estimator.ModeKeys.TRAIN else eval_attention_to_copy
+  return tf.cast(ret, tf.float32)
 
 
 dispatcher = {
