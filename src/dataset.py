@@ -52,7 +52,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
     # do batching
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=lambda d: tf.shape(d)[0],
                                                                       bucket_boundaries=bucket_boundaries,
-                                                                      bucket_batch_sizes=[batch_size] * 5,
+                                                                      bucket_batch_sizes=[batch_size] * len(bucket_boundaries),
                                                                       padded_shapes=dataset.output_shapes,
                                                                       padding_values=constants.PAD_VALUE))
 
