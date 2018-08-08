@@ -8,12 +8,14 @@ import dataset
 from vocab import Vocab
 from model import LISAModel
 import json
+import numpy as np
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_file', type=str, help='Training data file')
 arg_parser.add_argument('--dev_file', type=str, help='Development data file')
 arg_parser.add_argument('--save_dir', type=str, help='Training data file')
 arg_parser.add_argument('--transition_stats', type=str, help='Transition statistics between labels')
+arg_parser.add_argument('--bucket_boundaries', type=str, default='', help='Bucket boundaries for batching.')
 arg_parser.add_argument('--hparams', type=str, default='', help='Comma separated list of "name=value" pairs.')
 arg_parser.add_argument('--debug', dest='debug', action='store_true')
 arg_parser.set_defaults(debug=False)
@@ -400,13 +402,17 @@ if args.debug:
   eval_every_steps = 100
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
+bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
+if args.bucket_boundaries != '':
+  bucket_boundaries = np.loadtxt(args.bucket_boundaries)
+
 
 def get_input_fn(data_file, num_epochs, is_train, embedding_files):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
 
   return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, hparams.batch_size, num_epochs, is_train,
-                                   shuffle_buffer_multiplier)
+                                   shuffle_buffer_multiplier, bucket_boundaries)
 
 
 def train_input_fn():

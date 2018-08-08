@@ -30,7 +30,7 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
 
 
 def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train,
-                      shuffle_buffer_multiplier):
+                      shuffle_buffer_multiplier, bucket_boundaries):
   with tf.device('/cpu:0'):
 
     # get the names of data fields in data_config that correspond to features or labels,
@@ -51,7 +51,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
 
     # do batching
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=lambda d: tf.shape(d)[0],
-                                                                      bucket_boundaries=[20, 30, 50, 80],  # todo: optimal?
+                                                                      bucket_boundaries=bucket_boundaries,
                                                                       bucket_batch_sizes=[batch_size] * 5,
                                                                       padded_shapes=dataset.output_shapes,
                                                                       padding_values=constants.PAD_VALUE))

@@ -195,69 +195,6 @@ def bilinear(inputs1, inputs2, output_size, add_bias2=True, add_bias1=True, add_
     return bilin
 
 
-# def bilinear(inputs1, inputs2, output_size, add_bias2=True, add_bias1=True, add_bias=False, initializer=None,
-#              scope=None, moving_params=None):
-#   """"""
-#
-#   with tf.variable_scope(scope or 'Bilinear'):
-#     # Reformat the inputs
-#     ndims = len(inputs1.get_shape().as_list())
-#     inputs1_shape = tf.shape(inputs1)
-#     inputs1_bucket_size = inputs1_shape[ndims - 2]
-#     inputs1_size = inputs1.get_shape().as_list()[-1]
-#
-#     inputs2_shape = tf.shape(inputs2)
-#     inputs2_bucket_size = inputs2_shape[ndims - 2]
-#     inputs2_size = inputs2.get_shape().as_list()[-1]
-#     output_shape = []
-#     batch_size = 1
-#     for i in range(ndims - 2):
-#       batch_size *= inputs1_shape[i]
-#       output_shape.append(inputs1_shape[i])
-#     output_shape.append(inputs1_bucket_size)
-#     output_shape.append(output_size)
-#     output_shape.append(inputs2_bucket_size)
-#     output_shape = tf.stack(output_shape)
-#     inputs1 = tf.reshape(inputs1, tf.stack([batch_size, inputs1_bucket_size, inputs1_size]))
-#     inputs2 = tf.reshape(inputs2, tf.stack([batch_size, inputs2_bucket_size, inputs2_size]))
-#     if add_bias1:
-#       inputs1 = tf.concat(axis=2, values=[inputs1, tf.ones(tf.stack([batch_size, inputs1_bucket_size, 1]))])
-#     if add_bias2:
-#       inputs2 = tf.concat(axis=2, values=[inputs2, tf.ones(tf.stack([batch_size, inputs2_bucket_size, 1]))])
-#
-#     # Get the matrix
-#     if initializer is None and moving_params is None:
-#       initializer = tf.initializers.orthogonal
-#     weights = tf.get_variable('Weights', [inputs1_size + add_bias1, output_size, inputs2_size + add_bias2],
-#                               initializer=initializer)
-#     if moving_params is not None:
-#       weights = moving_params.average(weights)
-#     else:
-#       tf.add_to_collection('Weights', weights)
-#
-#     # Do the multiplications
-#     # (bn x d) (d x rd) -> (bn x rd)
-#     lin = tf.matmul(tf.reshape(inputs1, [-1, inputs1_size + add_bias1]),
-#                     tf.reshape(weights, [inputs1_size + add_bias1, -1]))
-#     # (b x nr x d) (b x n x d)T -> (b x nr x n)
-#     bilin = tf.matmul(
-#       tf.reshape(lin, tf.stack([batch_size, inputs1_bucket_size * output_size, inputs2_size + add_bias2])),
-#       inputs2, adjoint_b=True)
-#     # (bn x r x n)
-#     bilin = tf.reshape(bilin, tf.stack([-1, output_size, inputs2_bucket_size]))
-#     # (b x n x r x n)
-#     bilin = tf.reshape(bilin, output_shape)
-#
-#     # Get the bias
-#     if add_bias:
-#       bias = tf.get_variable('Biases', [output_size], initializer=tf.zeros_initializer())
-#       if moving_params is not None:
-#         bias = moving_params.average(bias)
-#       bilin += tf.expand_dims(bias, 1)
-#
-#     return bilin
-
-
 def bilinear_classifier(inputs1, inputs2, keep_prob, add_bias1=True, add_bias2=False):
   """"""
 

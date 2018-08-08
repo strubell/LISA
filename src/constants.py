@@ -6,6 +6,8 @@ JOINT_LABEL_SEP = '/'
 
 OOV_STRING = "<OOV>"
 
+DEFAULT_BUCKET_BOUNDARIES = [20, 30, 50, 80]
+
 # Optimizer hyperparameters
 hparams = {
   'learning_rate': 0.04,

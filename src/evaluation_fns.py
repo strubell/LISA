@@ -241,11 +241,7 @@ def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, pre
 
 
 def conll_parse_eval_py(parse_label_predictions, parse_head_predictions, words, mask, parse_label_targets,
-                        parse_head_targets, pred_eval_file, gold_eval_file, pos_predictions, pos_targets):
-
-  # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
-  # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
-  # words: batch_size x batch_seq_len tensor of ints (0/1)
+                        parse_head_targets, pred_eval_file, gold_eval_file, pos_targets):
 
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
@@ -261,15 +257,14 @@ def conll_parse_eval_py(parse_label_predictions, parse_head_predictions, words, 
   with open(os.devnull, 'w') as devnull:
     try:
       eval = check_output(["perl", "bin/eval.pl", "-g", gold_eval_file, "-s", pred_eval_file], stderr=devnull)
-      eval = eval.decode('utf-8')
+      eval_str = eval.decode('utf-8')
 
       # Labeled attachment score: 26444 / 29058 * 100 = 91.00 %
       # Unlabeled attachment score: 27251 / 29058 * 100 = 93.78 %
       # Label accuracy score: 27395 / 29058 * 100 = 94.28 %
-      first_three_lines = eval.split('\n')[:3]
+      first_three_lines = eval_str.split('\n')[:3]
       total = int(first_three_lines[0].split()[5])
       labeled_correct, unlabeled_correct, label_correct = map(lambda l: int(l.split()[3]), first_three_lines)
-      # correct, excess, missed = map(int, srl_eval.split('\n')[6].split()[1:4])
     except CalledProcessError as e:
       print("Call to eval.pl eval failed.")
 
@@ -278,31 +273,26 @@ def conll_parse_eval_py(parse_label_predictions, parse_head_predictions, words, 
 
 # todo share computation with srl eval
 def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, parse_head_targets, reverse_maps,
-                   gold_parse_eval_file, pred_parse_eval_file, pos_predictions, pos_targets):
+                   gold_parse_eval_file, pred_parse_eval_file, pos_targets):
 
   with tf.name_scope('conll_parse_eval'):
 
     # create accumulator variables
     total_count = create_metric_variable("total_count", shape=[], dtype=tf.int64)
-    # labeled_correct = create_metric_variable("labeled_correct", shape=[], dtype=tf.int64)
-    # unlabeled_correct = create_metric_variable("unlabeled_correct", shape=[], dtype=tf.int64)
-    # label_correct = create_metric_variable("label_correct", shape=[], dtype=tf.int64)
-    correct_count = create_metric_variable("label_correct", shape=[3], dtype=tf.int64)
+    correct_count = create_metric_variable("correct_count", shape=[3], dtype=tf.int64)
 
     # first, use reverse maps to convert ints to strings
     # todo order of map.values() is probably not guaranteed; should prob sort by keys first
     str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
     str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), predictions)
     str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), targets)
-
-    str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
     str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
     py_eval_inputs = [str_predictions, parse_head_predictions, str_words, mask, str_targets, parse_head_targets,
-                      pred_parse_eval_file, gold_parse_eval_file, str_pos_predictions, str_pos_targets]
-    out_types = [tf.int64, tf.int64] #, tf.int64, tf.int64]
+                      pred_parse_eval_file, gold_parse_eval_file, str_pos_targets]
+    out_types = [tf.int64, tf.int64]
     total, corrects = tf.py_func(conll_parse_eval_py, py_eval_inputs, out_types, stateful=False)
 
     update_total_count_op = tf.assign_add(total_count, total)
@@ -311,19 +301,6 @@ def conll_parse_eval(predictions, targets, parse_head_predictions, words, mask, 
     update_op = update_correct_op / update_total_count_op
 
     accuracies = correct_count / total_count
-
-    # update_total_count_op = tf.assign_add(total_count, total)
-    # update_labeled_correct_op = tf.assign_add(labeled_correct, labeled)
-    # update_unlabeled_correct_op = tf.assign_add(unlabeled_correct, unlabeled)
-    # update_label_correct_op = tf.assign_add(label_correct, label)
-
-    # uas_update_op = update_labeled_correct_op / update_total_count_op
-    # las_update_op = update_unlabeled_correct_op / update_total_count_op
-    # ls_update_op = update_label_correct_op / update_total_count_op
-
-    # uas = labeled_correct / total_count
-    # las = unlabeled_correct / total_count
-    # ls = label_correct / total_count
 
     return accuracies, update_op
 
