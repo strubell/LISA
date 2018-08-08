@@ -398,12 +398,13 @@ if args.debug:
   eval_every_steps = 100
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
-bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
+
+bucket_boundaries, test_bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
 if args.bucket_boundaries != '':
   bucket_boundaries = np.loadtxt(args.bucket_boundaries, dtype=np.int32)
+  test_bucket_boundaries = [9, 13, 17, 20, 24, 28, 33, 40, 49, 116]
 
-
-def get_input_fn(data_file, num_epochs, is_train, embedding_files):
+def get_input_fn(data_file, num_epochs, is_train, embedding_files, bucket_boundaries):
   # this needs to be created from here so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
 
@@ -413,11 +414,11 @@ def get_input_fn(data_file, num_epochs, is_train, embedding_files):
 
 def train_input_fn():
   return get_input_fn(args.train_file, num_epochs=hparams.num_train_epochs, is_train=True,
-                      embedding_files=embedding_files)
+                      embedding_files=embedding_files, bucket_boundaries=bucket_boundaries)
 
 
 def dev_input_fn():
-  return get_input_fn(args.dev_file, num_epochs=1, is_train=False, embedding_files=embedding_files)
+  return get_input_fn(args.dev_file, num_epochs=1, is_train=False, embedding_files=embedding_files, bucket_boundaries=test_bucket_boundaries)
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
