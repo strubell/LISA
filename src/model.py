@@ -195,13 +195,13 @@ class LISAModel:
               this_layer_attn_config = self.attention_config[i]
 
               if 'attention_fns' in this_layer_attn_config:
-                for attn_fn, attn_fn_map in this_layer_attn_config['attention_fns']:
+                for attn_fn, attn_fn_map in this_layer_attn_config['attention_fns'].items():
                   attention_fn_params = attention_fns.get_params(mode, attn_fn_map, predictions, feats, labels)
                   this_special_attn = attention_fns.dispatch(attn_fn_map['name'])(attention_fn_params)
                   special_attn.append(this_special_attn)
 
               # if 'value_fns' in this_layer_attn_config:
-              #   for value_fn, value_fn_map in this_layer_attn_config['value_fns']:
+              #   for value_fn, value_fn_map in this_layer_attn_config['value_fns'].items():
               #     value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels)
               #     this_special_values = attention_fns.dispatch(value_fn_map['name'])(value_fn_params)
               #     special_values.append(this_special_values)
