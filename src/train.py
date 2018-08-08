@@ -404,7 +404,7 @@ tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
 bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
 if args.bucket_boundaries != '':
-  bucket_boundaries = np.loadtxt(args.bucket_boundaries)
+  bucket_boundaries = np.loadtxt(args.bucket_boundaries, dtype=np.int32)
 
 
 def get_input_fn(data_file, num_epochs, is_train, embedding_files):
