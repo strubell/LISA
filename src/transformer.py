@@ -151,8 +151,8 @@ def dot_product_attention(q, k, v,
     # [batch, num_heads, query_length, memory_length]
     logits = tf.matmul(q, k, transpose_b=True)
 
-    logits = tf.Print(logits, tf.shape(special_attention), "special attn shape", summarize=10)
-    logits = tf.Print(logits, tf.shape(special_attention), "special attn shape", summarize=10)
+    logits = tf.Print(logits, [tf.shape(special_attention)], "special attn shape", summarize=10)
+    logits = tf.Print(logits, [tf.shape(special_attention)], "special attn shape", summarize=10)
 
 
     # concat special_attention to end of logits
