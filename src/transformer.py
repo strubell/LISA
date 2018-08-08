@@ -162,7 +162,7 @@ def dot_product_attention(q, k, v,
     return tf.matmul(weights_drop, v), logits
 
 
-def compute_qkv(antecedent, total_key_depth, total_value_depth):
+def compute_qkv(antecedent, input_depth, total_key_depth, total_value_depth):
   """Computes query, key and value.
   Args:
     total_key_depth: num_heads * key_dim
@@ -170,7 +170,7 @@ def compute_qkv(antecedent, total_key_depth, total_value_depth):
   Returns:
     q, k, v : [batch, length, depth] tensors
   """
-  params = tf.get_variable("qkv_transform", [1, 1, total_key_depth, 2*total_key_depth + total_value_depth])
+  params = tf.get_variable("qkv_transform", [1, 1, input_depth, 2*total_key_depth + total_value_depth])
   antecedent = tf.expand_dims(antecedent, 1)
   qkv_combined = tf.nn.conv2d(antecedent, params, [1, 1, 1, 1], "SAME")
   qkv_combined = tf.squeeze(qkv_combined, 1)
@@ -208,6 +208,8 @@ def multihead_attention(antecedent,
   #                    "attention heads (%d)." % (total_value_depth, num_heads))
   with tf.variable_scope("multihead_attention", values=[antecedent]):
 
+    input_size = antecedent.get_shape()[-1]
+
     total_output_size = head_size * num_heads
 
     num_basic_attention_heads = num_heads - len(special_attention)
@@ -216,7 +218,7 @@ def multihead_attention(antecedent,
     total_basic_key_size = num_basic_attention_heads * head_size
     total_basic_value_size = num_basic_value_heads * head_size
 
-    q, k, v = compute_qkv(antecedent, total_basic_key_size, total_basic_value_size)
+    q, k, v = compute_qkv(antecedent, input_size, total_basic_key_size, total_basic_value_size)
     q = split_heads(q, num_basic_attention_heads)
     k = split_heads(k, num_basic_attention_heads)
     v = split_heads(v, num_basic_value_heads)
