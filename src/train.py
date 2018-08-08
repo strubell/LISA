@@ -399,7 +399,7 @@ if args.debug:
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
 
 
-bucket_boundaries, test_bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
+bucket_boundaries, test_bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES, constants.DEFAULT_BUCKET_BOUNDARIES
 if args.bucket_boundaries != '':
   bucket_boundaries = np.loadtxt(args.bucket_boundaries, dtype=np.int32)
   test_bucket_boundaries = [9, 13, 17, 20, 24, 28, 33, 40, 49, 116]
