@@ -362,7 +362,7 @@ attention_config = {
   5: {
     'attention_fns': {
       'parse_heads': {
-        'name': '',
+        'name': 'copy_from_predicted',
         'params': {
           'train_attention_to_copy': {
             'label': 'parse_head'
