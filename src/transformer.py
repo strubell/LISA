@@ -1,4 +1,5 @@
 import tensorflow as tf
+import constants
 import nn_utils
 
 '''
@@ -53,7 +54,7 @@ def attention_bias_ignore_padding(tokens_to_keep):
     A `Tensor` with shape [batch, 1, 1, batch_seq_len].
   """
   # mask = tf.sequence_mask(lengths, tf.reduce_max(lengths))
-  mask = tf.cast(1 - tokens_to_keep, tf.float32) * -1e9
+  mask = tf.cast(1 - tokens_to_keep, tf.float32) * constants.VERY_SMALL
   return tf.expand_dims(tf.expand_dims(mask, axis=1), axis=1)
 
 

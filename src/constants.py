@@ -8,6 +8,9 @@ OOV_STRING = "<OOV>"
 
 DEFAULT_BUCKET_BOUNDARIES = [20, 30, 50, 80]
 
+VERY_LARGE = 1e9
+VERY_SMALL = -1e9
+
 # Optimizer hyperparameters
 hparams = {
   'learning_rate': 0.04,
