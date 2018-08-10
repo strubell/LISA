@@ -91,16 +91,16 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
+    moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
+    tf.global_variables_initializer()
+    moving_average_op = moving_averager.apply(tf.trainable_variables())
+    tf.logging.log(tf.logging.INFO,
+                   "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
+    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
+
     # todo move this somewhere else?
     # also, double check that this is working
     def moving_average_getter(getter, name, *args, **kwargs):
-
-      moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
-      tf.global_variables_initializer()
-      moving_average_op = moving_averager.apply(tf.trainable_variables())
-      tf.logging.log(tf.logging.INFO,
-                     "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
-      tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
       var = getter(name, *args, **kwargs)
       averaged_var = moving_averager.average(var)
