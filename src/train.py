@@ -424,8 +424,8 @@ tf.logging.set_verbosity(tf.logging.INFO)
 vocab = Vocab(args.train_file, data_config, args.save_dir)
 vocab.update(args.dev_file)
 
-embedding_files = [input_map['pretrained_embeddings'] for input_map in model_config['inputs'].values()
-                   if 'pretrained_embeddings' in input_map]
+embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in model_config['embeddings'].values()
+                   if 'pretrained_embeddings' in embeddings_map]
 
 shuffle_buffer_multiplier = 100
 eval_throttle_secs = 1000
