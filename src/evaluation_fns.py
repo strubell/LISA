@@ -328,7 +328,7 @@ def get_params(task_outputs, task_map, train_outputs, features, labels, task_lab
     params_map = task_map['params']
     for param_name, param_values in params_map.items():
       if 'reverse_maps' in param_values:
-        params[param_name] = {map_name: reverse_maps[map_name] for map_name in param_values['maps']}
+        params[param_name] = {map_name: reverse_maps[map_name] for map_name in param_values['reverse_maps']}
       elif 'label' in param_values:
         params[param_name] = labels[param_values['label']]
       elif 'feature' in param_values:
