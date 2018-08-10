@@ -359,7 +359,7 @@ attention_config = {
           },
           'eval_label_scores': {
             'layer': 'joint_pos_predicate',
-            'output': 'gold_pos_predictions'
+            'output': 'gold_pos_probabilities'
           },
           'label_embeddings': {
             'embeddings': 'gold_pos'
@@ -392,7 +392,7 @@ attention_config = {
     #       },
     #       'eval_labels': {
     #         'layer': 'parse_label',
-    #         'output': 'scores'
+    #         'output': 'probabilities'
     #       },
     #       'label_embeddings': {
     #         'embeddings': 'parse_label'

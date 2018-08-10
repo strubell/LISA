@@ -19,10 +19,9 @@ def label_attention(mode, train_label_scores, eval_label_scores, label_embedding
     if len(label_scores.get_shape()) < 3:
       label_scores = tf.one_hot(label_scores, vocab_size)
 
-    softmax_label_scores = tf.nn.softmax(label_scores)
-    softmax_label_scores = tf.reshape(softmax_label_scores, [-1, vocab_size])
+    label_scores = tf.reshape(label_scores, [-1, vocab_size])
     label_embeddings = tf.reshape(label_embeddings, [vocab_size, label_embedding_dim])
-    averaged = tf.matmul(softmax_label_scores, label_embeddings)
+    averaged = tf.matmul(label_scores, label_embeddings)
 
     return tf.reshape(averaged, [batch_size, batch_seq_len, label_embedding_dim])
 

@@ -4,6 +4,30 @@ import nn_utils
 import tf_utils
 
 
+def get_separate_scores_preds_from_joint(joint_outputs, joint_maps, joint_num_labels):
+  predictions = joint_outputs['predictions']
+  scores = joint_outputs['scores']
+  output_shape = tf.shape(predictions)
+  batch_size = output_shape[0]
+  batch_seq_len = output_shape[1]
+  sep_outputs = {}
+  for map_name, label_comp_map in joint_maps.items():
+    short_map_name = map_name.split('_to_')[-1]
+    label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
+    sep_outputs["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
+
+    # marginalize out probabilities for this task
+    task_num_labels = tf.shape(tf.unique(tf.reshape(label_comp_map, [-1]))[0])[0]
+    print(task_num_labels)
+    joint_probabilities = tf.nn.softmax(scores)
+    joint_probabilities_flat = tf.reshape(joint_probabilities, [-1, joint_num_labels])
+    segment_ids = tf.squeeze(tf.nn.embedding_lookup(label_comp_map, tf.range(joint_num_labels)), -1)
+    segment_scores = tf.unsorted_segment_sum(tf.transpose(joint_probabilities_flat), segment_ids, task_num_labels)
+    segment_scores = tf.reshape(tf.transpose(segment_scores), [batch_size, batch_seq_len, task_num_labels])
+    sep_outputs["%s_probabilities" % short_map_name] = segment_scores
+  return sep_outputs
+
+
 def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, joint_maps,
                              transition_params):
 
@@ -35,19 +59,20 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
       'scores': logits
     }
 
-    # now get separate-task predictions for each of the maps we've passed through
-    for map_name, label_comp_map in joint_maps.items():
-      short_map_name = map_name.split('_to_')[-1]
-      label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
-      output["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
+    # now get separate-task scores and predictions for each of the maps we've passed through
+    separate_output = get_separate_scores_preds_from_joint(output, joint_maps, num_labels)
+    combined_output = {**output, **separate_output}
 
-
-    return output
+    return combined_output
 
 
 def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, transition_params):
   class_mlp_size = model_config['class_mlp_size']
   attn_mlp_size = model_config['attn_mlp_size']
+
+  if transition_params is not None:
+    print('Transition params not supported in parse_bilinear')
+    exit(1)
 
   with tf.variable_scope('parse_bilinear'):
     with tf.variable_scope('MLP'):
@@ -63,6 +88,7 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
     num_tokens = tf.reduce_sum(tokens_to_keep)
 
     predictions = tf.argmax(arc_logits, -1)
+    probabilities = tf.nn.softmax(arc_logits)
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
     loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
@@ -70,6 +96,7 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
     output = {
       'loss': loss,
       'predictions': predictions,
+      'probabilities': probabilities,
       'scores': arc_logits,
       'dep_rel_mlp': dep_rel_mlp,
       'head_rel_mlp': head_rel_mlp
@@ -86,10 +113,8 @@ def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_label
     logits, _ = nn_utils.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, num_labels,
                                                          parse_preds, hparams.bilinear_dropout)
 
-
-  print(logits)
-
   predictions = tf.argmax(logits, -1)
+  probabilities = tf.nn.softmax(predictions)
 
   cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
@@ -100,6 +125,7 @@ def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_label
     'loss': loss,
     'scores': logits,
     'predictions': predictions,
+    'probabilities': probabilities
   }
 
   return output
