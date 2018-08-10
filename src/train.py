@@ -153,6 +153,9 @@ model_config = {
     'gold_pos': {
       'embedding_dim': 25,
     },
+    'parse_label': {
+      'embedding_dim': 25,
+    },
     # 'predicate': {
     #   'embedding_dim': 100
     # }
