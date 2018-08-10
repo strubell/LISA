@@ -117,9 +117,11 @@ class LISAModel:
 
   def model_fn(self, features, mode):
 
+    # todo will estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
     # todo move this somewhere else?
+    # also, double check that this is working
     moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay)
     moving_average_op = moving_averager.apply(tf.trainable_variables())
     tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
@@ -183,7 +185,7 @@ class LISAModel:
         tf.logging.log(tf.logging.INFO, "Created embeddings for '%s'." % embedding_name)
 
       inputs_list = []
-      for input_name, input_map in self.model_config['inputs'].items():
+      for input_name in self.model_config['inputs']:
         input_values = feats[input_name]
         input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
         inputs_list.append(input_embedding_lookup)
@@ -191,7 +193,6 @@ class LISAModel:
 
       current_input = tf.concat(inputs_list, axis=2)
 
-      # todo will estimators handle dropout for us or do we need to do it on our own?
       current_input = tf.nn.dropout(current_input, hparams.input_dropout)
 
       with tf.variable_scope('project_input'):
