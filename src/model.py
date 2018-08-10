@@ -225,7 +225,7 @@ class LISAModel:
               if 'value_fns' in this_layer_attn_config:
                 for value_fn, value_fn_map in this_layer_attn_config['value_fns'].items():
                   value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels, embeddings)
-                  this_special_values = attention_fns.dispatch(value_fn_map['name'])(**value_fn_params)
+                  this_special_values = value_fns.dispatch(value_fn_map['name'])(**value_fn_params)
                   special_values.append(this_special_values)
 
             current_input = transformer.transformer(current_input, tokens_to_keep, layer_config['head_dim'],
