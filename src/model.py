@@ -30,7 +30,8 @@ class LISAModel:
       return self.train_hparams
     return self.test_hparams
 
-  def load_transitions(self, transition_statistics, num_classes, vocab_map):
+  @staticmethod
+  def load_transitions(transition_statistics, num_classes, vocab_map):
     transition_statistics_np = np.zeros((num_classes, num_classes))
     with open(transition_statistics, 'r') as f:
       for line in f:
@@ -100,7 +101,8 @@ class LISAModel:
 
       return embedding_table
 
-  def load_pretrained_embeddings(self, pretrained_fname):
+  @staticmethod
+  def load_pretrained_embeddings(pretrained_fname):
     tf.logging.log(tf.logging.INFO, "Loading pre-trained embedding file: %s" % pretrained_fname)
 
     # TODO: np.loadtxt refuses to work for some reason
@@ -124,6 +126,7 @@ class LISAModel:
     # also, double check that this is working
     moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay)
     moving_average_op = moving_averager.apply(tf.trainable_variables())
+    tf.logging.log(tf.logging.INFO, "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
     tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
     def moving_average_getter(getter, name, *args, **kwargs):
