@@ -124,12 +124,16 @@ class LISAModel:
 
     # todo move this somewhere else?
     # also, double check that this is working
-    moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay)
-    moving_average_op = moving_averager.apply(tf.trainable_variables())
-    tf.logging.log(tf.logging.INFO, "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
+
 
     def moving_average_getter(getter, name, *args, **kwargs):
+
+      moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay)
+      moving_average_op = moving_averager.apply(tf.trainable_variables())
+      tf.logging.log(tf.logging.INFO,
+                     "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
+      tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
+
       var = getter(name, *args, **kwargs)
       averaged_var = moving_averager.average(var)
       return averaged_var if averaged_var else var
