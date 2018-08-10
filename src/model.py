@@ -91,185 +91,188 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
-    moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
-    moving_average_op = moving_averager.apply(tf.trainable_variables())
-    tf.logging.log(tf.logging.INFO,
-                   "Using moving average for variables: %s" % str([v for v in tf.GraphKeys.TRAINABLE_VARIABLES]))
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
-    # todo move this somewhere else?
-    # also, double check that this is working
-    def moving_average_getter(getter, name, *args, **kwargs):
+    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
-      var = getter(name, *args, **kwargs)
-      averaged_var = moving_averager.average(var)
-      return averaged_var if averaged_var else var
+      moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
+      moving_average_op = moving_averager.apply(tf.trainable_variables())
+      tf.logging.log(tf.logging.INFO,
+                     "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
+      tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
-    getter = moving_average_getter # None if mode == ModeKeys.TRAIN else moving_average_getter
+      # todo move this somewhere else?
+      # also, double check that this is working
+      def moving_average_getter(getter, name, *args, **kwargs):
 
-    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE, custom_getter=getter):
+        var = getter(name, *args, **kwargs)
+        averaged_var = moving_averager.average(var)
+        return averaged_var if averaged_var else var
 
-      batch_shape = tf.shape(features)
-      batch_size = batch_shape[0]
-      batch_seq_len = batch_shape[1]
-      layer_config = self.model_config['layers']
-      sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
+      getter = None if mode == ModeKeys.TRAIN else moving_average_getter
 
-      feats = {f: features[:, :, idx] for f, idx in self.feature_idx_map.items()}
+      with tf.variable_scope("LISA2", custom_getter=getter):
 
-      # todo this assumes that word_type is always passed in
-      words = feats['word_type']
+        batch_shape = tf.shape(features)
+        batch_size = batch_shape[0]
+        batch_seq_len = batch_shape[1]
+        layer_config = self.model_config['layers']
+        sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
-      # for masking out padding tokens
-      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
-                                tf.ones([batch_size, batch_seq_len]))
+        feats = {f: features[:, :, idx] for f, idx in self.feature_idx_map.items()}
 
-      # todo fix masking -- do it in lookup table?
-      feats = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in feats.items()}
+        # todo this assumes that word_type is always passed in
+        words = feats['word_type']
 
-      labels = {}
-      for l, idx in self.label_idx_map.items():
-        these_labels = features[:, :, idx[0]:idx[1]] if idx[1] != -1 else features[:, :, idx[0]:]
-        these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
-        # check if we need to mask another dimension
-        if idx[1] == -1:
-          last_dim = tf.shape(these_labels)[2]
-          this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
-                               tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
-                               tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
-          these_labels_masked = tf.multiply(these_labels_masked, this_mask)
-        else:
-          these_labels_masked = tf.squeeze(these_labels_masked, -1)
-        labels[l] = these_labels_masked
+        # for masking out padding tokens
+        tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
+                                  tf.ones([batch_size, batch_seq_len]))
 
-      embeddings = {}
-      for embedding_name, embedding_map in self.model_config['embeddings'].items():
-        embedding_dim = embedding_map['embedding_dim']
-        if 'pretrained_embeddings' in embedding_map:
-          input_pretrained_embeddings = embedding_map['pretrained_embeddings']
-          include_oov = True
-          embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
-                                                     pretrained_fname=input_pretrained_embeddings)
-        else:
-          num_embeddings = self.vocab.vocab_names_sizes[embedding_name]
-          include_oov = self.vocab.oovs[embedding_name]
-          embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
-                                                     num_embeddings=num_embeddings)
-        embeddings[embedding_name] = embedding_table
-        tf.logging.log(tf.logging.INFO, "Created embeddings for '%s'." % embedding_name)
+        # todo fix masking -- do it in lookup table?
+        feats = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in feats.items()}
 
-      inputs_list = []
-      for input_name in self.model_config['inputs']:
-        input_values = feats[input_name]
-        input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
-        inputs_list.append(input_embedding_lookup)
-        tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
+        labels = {}
+        for l, idx in self.label_idx_map.items():
+          these_labels = features[:, :, idx[0]:idx[1]] if idx[1] != -1 else features[:, :, idx[0]:]
+          these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
+          # check if we need to mask another dimension
+          if idx[1] == -1:
+            last_dim = tf.shape(these_labels)[2]
+            this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
+                                 tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
+                                 tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
+            these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+          else:
+            these_labels_masked = tf.squeeze(these_labels_masked, -1)
+          labels[l] = these_labels_masked
 
-      current_input = tf.concat(inputs_list, axis=2)
+        embeddings = {}
+        for embedding_name, embedding_map in self.model_config['embeddings'].items():
+          embedding_dim = embedding_map['embedding_dim']
+          if 'pretrained_embeddings' in embedding_map:
+            input_pretrained_embeddings = embedding_map['pretrained_embeddings']
+            include_oov = True
+            embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
+                                                       pretrained_fname=input_pretrained_embeddings)
+          else:
+            num_embeddings = self.vocab.vocab_names_sizes[embedding_name]
+            include_oov = self.vocab.oovs[embedding_name]
+            embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
+                                                       num_embeddings=num_embeddings)
+          embeddings[embedding_name] = embedding_table
+          tf.logging.log(tf.logging.INFO, "Created embeddings for '%s'." % embedding_name)
 
-      current_input = tf.nn.dropout(current_input, hparams.input_dropout)
+        inputs_list = []
+        for input_name in self.model_config['inputs']:
+          input_values = feats[input_name]
+          input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
+          inputs_list.append(input_embedding_lookup)
+          tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
 
-      with tf.variable_scope('project_input'):
-        current_input = nn_utils.MLP(current_input, sa_hidden_size, n_splits=1)
+        current_input = tf.concat(inputs_list, axis=2)
 
-      predictions = {}
-      eval_metric_ops = {}
-      export_outputs = {}
-      loss = tf.constant(0.)
-      items_to_log = {}
+        current_input = tf.nn.dropout(current_input, hparams.input_dropout)
 
-      num_layers = max(self.task_config.keys()) + 1
-      tf.logging.log(tf.logging.INFO, "Creating transformer model with %d layers" % num_layers)
-      with tf.variable_scope('transformer'):
-        current_input = transformer.add_timing_signal_1d(current_input)
-        for i in range(num_layers):
-          with tf.variable_scope('layer%d' % i):
+        with tf.variable_scope('project_input'):
+          current_input = nn_utils.MLP(current_input, sa_hidden_size, n_splits=1)
 
-            special_attn = []
-            special_values = []
-            if i in self.attention_config:
-              this_layer_attn_config = self.attention_config[i]
+        predictions = {}
+        eval_metric_ops = {}
+        export_outputs = {}
+        loss = tf.constant(0.)
+        items_to_log = {}
 
-              if 'attention_fns' in this_layer_attn_config:
-                for attn_fn, attn_fn_map in this_layer_attn_config['attention_fns'].items():
-                  attention_fn_params = attention_fns.get_params(mode, attn_fn_map, predictions, feats, labels)
-                  this_special_attn = attention_fns.dispatch(attn_fn_map['name'])(**attention_fn_params)
-                  special_attn.append(this_special_attn)
+        num_layers = max(self.task_config.keys()) + 1
+        tf.logging.log(tf.logging.INFO, "Creating transformer model with %d layers" % num_layers)
+        with tf.variable_scope('transformer'):
+          current_input = transformer.add_timing_signal_1d(current_input)
+          for i in range(num_layers):
+            with tf.variable_scope('layer%d' % i):
 
-              if 'value_fns' in this_layer_attn_config:
-                for value_fn, value_fn_map in this_layer_attn_config['value_fns'].items():
-                  value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels, embeddings)
-                  this_special_values = value_fns.dispatch(value_fn_map['name'])(**value_fn_params)
-                  special_values.append(this_special_values)
+              special_attn = []
+              special_values = []
+              if i in self.attention_config:
+                this_layer_attn_config = self.attention_config[i]
 
-            current_input = transformer.transformer(current_input, tokens_to_keep, layer_config['head_dim'],
-                                                    layer_config['num_heads'], hparams.attn_dropout,
-                                                    hparams.ff_dropout, hparams.prepost_dropout,
-                                                    layer_config['ff_hidden_size'], special_attn, special_values)
-            if i in self.task_config:
+                if 'attention_fns' in this_layer_attn_config:
+                  for attn_fn, attn_fn_map in this_layer_attn_config['attention_fns'].items():
+                    attention_fn_params = attention_fns.get_params(mode, attn_fn_map, predictions, feats, labels)
+                    this_special_attn = attention_fns.dispatch(attn_fn_map['name'])(**attention_fn_params)
+                    special_attn.append(this_special_attn)
 
-              # if normalization is done in layer_preprocess, then it should also be done
-              # on the output, since the output can grow very large, being the sum of
-              # a whole stack of unnormalized layer outputs.
-              current_input = nn_utils.layer_norm(current_input)
+                if 'value_fns' in this_layer_attn_config:
+                  for value_fn, value_fn_map in this_layer_attn_config['value_fns'].items():
+                    value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels, embeddings)
+                    this_special_values = value_fns.dispatch(value_fn_map['name'])(**value_fn_params)
+                    special_values.append(this_special_values)
 
-              # todo test a list of tasks for each layer
-              for task, task_map in self.task_config[i].items():
-                task_labels = labels[task]
-                task_vocab_size = self.vocab.vocab_names_sizes[task] if task in self.vocab.vocab_names_sizes else -1
+              current_input = transformer.transformer(current_input, tokens_to_keep, layer_config['head_dim'],
+                                                      layer_config['num_heads'], hparams.attn_dropout,
+                                                      hparams.ff_dropout, hparams.prepost_dropout,
+                                                      layer_config['ff_hidden_size'], special_attn, special_values)
+              if i in self.task_config:
 
-                # Set up CRF / Viterbi transition params if specified
-                with tf.variable_scope("crf"):  # to share parameters, change scope here
-                  transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
+                # if normalization is done in layer_preprocess, then it should also be done
+                # on the output, since the output can grow very large, being the sum of
+                # a whole stack of unnormalized layer outputs.
+                current_input = nn_utils.layer_norm(current_input)
 
-                  # todo vocab_lookups not yet initialized -- fix
-                  transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
-                                                           self.vocab.vocab_maps[task]) if transition_stats_file else None
+                # todo test a list of tasks for each layer
+                for task, task_map in self.task_config[i].items():
+                  task_labels = labels[task]
+                  task_vocab_size = self.vocab.vocab_names_sizes[task] if task in self.vocab.vocab_names_sizes else -1
 
-                  # create transition parameters if training or decoding with crf/viterbi
-                  task_crf = 'crf' in task_map and task_map['crf']
-                  task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
-                  transition_params = None
-                  if task_viterbi_decode or task_crf:
-                    transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
-                                                        initializer=tf.constant_initializer(transition_stats),
-                                                        trainable=task_crf)
-                    train_or_decode_str = "training" if task_crf else "decoding"
-                    tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
+                  # Set up CRF / Viterbi transition params if specified
+                  with tf.variable_scope("crf"):  # to share parameters, change scope here
+                    transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
 
-                output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
-                                                         feats, labels, current_input, task_labels, task_vocab_size,
-                                                         self.vocab.joint_label_lookup_maps, tokens_to_keep,
-                                                         transition_params, hparams)
-                task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
+                    # todo vocab_lookups not yet initialized -- fix
+                    transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
+                                                             self.vocab.vocab_maps[task]) if transition_stats_file else None
 
-                # want task_outputs to have:
-                # - predictions
-                # - loss
-                # - scores
-                predictions[task] = task_outputs
+                    # create transition parameters if training or decoding with crf/viterbi
+                    task_crf = 'crf' in task_map and task_map['crf']
+                    task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
+                    transition_params = None
+                    if task_viterbi_decode or task_crf:
+                      transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
+                                                          initializer=tf.constant_initializer(transition_stats),
+                                                          trainable=task_crf)
+                      train_or_decode_str = "training" if task_crf else "decoding"
+                      tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
 
-                # do the evaluation
-                for eval_name, eval_map in task_map['eval_fns'].items():
-                  eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
-                                                             task_labels, self.vocab.reverse_maps, tokens_to_keep)
-                  eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-                  eval_metric_ops[eval_name] = eval_result
+                  output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
+                                                           feats, labels, current_input, task_labels, task_vocab_size,
+                                                           self.vocab.joint_label_lookup_maps, tokens_to_keep,
+                                                           transition_params, hparams)
+                  task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
-                # get the individual task loss and apply penalty
-                this_task_loss = task_outputs['loss'] * task_map['penalty']
+                  # want task_outputs to have:
+                  # - predictions
+                  # - loss
+                  # - scores
+                  predictions[task] = task_outputs
 
-                # log this task's loss
-                items_to_log['%s_loss' % task] = this_task_loss
+                  # do the evaluation
+                  for eval_name, eval_map in task_map['eval_fns'].items():
+                    eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
+                                                               task_labels, self.vocab.reverse_maps, tokens_to_keep)
+                    eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
+                    eval_metric_ops[eval_name] = eval_result
 
-                # add this loss to the overall loss being minimized
-                loss += this_task_loss
+                  # get the individual task loss and apply penalty
+                  this_task_loss = task_outputs['loss'] * task_map['penalty']
 
-                # todo add the predictions to export_outputs
-                # todo add un-joint predictions too?
-                # predict_output = tf.estimator.export.PredictOutput({'scores': task_outputs['scores'],
-                #                                                     'predictions': task_outputs['predictions']})
-                # export_outputs['%s_predict' % task] = predict_output
+                  # log this task's loss
+                  items_to_log['%s_loss' % task] = this_task_loss
+
+                  # add this loss to the overall loss being minimized
+                  loss += this_task_loss
+
+                  # todo add the predictions to export_outputs
+                  # todo add un-joint predictions too?
+                  # predict_output = tf.estimator.export.PredictOutput({'scores': task_outputs['scores'],
+                  #                                                     'predictions': task_outputs['predictions']})
+                  # export_outputs['%s_predict' % task] = predict_output
 
       items_to_log['loss'] = loss
 
