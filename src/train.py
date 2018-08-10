@@ -143,15 +143,24 @@ model_config = {
     'head_dim': 25,
     'ff_hidden_size': 800,
   },
-  'inputs': {
+  # todo add label embeddings for value fns here
+  # todo also need to make it so that these can be grabbed as inputs to functions
+  'embeddings': {
     'word_type': {
       'embedding_dim': 100,
       'pretrained_embeddings': 'embeddings/glove.6B.100d.txt'
     },
+    'gold_pos': {
+      'embedding_dim': 200,
+    },
     # 'predicate': {
     #   'embedding_dim': 100
     # }
-  }
+  },
+  'inputs': [
+    'word_type',
+    # 'predicate'
+  ],
 }
 
 # todo validate these files
@@ -165,7 +174,7 @@ task_config = {
           'name': 'joint_softmax_classifier',
           'params': {
             'joint_maps': {
-              'maps': [
+              'joint_maps': [
                 'joint_pos_predicate_to_gold_pos',
                 'joint_pos_predicate_to_predicate'
               ]
@@ -238,9 +247,6 @@ task_config = {
           }
         },
         'eval_fns': {
-          # 'label_accuracy': {
-          #   'name': 'accuracy'
-          # }
           'parse_eval': {
             'name': 'conll_parse_eval',
             'params': {
@@ -251,7 +257,7 @@ task_config = {
                 'value': args.save_dir + '/parse_preds.txt'
               },
               'reverse_maps': {
-                'maps': [
+                'reverse_maps': [
                   'word',
                   'parse_label',
                   'gold_pos'
@@ -307,7 +313,7 @@ task_config = {
                 'value': args.save_dir + '/srl_preds.txt'
               },
               'reverse_maps': {
-                'maps': [
+                'reverse_maps': [
                   'word',
                   'srl',
                   'gold_pos'
@@ -354,6 +360,9 @@ attention_config = {
           'eval_labels': {
             'layer': 'joint_pos_predicate',
             'output': 'gold_pos_predictions'
+          },
+          'label_embeddings': {
+            'embeddings': 'gold_pos'
           }
         }
       }
@@ -374,20 +383,23 @@ attention_config = {
         }
       }
     },
-    'value_fns': {
-      'parse_label': {
-        'name': 'label_attention',
-        'params': {
-          'train_labels': {
-            'label': 'parse_label'
-          },
-          'eval_labels': {
-            'layer': 'parse_label',
-            'output': 'scores'
-          }
-        }
-      }
-    }
+    # 'value_fns': {
+    #   'parse_label': {
+    #     'name': 'label_attention',
+    #     'params': {
+    #       'train_labels': {
+    #         'label': 'parse_label'
+    #       },
+    #       'eval_labels': {
+    #         'layer': 'parse_label',
+    #         'output': 'scores'
+    #       },
+    #       'label_embeddings': {
+    #         'embeddings': 'parse_label'
+    #       }
+    #     }
+    #   }
+    # }
   }
 }
 

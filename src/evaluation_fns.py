@@ -320,15 +320,15 @@ def dispatch(fn_name):
     exit(1)
 
 
-def get_params(task_outputs, task_map, train_outputs, features, labels, task_labels, lookup_maps, tokens_to_keep):
+def get_params(task_outputs, task_map, train_outputs, features, labels, task_labels, reverse_maps, tokens_to_keep):
 
   # always pass through predictions, targets and mask
   params = {'predictions': task_outputs['predictions'], 'targets': task_labels, 'mask': tokens_to_keep}
   if 'params' in task_map:
     params_map = task_map['params']
     for param_name, param_values in params_map.items():
-      if 'maps' in param_values:
-        params[param_name] = {map_name: lookup_maps[map_name] for map_name in param_values['maps']}
+      if 'reverse_maps' in param_values:
+        params[param_name] = {map_name: reverse_maps[map_name] for map_name in param_values['maps']}
       elif 'label' in param_values:
         params[param_name] = labels[param_values['label']]
       elif 'feature' in param_values:

@@ -236,7 +236,7 @@ def get_params(mode, model_config, task_map, train_outputs, features, labels, cu
   params_map = task_map['params']
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
-    if 'maps' in param_values:
+    if 'joint_maps' in param_values:
       params[param_name] = {map_name: joint_lookup_maps[map_name] for map_name in param_values['maps']}
     elif 'label' in param_values:
       params[param_name] = labels[param_values['label']]

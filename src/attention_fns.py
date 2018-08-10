@@ -4,9 +4,12 @@ import constants
 
 def copy_from_predicted(mode, train_attention_to_copy, eval_attention_to_copy):
   attention_to_copy = train_attention_to_copy if mode == tf.estimator.ModeKeys.TRAIN else eval_attention_to_copy
+
+  # check whether this thing is actually scores or if it's predictions, and needs
+  # to be expanded out to one-hot scores. If it's actually scores, dims should be
+  # batch x batch_seq_len x batch_seq_len, and thus rank should be 3
   if len(attention_to_copy.get_shape()) < 3:
-    # use non-standard on and off values because we're going to softmax this later, and
-    # want the softmaxed result to be 0/1
+    # use non-standard on and off values because we're going to softmax this later, and want the result to be 0/1
     attention_to_copy = tf.one_hot(attention_to_copy, tf.shape(attention_to_copy)[-1], on_value=constants.VERY_LARGE,
                                    off_value=constants.VERY_SMALL)
 

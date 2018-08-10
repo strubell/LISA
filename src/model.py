@@ -38,8 +38,38 @@ class LISAModel:
         transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
     return transition_statistics_np
 
-  def get_embedding_lookup(self, name, embedding_dim, embedding_values, include_oov,
-                           pretrained_fname=None, num_embeddings=None):
+  # def get_embedding_lookup(self, name, embedding_dim, embedding_values, include_oov,
+  #                          pretrained_fname=None, num_embeddings=None):
+  #
+  #   with tf.variable_scope("%s_embeddings" % name):
+  #     initializer = tf.random_normal_initializer()
+  #     if pretrained_fname:
+  #       pretrained_embeddings = self.load_pretrained_embeddings(pretrained_fname)
+  #       initializer = tf.constant_initializer(pretrained_embeddings)
+  #       pretrained_num_embeddings, pretrained_embedding_dim = pretrained_embeddings.shape
+  #       if pretrained_embedding_dim != embedding_dim:
+  #         tf.logging.log(tf.logging.ERROR, "Pre-trained %s embedding dim does not match"
+  #                                          " specified dim (%d vs %d)." % (name,
+  #                                                                          pretrained_embedding_dim,
+  #                                                                          embedding_dim))
+  #       if num_embeddings and num_embeddings != pretrained_num_embeddings:
+  #         tf.logging.log(tf.logging.ERROR, "Number of pre-trained %s embeddings does not match"
+  #                                          " specified number of embeddings (%d vs %d)." % (name,
+  #                                                                                           pretrained_num_embeddings,
+  #                                                                                           num_embeddings))
+  #       num_embeddings = pretrained_num_embeddings
+  #
+  #     embedding_table = tf.get_variable(name="embeddings", shape=[num_embeddings, embedding_dim],
+  #                                       initializer=initializer)
+  #
+  #     if include_oov:
+  #       oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, embedding_dim],
+  #                                       initializer=tf.random_normal_initializer())
+  #       embedding_table = tf.concat([embedding_table, oov_embedding], axis=0,
+  #                                   name="embeddings_table")
+  #
+  #     return tf.nn.embedding_lookup(embedding_table, embedding_values)
+  def get_embedding_table(self, name, embedding_dim, include_oov, pretrained_fname=None, num_embeddings=None):
 
     with tf.variable_scope("%s_embeddings" % name):
       initializer = tf.random_normal_initializer()
@@ -68,7 +98,7 @@ class LISAModel:
         embedding_table = tf.concat([embedding_table, oov_embedding], axis=0,
                                     name="embeddings_table")
 
-      return tf.nn.embedding_lookup(embedding_table, embedding_values)
+      return embedding_table
 
   def load_pretrained_embeddings(self, pretrained_fname):
     tf.logging.log(tf.logging.INFO, "Loading pre-trained embedding file: %s" % pretrained_fname)
@@ -136,39 +166,30 @@ class LISAModel:
           these_labels_masked = tf.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
 
+      embeddings = {}
+      for embedding_name, embedding_map in self.model_config['embeddings'].items():
+        embedding_dim = embedding_map['embedding_dim']
+        if 'pretrained_embeddings' in embedding_map:
+          input_pretrained_embeddings = embedding_map['pretrained_embeddings']
+          include_oov = True
+          embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
+                                                     pretrained_fname=input_pretrained_embeddings)
+        else:
+          num_embeddings = self.vocab.vocab_names_sizes[embedding_name]
+          include_oov = self.vocab.oovs[embedding_name]
+          embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
+                                                     num_embeddings=num_embeddings)
+        embeddings[embedding_name] = embedding_table
+        tf.logging.log(tf.logging.INFO, "Created embeddings for '%s'." % embedding_name)
+
       inputs_list = []
       for input_name, input_map in self.model_config['inputs'].items():
-        # words = feats['word_type']
         input_values = feats[input_name]
-        input_embedding_dim = input_map['embedding_dim']
-        if 'pretrained_embeddings' in input_map:
-          input_pretrained_embeddings = input_map['pretrained_embeddings']
-          input_include_oov = True
-          input_embedding_lookup = self.get_embedding_lookup(input_name, input_embedding_dim,
-                                                             input_values, input_include_oov,
-                                                             pretrained_fname=input_pretrained_embeddings)
-        else:
-          num_embeddings = self.vocab.vocab_names_sizes[input_name]
-          input_include_oov = self.vocab.oovs[input_name]
-          input_embedding_lookup = self.get_embedding_lookup(input_name, input_embedding_dim,
-                                                             input_values, input_include_oov,
-                                                             num_embeddings=num_embeddings)
+        input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
         inputs_list.append(input_embedding_lookup)
         tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
 
       current_input = tf.concat(inputs_list, axis=2)
-
-      # todo this is parse specific
-      # compute targets adj matrix
-      # i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(batch_seq_len), indexing="ij")
-      # idx = tf.stack([i1, i2, labels['parse_head']], axis=-1)
-      # adj = tf.scatter_nd(idx, tf.ones([batch_size, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
-      # mask2d = tokens_to_keep * tf.transpose(tokens_to_keep)
-      # adj = adj * mask2d
-
-      # word_embeddings_table = self.load_pretrained_embeddings(self.args.word_embedding_file)
-      # word_embeddings = tf.nn.embedding_lookup(word_embeddings_table, words)
-      # current_input = word_embeddings
 
       # todo will estimators handle dropout for us or do we need to do it on our own?
       current_input = tf.nn.dropout(current_input, hparams.input_dropout)
@@ -200,11 +221,11 @@ class LISAModel:
                   this_special_attn = attention_fns.dispatch(attn_fn_map['name'])(**attention_fn_params)
                   special_attn.append(this_special_attn)
 
-              # if 'value_fns' in this_layer_attn_config:
-              #   for value_fn, value_fn_map in this_layer_attn_config['value_fns'].items():
-              #     value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels)
-              #     this_special_values = attention_fns.dispatch(value_fn_map['name'])(**value_fn_params)
-              #     special_values.append(this_special_values)
+              if 'value_fns' in this_layer_attn_config:
+                for value_fn, value_fn_map in this_layer_attn_config['value_fns'].items():
+                  value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels, embeddings)
+                  this_special_values = attention_fns.dispatch(value_fn_map['name'])(**value_fn_params)
+                  special_values.append(this_special_values)
 
             current_input = transformer.transformer(current_input, tokens_to_keep, layer_config['head_dim'],
                                                     layer_config['num_heads'], hparams.attn_dropout,
