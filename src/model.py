@@ -94,7 +94,7 @@ class LISAModel:
     moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
     moving_average_op = moving_averager.apply(tf.trainable_variables())
     tf.logging.log(tf.logging.INFO,
-                   "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
+                   "Using moving average for variables: %s" % str([v.name for v in tf.GraphKeys.TRAINABLE_VARIABLES]))
     tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
     # todo move this somewhere else?
