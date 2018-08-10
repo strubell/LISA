@@ -39,37 +39,6 @@ class LISAModel:
         transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
     return transition_statistics_np
 
-  # def get_embedding_lookup(self, name, embedding_dim, embedding_values, include_oov,
-  #                          pretrained_fname=None, num_embeddings=None):
-  #
-  #   with tf.variable_scope("%s_embeddings" % name):
-  #     initializer = tf.random_normal_initializer()
-  #     if pretrained_fname:
-  #       pretrained_embeddings = self.load_pretrained_embeddings(pretrained_fname)
-  #       initializer = tf.constant_initializer(pretrained_embeddings)
-  #       pretrained_num_embeddings, pretrained_embedding_dim = pretrained_embeddings.shape
-  #       if pretrained_embedding_dim != embedding_dim:
-  #         tf.logging.log(tf.logging.ERROR, "Pre-trained %s embedding dim does not match"
-  #                                          " specified dim (%d vs %d)." % (name,
-  #                                                                          pretrained_embedding_dim,
-  #                                                                          embedding_dim))
-  #       if num_embeddings and num_embeddings != pretrained_num_embeddings:
-  #         tf.logging.log(tf.logging.ERROR, "Number of pre-trained %s embeddings does not match"
-  #                                          " specified number of embeddings (%d vs %d)." % (name,
-  #                                                                                           pretrained_num_embeddings,
-  #                                                                                           num_embeddings))
-  #       num_embeddings = pretrained_num_embeddings
-  #
-  #     embedding_table = tf.get_variable(name="embeddings", shape=[num_embeddings, embedding_dim],
-  #                                       initializer=initializer)
-  #
-  #     if include_oov:
-  #       oov_embedding = tf.get_variable(name="oov_embedding", shape=[1, embedding_dim],
-  #                                       initializer=tf.random_normal_initializer())
-  #       embedding_table = tf.concat([embedding_table, oov_embedding], axis=0,
-  #                                   name="embeddings_table")
-  #
-  #     return tf.nn.embedding_lookup(embedding_table, embedding_values)
   def get_embedding_table(self, name, embedding_dim, include_oov, pretrained_fname=None, num_embeddings=None):
 
     with tf.variable_scope("%s_embeddings" % name):
@@ -119,16 +88,15 @@ class LISAModel:
 
   def model_fn(self, features, mode):
 
-    # todo will estimators handle dropout for us or do we need to do it on our own?
+    # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
     # todo move this somewhere else?
     # also, double check that this is working
-
-
     def moving_average_getter(getter, name, *args, **kwargs):
 
-      moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay)
+      moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
+      tf.global_variables_initializer()
       moving_average_op = moving_averager.apply(tf.trainable_variables())
       tf.logging.log(tf.logging.INFO,
                      "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
