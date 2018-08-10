@@ -151,7 +151,7 @@ model_config = {
       'pretrained_embeddings': 'embeddings/glove.6B.100d.txt'
     },
     'gold_pos': {
-      'embedding_dim': 200,
+      'embedding_dim': 25,
     },
     # 'predicate': {
     #   'embedding_dim': 100
