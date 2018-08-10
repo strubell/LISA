@@ -143,8 +143,6 @@ model_config = {
     'head_dim': 25,
     'ff_hidden_size': 800,
   },
-  # todo add label embeddings for value fns here
-  # todo also need to make it so that these can be grabbed as inputs to functions
   'embeddings': {
     'word_type': {
       'embedding_dim': 100,
@@ -390,10 +388,10 @@ attention_config = {
       'parse_label': {
         'name': 'label_attention',
         'params': {
-          'train_labels': {
+          'train_label_scores': {
             'label': 'parse_label'
           },
-          'eval_labels': {
+          'eval_label_scores': {
             'layer': 'parse_label',
             'output': 'probabilities'
           },
