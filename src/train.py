@@ -483,25 +483,8 @@ for i, f in enumerate([d for d in data_config.keys() if
 
 model = LISAModel(hparams, model_config, task_config['layers'], attention_config, feature_idx_map, label_idx_map, vocab)
 
-moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
-tf.global_variables_initializer()
-moving_average_op = moving_averager.apply(tf.trainable_variables())
-tf.logging.log(tf.logging.INFO,
-               "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
-tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
-
-
-# todo move this somewhere else?
-# also, double check that this is working
-def moving_average_getter(getter, name, *args, **kwargs):
-  var = getter(name, *args, **kwargs)
-  averaged_var = moving_averager.average(var)
-  return averaged_var if averaged_var else var
-
-
-
 checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
-estimator = tf.estimator.Estimator(model_fn=partial(model.model_fn, moving_average_getter=moving_average_getter), model_dir=args.save_dir, config=checkpointing_config)
+estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
 # validation_hook = train_hooks.ValidationHook(estimator, dev_input_fn, every_n_steps=eval_every_steps*1000)
 
