@@ -383,23 +383,23 @@ attention_config = {
         }
       }
     },
-    # 'value_fns': {
-    #   'parse_label': {
-    #     'name': 'label_attention',
-    #     'params': {
-    #       'train_labels': {
-    #         'label': 'parse_label'
-    #       },
-    #       'eval_labels': {
-    #         'layer': 'parse_label',
-    #         'output': 'probabilities'
-    #       },
-    #       'label_embeddings': {
-    #         'embeddings': 'parse_label'
-    #       }
-    #     }
-    #   }
-    # }
+    'value_fns': {
+      'parse_label': {
+        'name': 'label_attention',
+        'params': {
+          'train_labels': {
+            'label': 'parse_label'
+          },
+          'eval_labels': {
+            'layer': 'parse_label',
+            'output': 'probabilities'
+          },
+          'label_embeddings': {
+            'embeddings': 'parse_label'
+          }
+        }
+      }
+    }
   }
 }
 
