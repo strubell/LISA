@@ -47,7 +47,7 @@ def get_params(mode, value_map, train_outputs, features, labels, embeddings):
     if 'label' in param_values:
       params[param_name] = labels[param_values['label']]
     elif 'embeddings' in param_values:
-      params[param_name] = embeddings[param_values['feature']]
+      params[param_name] = embeddings[param_values['embeddings']]
     elif 'feature' in param_values:
       params[param_name] = features[param_values['feature']]
     # otherwise, this is a previous-prediction-type param, look those up and pass through
