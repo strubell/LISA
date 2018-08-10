@@ -354,10 +354,10 @@ attention_config = {
       'pos': {
         'name': 'label_attention',
         'params': {
-          'train_labels': {
+          'train_label_scores': {
             'label': 'gold_pos'
           },
-          'eval_labels': {
+          'eval_label_scores': {
             'layer': 'joint_pos_predicate',
             'output': 'gold_pos_predictions'
           },
