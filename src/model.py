@@ -268,7 +268,7 @@ class LISAModel:
                 # export_outputs['%s_predict' % task] = predict_output
 
       # set up moving average variables
-      deps = []
+      assign_moving_averages_dep = tf.no_op()
       if hparams.moving_average_decay > 0.:
         moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
         moving_average_op = moving_averager.apply(tf.trainable_variables())
@@ -280,12 +280,12 @@ class LISAModel:
         tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
         # use moving averages of variables if evaluating
-        assign_moving_averages = tf.cond(tf.equal(mode, ModeKeys.TRAIN),
-                                         lambda: tf.no_op(),
-                                         lambda: nn_utils.set_vars_to_moving_average(moving_averager))
-        deps.append(assign_moving_averages)
+        assign_moving_averages_dep = tf.cond(tf.equal(mode, ModeKeys.TRAIN),
+                                             lambda: tf.no_op(),
+                                             lambda: nn_utils.set_vars_to_moving_average(moving_averager))
 
-      with tf.control_dependencies(deps):
+
+      with tf.control_dependencies([assign_moving_averages_dep]):
 
         items_to_log['loss'] = loss
 
