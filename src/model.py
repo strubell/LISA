@@ -267,17 +267,19 @@ class LISAModel:
                 #                                                     'predictions': task_outputs['predictions']})
                 # export_outputs['%s_predict' % task] = predict_output
 
-      # use moving averages of variables if evaluating
-      assign_dep = tf.no_op()
-      if mode != ModeKeys.TRAIN:
-        moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
-        moving_average_op = moving_averager.apply(tf.trainable_variables())
-        tf.logging.log(tf.logging.INFO,
-                       "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
-        assign_dep = nn_utils.set_vars_to_moving_average(moving_averager)
+      # set up moving average variables
+      moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
+      moving_average_op = moving_averager.apply(tf.trainable_variables())
+      # tf.logging.log(tf.logging.INFO,
+      #                "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
+      tf.logging.log(tf.logging.INFO, "Creating moving averages for %d variables." % len(tf.trainable_variables()))
+      tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
-      with tf.control_dependencies([assign_dep]):
+      # use moving averages of variables if evaluating
+      assign_moving_averages = tf.cond(tf.equal(mode, ModeKeys.TRAIN), lambda: tf.no_op(),
+                                       lambda: nn_utils.set_vars_to_moving_average(moving_averager))
+
+      with tf.control_dependencies([assign_moving_averages]):
 
         items_to_log['loss'] = loss
 
