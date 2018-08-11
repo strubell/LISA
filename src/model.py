@@ -284,7 +284,6 @@ class LISAModel:
                                              lambda: tf.no_op(),
                                              lambda: nn_utils.set_vars_to_moving_average(moving_averager))
 
-
       with tf.control_dependencies([assign_moving_averages_dep]):
 
         items_to_log['loss'] = loss

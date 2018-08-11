@@ -1,5 +1,4 @@
-
-# __path__ = 'src/constants'
+import time
 
 PAD_VALUE = -1
 JOINT_LABEL_SEP = '/'
@@ -34,6 +33,7 @@ hparams = {
   'attn_dropout': 1.0,
   'ff_dropout': 1.0,
   'prepost_dropout': 1.0,
+  'random_seed': int(time.time())
 }
 
 

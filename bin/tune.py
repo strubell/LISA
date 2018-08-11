@@ -34,6 +34,7 @@ if not os.path.exists(out_dir):
 partition_maxjobs = [p.split(':') for p in args.partition.split(',')]
 partition_maxjobs = [(s, int(v)) for s, v in partition_maxjobs]
 
+# these will be passed as a list of hyperparams to be parsed by tf.contrib.HParams
 params = {
   'learning_rate': [0.04],
   'beta1': [0.9],
@@ -42,10 +43,10 @@ params = {
   'moving_average_decay': [0.0, 0.9999, 0.999],
   'batch_size': [256],
   'gradient_clip_norm': [1.0, 5.0],
-}
 
-# setting the random seed randomly
-params['random_seed'] = [int(time.time()) + i for i in range(args.repeats)]
+  # set random seed randomly, sort of
+  'random_seed': [int(time.time()) + i for i in range(args.repeats)]
+}
 
 # for SA
 # predicate_layers="2 3 4"

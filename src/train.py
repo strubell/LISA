@@ -18,7 +18,6 @@ arg_parser.add_argument('--transition_stats', type=str, help='Transition statist
 arg_parser.add_argument('--bucket_boundaries', type=str, default='', help='Bucket boundaries for batching.')
 arg_parser.add_argument('--hparams', type=str, default='', help='Comma separated list of "name=value" pairs.')
 arg_parser.add_argument('--debug', dest='debug', action='store_true')
-arg_parser.add_argument('--random_seed', type=int)
 
 arg_parser.set_defaults(debug=False)
 
@@ -409,13 +408,13 @@ attention_config = {
 tf.logging.set_verbosity(tf.logging.INFO)
 tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
 
-if args.random_seed:
-  np.random.seed(args.random_seed)
-  tf.set_random_seed(args.random_seed)
-
 # Create a HParams object specifying the names and values of the
 # model hyperparameters:
 hparams = tf.contrib.training.HParams(**constants.hparams)
+
+# Set the random seed. This defaults to int(time.time()) if not otherwise set.
+np.random.seed(hparams.random_seed)
+tf.set_random_seed(hparams.random_seed)
 
 # First get default hyperparams from the model config
 if 'hparams' in model_config:
