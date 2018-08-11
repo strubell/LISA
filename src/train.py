@@ -413,7 +413,6 @@ if args.random_seed:
   np.random.seed(args.random_seed)
   tf.set_random_seed(args.random_seed)
 
-
 # Create a HParams object specifying the names and values of the
 # model hyperparameters:
 hparams = tf.contrib.training.HParams(**constants.hparams)
