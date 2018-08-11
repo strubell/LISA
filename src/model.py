@@ -268,7 +268,7 @@ class LISAModel:
                 # export_outputs['%s_predict' % task] = predict_output
 
       # set up moving average variables
-      if hparams.hparams.moving_average_decay > 0.0:
+      if hparams.moving_average_decay > 0.0:
         moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
         moving_average_op = moving_averager.apply(tf.trainable_variables())
         # tf.logging.log(tf.logging.INFO,
