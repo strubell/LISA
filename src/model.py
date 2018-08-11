@@ -288,7 +288,7 @@ class LISAModel:
       assign_moving_averages = tf.cond(tf.logical_or(tf.equal(mode, ModeKeys.TRAIN),
                                                      tf.equal(hparams.moving_average_decay, 0.)),
                                        lambda: tf.no_op(),
-                                       lambda: get_moving_average_op)
+                                       get_moving_average_op)
 
       with tf.control_dependencies([assign_moving_averages]):
 
