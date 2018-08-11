@@ -18,7 +18,6 @@ def get_separate_scores_preds_from_joint(joint_outputs, joint_maps, joint_num_la
 
     # marginalize out probabilities for this task
     task_num_labels = tf.shape(tf.unique(tf.reshape(label_comp_map, [-1]))[0])[0]
-    print(task_num_labels)
     joint_probabilities = tf.nn.softmax(scores)
     joint_probabilities_flat = tf.reshape(joint_probabilities, [-1, joint_num_labels])
     segment_ids = tf.squeeze(tf.nn.embedding_lookup(label_comp_map, tf.range(joint_num_labels)), -1)

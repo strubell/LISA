@@ -17,22 +17,6 @@ class OutputFnTests(tf.test.TestCase):
 
       joint_num_labels = 6
 
-      # joint_maps = {
-      #   'joint_to_single1':
-      #     tf.constant([[0, 1],
-      #                  [1, 1],
-      #                  [2, 1],
-      #                  [3, 0],
-      #                  [4, 0],
-      #                  [5, 0]]),
-      #   'joint_to_single2':
-      #     tf.constant([[0, 0],
-      #                  [1, 1],
-      #                  [2, 2],
-      #                  [3, 0],
-      #                  [4, 1],
-      #                  [5, 2]])
-      # }
       joint_maps = {
         'joint_to_single1':
           tf.constant([[0],
@@ -49,12 +33,6 @@ class OutputFnTests(tf.test.TestCase):
                        [1],
                        [2]])
       }
-      # joint_maps = {
-      #   'joint_to_single1':
-      #     tf.constant([1, 1, 1, 0, 0, 0]),
-      #   'joint_to_single2':
-      #     tf.constant([0, 1, 2, 0, 1, 2])
-      # }
 
       # joint_predictions: batch_size x batch_seq_len
       joint_predictions = tf.constant([[1, 3, 0],
