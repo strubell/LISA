@@ -4,6 +4,11 @@ import tensorflow as tf
 def leaky_relu(x): return tf.maximum(0.1 * x, x)
 
 
+def set_vars_to_moving_average(moving_averager):
+  moving_avg_variables = tf.get_collection(tf.GraphKeys.MOVING_AVERAGE_VARIABLES)
+  return tf.group(*[tf.assign(x, moving_averager.average(x)) for x in moving_avg_variables])
+
+
 def layer_norm(inputs, epsilon=1e-6):
   """Applies layer normalization.
 
