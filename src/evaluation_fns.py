@@ -195,9 +195,8 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
 
 
 def create_metric_variable(name, shape, dtype):
-  return tf.get_variable(name=name, shape=shape, dtype=dtype, collections=[tf.GraphKeys.LOCAL_VARIABLES,
-                                                                           tf.GraphKeys.METRIC_VARIABLES],
-                         trainable=False)
+  return tf.get_variable(name=name, shape=shape, dtype=dtype, trainable=False,
+                         collections=[tf.GraphKeys.LOCAL_VARIABLES, tf.GraphKeys.METRIC_VARIABLES])
 
 
 def conll_srl_eval(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
