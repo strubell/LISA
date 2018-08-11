@@ -406,8 +406,6 @@ attention_config = {
   # }
 }
 
-tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
-
 if args.random_seed:
   np.random.seed(args.random_seed)
   tf.set_random_seed(args.random_seed)
@@ -447,6 +445,7 @@ if args.debug:
   eval_throttle_secs = 60
   eval_every_steps = 100
 tf.logging.log(tf.logging.INFO, "Evaluating every %d steps" % eval_every_steps)
+tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
 
 
 # bucket_boundaries, test_bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES, constants.DEFAULT_BUCKET_BOUNDARIES
