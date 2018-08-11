@@ -7,7 +7,8 @@ import time
 import random
 
 argparser = argparse.ArgumentParser()
-argparser.add_argument('--partition', default='titanx-short:120,m40-short:30', type=str)
+argparser.add_argument('--partition', default='titanx-long:30', type=str)
+argparser.add_argument('--repeats', default=2, type=int)
 argparser.add_argument('--cpu_memory', default='24GB', type=str)
 argparser.add_argument('--output_dir', default='hyperparams', type=str)
 argparser.add_argument('--script', type=str)
@@ -34,13 +35,24 @@ partition_maxjobs = [p.split(':') for p in args.partition.split(',')]
 partition_maxjobs = [(s, int(v)) for s, v in partition_maxjobs]
 
 params = {
-  'learning_rate': [0.0005, 0.0001, 0.00005, 0.00001],
+  'learning_rate': [0.04],
   'beta1': [0.9],
-  'beta2': [0.98, 0.999],
+  'beta2': [0.98],
   'epsilon': [1e-12],
-  'moving_average_decay': [0.9999],
-  'batch_size': [256]
+  'moving_average_decay': [0.0, 0.9999, 0.999],
+  'batch_size': [256],
+  'gradient_clip_norm': [1.0, 5.0],
 }
+
+# setting the random seed randomly
+params['random_seed'] = [time.localtime()] * args.repeats
+
+# for SA
+# predicate_layers="2 3 4"
+
+# for LISA
+# parents_layers="parents:4 parents:5"
+# predicate_layers="3 4"
 
 
 def make_job_str(_setting):
