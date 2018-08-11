@@ -45,7 +45,7 @@ params = {
 }
 
 # setting the random seed randomly
-params['random_seed'] = [time.localtime()] * args.repeats
+params['random_seed'] = [int(time.time()) + i for i in range(args.repeats)]
 
 # for SA
 # predicate_layers="2 3 4"
