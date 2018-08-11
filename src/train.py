@@ -150,12 +150,12 @@ model_config = {
       'embedding_dim': 100,
       'pretrained_embeddings': 'embeddings/glove.6B.100d.txt'
     },
-    'gold_pos': {
-      'embedding_dim': 25,
-    },
-    'parse_label': {
-      'embedding_dim': 25,
-    },
+    # 'gold_pos': {
+    #   'embedding_dim': 25,
+    # },
+    # 'parse_label': {
+    #   'embedding_dim': 25,
+    # },
     # 'predicate': {
     #   'embedding_dim': 100
     # }
@@ -213,77 +213,77 @@ task_config = {
       }
     },
 
-    4: {
-      'parse_head': {
-        'penalty': 1.0,
-        'output_fn': {
-          'name': 'parse_bilinear',
-          'params': {
-          }
-        },
-        'eval_fns': {
-          'label_accuracy': {
-            'name': 'accuracy'
-          }
-        }
-      },
-      'parse_label': {
-        'penalty': 0.1,
-        'output_fn': {
-          'name': 'conditional_bilinear',
-          'params': {
-            'dep_rel_mlp': {
-              'layer': 'parse_head',
-              'output': 'dep_rel_mlp'
-            },
-            'head_rel_mlp': {
-              'layer': 'parse_head',
-              'output': 'head_rel_mlp'
-            },
-            'parse_preds_train': {
-              'label': 'parse_head'
-            },
-            'parse_preds_eval': {
-              'layer': 'parse_head',
-              'output': 'predictions'
-            },
-          }
-        },
-        'eval_fns': {
-          'parse_eval': {
-            'name': 'conll_parse_eval',
-            'params': {
-              'gold_parse_eval_file': {
-                'value': args.save_dir + '/parse_gold.txt'
-              },
-              'pred_parse_eval_file': {
-                'value': args.save_dir + '/parse_preds.txt'
-              },
-              'reverse_maps': {
-                'reverse_maps': [
-                  'word',
-                  'parse_label',
-                  'gold_pos'
-                ]
-              },
-              'parse_head_predictions': {
-                'layer': 'parse_head',
-                'output': 'predictions'
-              },
-              'parse_head_targets': {
-                'label': 'parse_head',
-              },
-              'words': {
-                'feature': 'word',
-              },
-              'pos_targets': {
-                'label': 'gold_pos'
-              }
-            }
-          }
-        }
-      }
-    },
+    # 4: {
+    #   'parse_head': {
+    #     'penalty': 1.0,
+    #     'output_fn': {
+    #       'name': 'parse_bilinear',
+    #       'params': {
+    #       }
+    #     },
+    #     'eval_fns': {
+    #       'label_accuracy': {
+    #         'name': 'accuracy'
+    #       }
+    #     }
+    #   },
+    #   'parse_label': {
+    #     'penalty': 0.1,
+    #     'output_fn': {
+    #       'name': 'conditional_bilinear',
+    #       'params': {
+    #         'dep_rel_mlp': {
+    #           'layer': 'parse_head',
+    #           'output': 'dep_rel_mlp'
+    #         },
+    #         'head_rel_mlp': {
+    #           'layer': 'parse_head',
+    #           'output': 'head_rel_mlp'
+    #         },
+    #         'parse_preds_train': {
+    #           'label': 'parse_head'
+    #         },
+    #         'parse_preds_eval': {
+    #           'layer': 'parse_head',
+    #           'output': 'predictions'
+    #         },
+    #       }
+    #     },
+    #     'eval_fns': {
+    #       'parse_eval': {
+    #         'name': 'conll_parse_eval',
+    #         'params': {
+    #           'gold_parse_eval_file': {
+    #             'value': args.save_dir + '/parse_gold.txt'
+    #           },
+    #           'pred_parse_eval_file': {
+    #             'value': args.save_dir + '/parse_preds.txt'
+    #           },
+    #           'reverse_maps': {
+    #             'reverse_maps': [
+    #               'word',
+    #               'parse_label',
+    #               'gold_pos'
+    #             ]
+    #           },
+    #           'parse_head_predictions': {
+    #             'layer': 'parse_head',
+    #             'output': 'predictions'
+    #           },
+    #           'parse_head_targets': {
+    #             'label': 'parse_head',
+    #           },
+    #           'words': {
+    #             'feature': 'word',
+    #           },
+    #           'pos_targets': {
+    #             'label': 'gold_pos'
+    #           }
+    #         }
+    #       }
+    #     }
+    #   }
+    # },
 
     11: {
       'srl': {
@@ -352,58 +352,58 @@ task_config = {
 }
 
 attention_config = {
-  3: {
-    'value_fns': {
-      'pos': {
-        'name': 'label_attention',
-        'params': {
-          'train_label_scores': {
-            'label': 'gold_pos'
-          },
-          'eval_label_scores': {
-            'layer': 'joint_pos_predicate',
-            'output': 'gold_pos_probabilities'
-          },
-          'label_embeddings': {
-            'embeddings': 'gold_pos'
-          }
-        }
-      }
-    }
-  },
-  5: {
-    'attention_fns': {
-      'parse_heads': {
-        'name': 'copy_from_predicted',
-        'params': {
-          'train_attention_to_copy': {
-            'label': 'parse_head'
-          },
-          'eval_attention_to_copy': {
-            'layer': 'parse_head',
-            'output': 'scores'
-          }
-        }
-      }
-    },
-    'value_fns': {
-      'parse_label': {
-        'name': 'label_attention',
-        'params': {
-          'train_label_scores': {
-            'label': 'parse_label'
-          },
-          'eval_label_scores': {
-            'layer': 'parse_label',
-            'output': 'probabilities'
-          },
-          'label_embeddings': {
-            'embeddings': 'parse_label'
-          }
-        }
-      }
-    }
-  }
+  # 3: {
+  #   'value_fns': {
+  #     'pos': {
+  #       'name': 'label_attention',
+  #       'params': {
+  #         'train_label_scores': {
+  #           'label': 'gold_pos'
+  #         },
+  #         'eval_label_scores': {
+  #           'layer': 'joint_pos_predicate',
+  #           'output': 'gold_pos_probabilities'
+  #         },
+  #         'label_embeddings': {
+  #           'embeddings': 'gold_pos'
+  #         }
+  #       }
+  #     }
+  #   }
+  # },
+  # 5: {
+  #   'attention_fns': {
+  #     'parse_heads': {
+  #       'name': 'copy_from_predicted',
+  #       'params': {
+  #         'train_attention_to_copy': {
+  #           'label': 'parse_head'
+  #         },
+  #         'eval_attention_to_copy': {
+  #           'layer': 'parse_head',
+  #           'output': 'scores'
+  #         }
+  #       }
+  #     }
+  #   },
+  #   'value_fns': {
+  #     'parse_label': {
+  #       'name': 'label_attention',
+  #       'params': {
+  #         'train_label_scores': {
+  #           'label': 'parse_label'
+  #         },
+  #         'eval_label_scores': {
+  #           'layer': 'parse_label',
+  #           'output': 'probabilities'
+  #         },
+  #         'label_embeddings': {
+  #           'embeddings': 'parse_label'
+  #         }
+  #       }
+  #     }
+  #   }
+  # }
 }
 
 if args.random_seed:
