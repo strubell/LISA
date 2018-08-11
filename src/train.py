@@ -406,11 +406,13 @@ attention_config = {
   # }
 }
 
+tf.logging.set_verbosity(tf.logging.INFO)
+tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
+
 if args.random_seed:
   np.random.seed(args.random_seed)
   tf.set_random_seed(args.random_seed)
 
-tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
 
 # Create a HParams object specifying the names and values of the
 # model hyperparameters:
@@ -427,8 +429,6 @@ hparams.parse(args.hparams)
 
 if not os.path.exists(args.save_dir):
   os.makedirs(args.save_dir)
-
-tf.logging.set_verbosity(tf.logging.INFO)
 
 vocab = Vocab(args.train_file, data_config, args.save_dir)
 vocab.update(args.dev_file)
