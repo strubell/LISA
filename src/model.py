@@ -270,8 +270,9 @@ class LISAModel:
       # set up moving average variables
       assign_moving_averages_dep = tf.no_op()
       if hparams.moving_average_decay > 0.:
-        moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True)
-        moving_average_op = moving_averager.apply(tf.trainable_variables())
+        moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True,
+                                                            num_updates=tf.train.get_global_step())
+        moving_average_op = moving_averager.apply(train_utils.get_vars_for_moving_average(hparams.average_norms))
         # tf.logging.log(tf.logging.INFO,
         #                "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
         tf.logging.log(tf.logging.INFO, "%s moving averages for %d variables." %

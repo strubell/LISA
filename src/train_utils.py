@@ -6,6 +6,13 @@ def copy_without_dropout(hparams):
   return tf.contrib.training.HParams(**new_hparams)
 
 
+def get_vars_for_moving_average(average_norms):
+  all_vars = tf.trainable_variables()
+  if not average_norms:
+    return [v for v in all_vars if 'norm' not in v.name]
+  return all_vars
+
+
 def learning_rate(hparams, global_step):
   lr = hparams.learning_rate
   warmup_steps = hparams.warmup_steps
