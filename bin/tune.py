@@ -34,18 +34,20 @@ if not os.path.exists(out_dir):
 partition_maxjobs = [p.split(':') for p in args.partition.split(',')]
 partition_maxjobs = [(s, int(v)) for s, v in partition_maxjobs]
 
+# these will be passed as a list of hyperparams to be parsed by tf.contrib.HParams
 params = {
   'learning_rate': [0.04],
   'beta1': [0.9],
   'beta2': [0.98],
   'epsilon': [1e-12],
-  'moving_average_decay': [0.0, 0.9999, 0.999],
+  'moving_average_decay': [0.0, 0.9999],
+  'average_norms': [True, False],
   'batch_size': [256],
-  'gradient_clip_norm': [1.0, 5.0],
-}
+  'gradient_clip_norm': [5.0],
 
-# setting the random seed randomly
-params['random_seed'] = [time.localtime()] * args.repeats
+  # set random seed randomly, sort of
+  'random_seed': [int(time.time()) + i for i in range(args.repeats)]
+}
 
 # for SA
 # predicate_layers="2 3 4"
@@ -95,7 +97,7 @@ for setting in all_jobs:
             # only run max_jobs at once
             running_jobs = int(subprocess.check_output('squeue -u %s -p %s | wc -l'
                                                        % (user, partition), shell=True))
-            if running_jobs < max_jobs and not added:
+            if running_jobs <= max_jobs and not added:
                 add_to_partition(partition, setting_str, log_str)
                 added = True
             else:

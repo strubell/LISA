@@ -1,5 +1,4 @@
-
-# __path__ = 'src/constants'
+import time
 
 PAD_VALUE = -1
 JOINT_LABEL_SEP = '/'
@@ -28,12 +27,14 @@ hparams = {
   'gradient_clip_norm': 5.0,
   'label_smoothing': 0.1,
   'moving_average_decay': 0.999,
+  'average_norms': False,
   'input_dropout': 1.0,
   'bilinear_dropout': 1.0,
   'mlp_dropout': 1.0,
   'attn_dropout': 1.0,
   'ff_dropout': 1.0,
   'prepost_dropout': 1.0,
+  'random_seed': int(time.time())
 }
 
 

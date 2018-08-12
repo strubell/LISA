@@ -5,7 +5,7 @@
 Requirements:
 ----
 - Python 3.
-- TensorFlow 1.9
+- TensorFlow 1.10+
 
 
 Data setup:
