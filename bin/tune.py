@@ -40,9 +40,10 @@ params = {
   'beta1': [0.9],
   'beta2': [0.98],
   'epsilon': [1e-12],
-  'moving_average_decay': [0.0, 0.9999, 0.999],
+  'moving_average_decay': [0.0, 0.9999],
+  'average_norms': [True, False],
   'batch_size': [256],
-  'gradient_clip_norm': [1.0, 5.0],
+  'gradient_clip_norm': [5.0],
 
   # set random seed randomly, sort of
   'random_seed': [int(time.time()) + i for i in range(args.repeats)]
