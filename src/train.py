@@ -410,6 +410,7 @@ tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
 
 # Create a HParams object specifying the names and values of the
 # model hyperparameters:
+# todo print or save hparams
 hparams = tf.contrib.training.HParams(**constants.hparams)
 
 # Set the random seed. This defaults to int(time.time()) if not otherwise set.

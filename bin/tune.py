@@ -96,7 +96,7 @@ for setting in all_jobs:
             # only run max_jobs at once
             running_jobs = int(subprocess.check_output('squeue -u %s -p %s | wc -l'
                                                        % (user, partition), shell=True))
-            if running_jobs < max_jobs and not added:
+            if running_jobs <= max_jobs and not added:
                 add_to_partition(partition, setting_str, log_str)
                 added = True
             else:
