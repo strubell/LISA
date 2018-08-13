@@ -18,152 +18,168 @@ arg_parser.add_argument('--transition_stats', type=str, help='Transition statist
 arg_parser.add_argument('--bucket_boundaries', type=str, default='', help='Bucket boundaries for batching.')
 arg_parser.add_argument('--hparams', type=str, default='', help='Comma separated list of "name=value" pairs.')
 arg_parser.add_argument('--debug', dest='debug', action='store_true')
+arg_parser.add_argument('--data_config', help='Path to data configuration json')
+arg_parser.add_argument('--model_config', help='Path to model configuration json')
+arg_parser.add_argument('--attention_config', help='Path to attention configuration json')
+
 
 arg_parser.set_defaults(debug=False)
 
 args, leftovers = arg_parser.parse_known_args()
 
-data_config = {
-  'id': {
-    'conll_idx': 2,
-  },
-  'sent_id': {
-    'conll_idx': 1,
-    'label': True
-  },
-  'word': {
-    'conll_idx': 3,
-    'feature': True,
-    'vocab': 'word',
-    'oov': False,
-    'updatable': True
-  },
-  'word_type': {
-    'conll_idx': 3,
-    'feature': True,
-    'vocab': 'embeddings/glove.6B.100d.txt',
-    'converter':  {
-      'name': 'lowercase'
-    },
-    'oov': True
-  },
-  'gold_pos': {
-    'conll_idx': 4,
-    'label': True,
-    'vocab': 'gold_pos'
-  },
-  'auto_pos': {
-    'conll_idx': 5,
-    'vocab': 'gold_pos'
-  },
+data_config = {}
+model_config = {}
+attention_config = {}
+with open(args.data_config) as data_config_file:
+  data_config = json.load(data_config_file)
+with open(args.model_config) as model_config_file:
+  model_config = json.load(model_config_file)
 
-  'parse_head': {
-    'conll_idx': [6, 2],
-    'label': True,
-    'converter':  {
-      'name': 'parse_roots_self_loop'
-    }
-  },
-  'parse_label': {
-    'conll_idx': 7,
-    'label': True,
-    'vocab': 'parse_label'
-  },
-  'domain': {
-    'conll_idx': 0,
-    'vocab': 'domain',
-    'converter': {
-      'name': 'strip_conll12_domain'
-    }
-  },
-  'predicate': {
-    'conll_idx': 9,
-    'label': True,
-    # 'feature': True,
-    'vocab': 'predicate',
-    'converter': {
-      'name': 'conll12_binary_predicates'
-    }
-  },
-  'joint_pos_predicate': {
-    'conll_idx': [4, 9],
-    'label': True,
-    'vocab': 'joint_pos_predicate',
-    'converter': {
-      'name': 'joint_converter',
-      'params': {
-        'component_converters': ['default_converter', 'conll12_binary_predicates']
-      }
-    },
-    'label_components': [
-      'gold_pos',
-      'predicate'
-    ]
-  },
-  'srl': {
-    'conll_idx': [14, -1],
-    'type': 'range',
-    'label': True,
-    'vocab': 'srl',
-    'converter': {
-      'name': 'idx_range_converter'
-    }
-  },
-}
+if args.attention_config and args.attention_config != '':
+  with open(args.model_config) as attention_config_file:
+    attention_config = json.load(model_config_file)
 
-
-# todo define model inputs here
-model_config = {
-  'predicate_mlp_size': 200,
-  'role_mlp_size': 200,
-  'predicate_pred_mlp_size': 200,
-  'class_mlp_size': 100,
-  'attn_mlp_size': 500,
-  'hparams': {
-    'label_smoothing': 0.1,
-    'input_dropout': 0.8,
-    'mlp_dropout': 0.9,
-    'bilinear_dropout': 0.9,
-    'attn_dropout': 0.9,
-    'ff_dropout': 0.9,
-    'prepost_dropout': 0.8,
-    'moving_average_decay': 0.9999,
-    'gradient_clip_norm': 5.0,
-    'learning_rate': 0.04,
-    'decay_rate': 1.5,
-    'warmup_steps': 8000,
-    'beta1': 0.9,
-    'beta2': 0.98,
-    'epsilon': 1e-12,
-    'use_nesterov': True,
-    'batch_size': 256
-  },
-  'layers': {
-    'type': 'transformer',
-    'num_heads': 8,
-    'head_dim': 25,
-    'ff_hidden_size': 800,
-  },
-  'embeddings': {
-    'word_type': {
-      'embedding_dim': 100,
-      'pretrained_embeddings': 'embeddings/glove.6B.100d.txt'
-    },
-    # 'gold_pos': {
-    #   'embedding_dim': 25,
-    # },
-    # 'parse_label': {
-    #   'embedding_dim': 25,
-    # },
-    # 'predicate': {
-    #   'embedding_dim': 100
-    # }
-  },
-  'inputs': [
-    'word_type',
-    # 'predicate'
-  ],
-}
+# data_config = {
+#   'id': {
+#     'conll_idx': 2,
+#   },
+#   'sent_id': {
+#     'conll_idx': 1,
+#     'label': True
+#   },
+#   'word': {
+#     'conll_idx': 3,
+#     'feature': True,
+#     'vocab': 'word',
+#     'oov': False,
+#     'updatable': True
+#   },
+#   'word_type': {
+#     'conll_idx': 3,
+#     'feature': True,
+#     'vocab': 'embeddings/glove.6B.100d.txt',
+#     'converter':  {
+#       'name': 'lowercase'
+#     },
+#     'oov': True
+#   },
+#   'gold_pos': {
+#     'conll_idx': 4,
+#     'label': True,
+#     'vocab': 'gold_pos'
+#   },
+#   'auto_pos': {
+#     'conll_idx': 5,
+#     'vocab': 'gold_pos'
+#   },
+#
+#   'parse_head': {
+#     'conll_idx': [6, 2],
+#     'label': True,
+#     'converter':  {
+#       'name': 'parse_roots_self_loop'
+#     }
+#   },
+#   'parse_label': {
+#     'conll_idx': 7,
+#     'label': True,
+#     'vocab': 'parse_label'
+#   },
+#   'domain': {
+#     'conll_idx': 0,
+#     'vocab': 'domain',
+#     'converter': {
+#       'name': 'strip_conll12_domain'
+#     }
+#   },
+#   'predicate': {
+#     'conll_idx': 9,
+#     'label': True,
+#     # 'feature': True,
+#     'vocab': 'predicate',
+#     'converter': {
+#       'name': 'conll12_binary_predicates'
+#     }
+#   },
+#   'joint_pos_predicate': {
+#     'conll_idx': [4, 9],
+#     'label': True,
+#     'vocab': 'joint_pos_predicate',
+#     'converter': {
+#       'name': 'joint_converter',
+#       'params': {
+#         'component_converters': ['default_converter', 'conll12_binary_predicates']
+#       }
+#     },
+#     'label_components': [
+#       'gold_pos',
+#       'predicate'
+#     ]
+#   },
+#   'srl': {
+#     'conll_idx': [14, -1],
+#     'type': 'range',
+#     'label': True,
+#     'vocab': 'srl',
+#     'converter': {
+#       'name': 'idx_range_converter'
+#     }
+#   },
+# }
+#
+#
+# # todo define model inputs here
+# model_config = {
+#   'predicate_mlp_size': 200,
+#   'role_mlp_size': 200,
+#   'predicate_pred_mlp_size': 200,
+#   'class_mlp_size': 100,
+#   'attn_mlp_size': 500,
+#   'hparams': {
+#     'label_smoothing': 0.1,
+#     'input_dropout': 0.8,
+#     'mlp_dropout': 0.9,
+#     'bilinear_dropout': 0.9,
+#     'attn_dropout': 0.9,
+#     'ff_dropout': 0.9,
+#     'prepost_dropout': 0.8,
+#     'moving_average_decay': 0.9999,
+#     'gradient_clip_norm': 5.0,
+#     'learning_rate': 0.04,
+#     'decay_rate': 1.5,
+#     'warmup_steps': 8000,
+#     'beta1': 0.9,
+#     'beta2': 0.98,
+#     'epsilon': 1e-12,
+#     'use_nesterov': True,
+#     'batch_size': 256
+#   },
+#   'layers': {
+#     'type': 'transformer',
+#     'num_heads': 8,
+#     'head_dim': 25,
+#     'ff_hidden_size': 800,
+#   },
+#   'embeddings': {
+#     'word_type': {
+#       'embedding_dim': 100,
+#       'pretrained_embeddings': 'embeddings/glove.6B.100d.txt'
+#     },
+#     # 'gold_pos': {
+#     #   'embedding_dim': 25,
+#     # },
+#     # 'parse_label': {
+#     #   'embedding_dim': 25,
+#     # },
+#     # 'predicate': {
+#     #   'embedding_dim': 100
+#     # }
+#   },
+#   'inputs': [
+#     'word_type',
+#     # 'predicate'
+#   ],
+# }
 
 # todo validate these files
 task_config = {
