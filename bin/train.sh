@@ -14,5 +14,7 @@ python3 src/train.py \
 --dev_file $dev_file \
 --transition_stats $transition_stats \
 --bucket_boundaries $bucket_boundaries \
+--data_config config/conll05.json \
+--model_config config/sa/sa_model.json \
 $params
 
