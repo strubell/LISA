@@ -108,28 +108,31 @@ tf.set_random_seed(hparams.random_seed)
 if not os.path.exists(args.save_dir):
   os.makedirs(args.save_dir)
 
-vocab = Vocab(args.train_file, data_config, args.save_dir)
-vocab.update(args.dev_file)
+train_filenames = args.train_files.split(',')
+dev_filenames = args.dev_files.split(',')
+
+vocab = Vocab(train_filenames, data_config, args.save_dir)
+vocab.update(dev_filenames)
 
 embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in model_config['embeddings'].values()
                    if 'pretrained_embeddings' in embeddings_map]
 
 
-def get_input_fn(data_file, num_epochs, shuffle, embedding_files):
+def get_input_fn(data_files, num_epochs, shuffle, embedding_files):
   # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
 
-  return dataset.get_data_iterator(data_file, data_config, vocab_lookup_ops, hparams.batch_size, num_epochs, shuffle,
+  return dataset.get_data_iterator(data_files, data_config, vocab_lookup_ops, hparams.batch_size, num_epochs, shuffle,
                                    shuffle_buffer_multiplier)
 
 
 def train_input_fn():
-  return get_input_fn(args.train_file, num_epochs=hparams.num_train_epochs, shuffle=True,
+  return get_input_fn(train_filenames, num_epochs=hparams.num_train_epochs, shuffle=True,
                       embedding_files=embedding_files)
 
 
 def dev_input_fn():
-  return get_input_fn(args.dev_file, num_epochs=1, shuffle=False, embedding_files=embedding_files)
+  return get_input_fn(dev_filenames, num_epochs=1, shuffle=False, embedding_files=embedding_files)
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs

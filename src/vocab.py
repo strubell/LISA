@@ -6,11 +6,11 @@ import data_converters
 
 class Vocab:
   '''
-  Handles creating and caching vocabulary files and tf vocabulary lookup ops for a given data file.
+  Handles creating and caching vocabulary files and tf vocabulary lookup ops for a given list of data files.
   '''
 
-  def __init__(self, data_filename, data_config, save_dir):
-    self.data_filename = data_filename
+  def __init__(self, data_filenames, data_config, save_dir):
+    self.data_filename = data_filenames
     self.data_config = data_config
     self.save_dir = save_dir
 
@@ -89,7 +89,7 @@ class Vocab:
   Returns:
     Map from vocab names to their sizes
   '''
-  def make_or_update_vocab_files(self, filename, data_config, save_dir, update_only=False):
+  def make_or_update_vocab_files(self, filenames, data_config, save_dir, update_only=False):
 
     # init maps
     vocabs = []
@@ -112,26 +112,27 @@ class Vocab:
         vocabs.append(this_vocab)
         vocabs_index[d] = len(vocabs_index)
 
-    with open(filename, 'r') as f:
-      for line in f:
-        line = line.strip()
-        if line:
-          split_line = line.split()
-          for d in vocabs_index.keys():
-            datum_idx = data_config[d]['conll_idx']
-            this_vocab_map = vocabs[vocabs_index[d]]
-            # # if the idx is an int, just grab the datum at the index in the line
-            # # otherwise, we assume the converter will handle it
-            # if isinstance(datum_idx, int):
-            #   this_data = [split_line[datum_idx]]
-            # if 'converter' in data_config[d]:
-            converter_name = data_config[d]['converter']['name'] if 'converter' in data_config[d] else 'default_converter'
-            converter_params = data_converters.get_params(data_config[d], split_line, datum_idx)
-            this_data = data_converters.dispatch(converter_name)(**converter_params)
-            for this_datum in this_data:
-              if this_datum not in this_vocab_map:
-                this_vocab_map[this_datum] = 0
-              this_vocab_map[this_datum] += 1
+    for filename in filenames:
+      with open(filename, 'r') as f:
+        for line in f:
+          line = line.strip()
+          if line:
+            split_line = line.split()
+            for d in vocabs_index.keys():
+              datum_idx = data_config[d]['conll_idx']
+              this_vocab_map = vocabs[vocabs_index[d]]
+              # # if the idx is an int, just grab the datum at the index in the line
+              # # otherwise, we assume the converter will handle it
+              # if isinstance(datum_idx, int):
+              #   this_data = [split_line[datum_idx]]
+              # if 'converter' in data_config[d]:
+              converter_name = data_config[d]['converter']['name'] if 'converter' in data_config[d] else 'default_converter'
+              converter_params = data_converters.get_params(data_config[d], split_line, datum_idx)
+              this_data = data_converters.dispatch(converter_name)(**converter_params)
+              for this_datum in this_data:
+                if this_datum not in this_vocab_map:
+                  this_vocab_map[this_datum] = 0
+                this_vocab_map[this_datum] += 1
 
     # build reverse_maps, joint_label_lookup_maps
     for v in vocabs_index.keys():
@@ -174,11 +175,11 @@ class Vocab:
 
     return {k: len(vocabs[vocabs_index[k]]) for k in vocabs_index.keys()}
 
-  def make_vocab_files(self, filename, data_config, save_dir):
-    return self.make_or_update_vocab_files(filename, data_config, save_dir, False)
+  def make_vocab_files(self, filenames, data_config, save_dir):
+    return self.make_or_update_vocab_files(filenames, data_config, save_dir, False)
 
-  def update(self, filename):
-    vocab_names_sizes = self.make_or_update_vocab_files(filename, self.data_config, self.save_dir, True)
+  def update(self, filenames):
+    vocab_names_sizes = self.make_or_update_vocab_files(filenames, self.data_config, self.save_dir, True)
 
     # merge new and old
     for vocab_name, vocab_size in vocab_names_sizes.items():

@@ -29,11 +29,13 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
   return _mapper
 
 
-def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
+def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
                       shuffle_buffer_multiplier):
 
   bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
   bucket_batch_sizes = [batch_size] * (len(bucket_boundaries) + 1)
+
+  # todo do something smarter with multiple files + parallel?
 
   with tf.device('/cpu:0'):
 
@@ -44,7 +46,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                            ('label' in data_config[d] and data_config[d]['label'])]
 
     # get the dataset
-    dataset = tf.data.Dataset.from_generator(lambda: conll_data_generator(data_filename, data_config),
+    dataset = tf.data.Dataset.from_generator(lambda: conll_data_generator(data_filenames, data_config),
                                              output_shapes=[None, None], output_types=tf.string)
 
     # intmap the dataset
