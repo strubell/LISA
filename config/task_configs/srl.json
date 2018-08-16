@@ -3,7 +3,7 @@
   "srl": {
     "penalty": 1.0,
     "viterbi": true,
-    "transition_stats": "%%transition_stats%%",
+    "transition_stats": "##transition_stats##",
     "output_fn": {
       "name": "srl_bilinear",
       "params": {
@@ -24,10 +24,10 @@
         "name": "conll_srl_eval",
         "params": {
           "gold_srl_eval_file": {
-            "value": "%%save_dir%%/srl_gold.txt"
+            "value": "##save_dir##/srl_gold.txt"
           },
           "pred_srl_eval_file": {
-            "value": "%%save_dir%%/srl_preds.txt"
+            "value": "##save_dir##/srl_preds.txt"
           },
           "reverse_maps": {
             "reverse_maps": [

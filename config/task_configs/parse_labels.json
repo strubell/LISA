@@ -26,10 +26,10 @@
         "name": "conll_parse_eval",
         "params": {
           "gold_parse_eval_file": {
-            "value": "%%save_dir%%/parse_gold.txt"
+            "value": "##save_dir##/parse_gold.txt"
           },
           "pred_parse_eval_file": {
-            "value": "%%save_dir%%/parse_preds.txt"
+            "value": "##save_dir##/parse_preds.txt"
           },
           "reverse_maps": {
             "reverse_maps": [
