@@ -24,11 +24,11 @@ def load_json_configs(config_file_list, args=None):
       # read the json in as a string so that we can run a replace on it
       json_str = Path(config_file).read_text()
       # todo use constant for %%
-      matches = re.findall(r'.*%%(.*)%%.*', json_str)
+      matches = re.findall(r'.*##(.*)##.*', json_str)
       for match in matches:
         try:
           value = getattr(args, match)
-          json_str = json_str.replace(match, value)
+          json_str = json_str.replace('##%s##' % match, value)
         except AttributeError:
           tf.logging.log(tf.logging.ERROR, 'Could not find "%s" attribute in command line args when parsing: %s' %
                          (match, config_file))

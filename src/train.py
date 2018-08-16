@@ -88,7 +88,8 @@ if 'hparams' in model_config:
   hparams.parse_json(hparams_json)
 
 # Override those with command line hyperparams
-hparams.parse(args.hparams)
+if args.hparams:
+  hparams.parse(args.hparams)
 
 # todo make these hparams
 shuffle_buffer_multiplier = 100
