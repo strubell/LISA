@@ -47,9 +47,9 @@ model_config = train_utils.load_json_configs(args.model_configs)
 task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
 
-attention_config = {}
-if args.attention_config and args.attention_config != '':
-  attention_config = train_utils.load_json_configs(args.attention_config)
+attention_configs = {}
+if args.attention_configs and args.attention_configs != '':
+  attention_config = train_utils.load_json_configs(args.attention_configs)
 
 # Reverse the layer config because we really want a mapping from layer indices to task names,
 # but json won't let us have integer keys :)
