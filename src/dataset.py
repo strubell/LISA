@@ -29,7 +29,7 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
   return _mapper
 
 
-def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, is_train,
+def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
                       shuffle_buffer_multiplier):
 
   bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
@@ -61,7 +61,7 @@ def get_data_iterator(data_filename, data_config, vocab_lookup_ops, batch_size, 
                                                                       padding_values=constants.PAD_VALUE))
 
     # shuffle and expand out epochs if training
-    if is_train:
+    if shuffle:
       dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*shuffle_buffer_multiplier,
                                                                  count=num_epochs))
 

@@ -1,0 +1,15 @@
+{
+  "embeddings": {
+    "word_type": {
+      "embedding_dim": 100,
+      "pretrained_embeddings": "embeddings/glove.6B.100d.txt"
+    },
+    "predicate": {
+      "embedding_dim": 100
+    }
+  },
+  "inputs": [
+   "word_type",
+   "predicate"
+ ]
+}

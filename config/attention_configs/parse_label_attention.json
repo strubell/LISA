@@ -1,0 +1,21 @@
+{
+  "parse_label_attention": {
+    "value_fns": {
+      "parse_label": {
+        "name": "label_attention",
+        "params": {
+          "train_label_scores": {
+            "label": "parse_label"
+          },
+          "eval_label_scores": {
+            "layer": "parse_label",
+            "output": "probabilities"
+          },
+          "label_embeddings": {
+            "embeddings": "parse_label"
+          }
+        }
+      }
+    }
+  }
+}

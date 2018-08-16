@@ -1,0 +1,16 @@
+{
+  "best_eval_key": "head_accuracy",
+  "parse_head": {
+    "penalty": 1.0,
+    "output_fn": {
+      "name": "parse_bilinear",
+      "params": {
+      }
+    },
+    "eval_fns": {
+      "head_accuracy": {
+        "name": "accuracy"
+      }
+    }
+  }
+}

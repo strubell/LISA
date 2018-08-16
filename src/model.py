@@ -14,7 +14,8 @@ from lazy_adam_v2 import LazyAdamOptimizer
 
 class LISAModel:
 
-  def __init__(self, hparams, model_config, task_config, attention_config, feature_idx_map, label_idx_map, vocab):
+  def __init__(self, hparams, model_config, task_config, attention_config, feature_idx_map, label_idx_map,
+               vocab):
     self.train_hparams = hparams
     self.test_hparams = train_utils.copy_without_dropout(hparams)
 
@@ -91,18 +92,6 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
-    # todo need to fix moving averages by doing it manually and adding a control_op thing at the END
-
-    # todo move this somewhere else?
-    # also, double check that this is working
-    # def moving_average_getter(getter, name, *args, **kwargs):
-    #
-    #   var = getter(name, *args, **kwargs)
-    #   averaged_var = moving_averager.average(var)
-    #   return averaged_var if averaged_var else var
-
-    # getter = moving_average_getter # None if mode == ModeKeys.TRAIN else moving_average_getter
-
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
       batch_shape = tf.shape(features)
@@ -120,9 +109,11 @@ class LISAModel:
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
 
-      # todo fix masking -- do it in lookup table?
+      # Extract named features from monolithic "features" input
       feats = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in feats.items()}
 
+      # Extract named labels from monolithic "features" input, and mask them
+      # todo fix masking -- is it even necessary?
       labels = {}
       for l, idx in self.label_idx_map.items():
         these_labels = features[:, :, idx[0]:idx[1]] if idx[1] != -1 else features[:, :, idx[0]:]
@@ -138,6 +129,7 @@ class LISAModel:
           these_labels_masked = tf.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
 
+      # Create embeddings tables, loading pre-trained if specified
       embeddings = {}
       for embedding_name, embedding_map in self.model_config['embeddings'].items():
         embedding_dim = embedding_map['embedding_dim']
@@ -154,15 +146,14 @@ class LISAModel:
         embeddings[embedding_name] = embedding_table
         tf.logging.log(tf.logging.INFO, "Created embeddings for '%s'." % embedding_name)
 
+      # Set up model inputs
       inputs_list = []
       for input_name in self.model_config['inputs']:
         input_values = feats[input_name]
         input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
         inputs_list.append(input_embedding_lookup)
         tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
-
       current_input = tf.concat(inputs_list, axis=2)
-
       current_input = tf.nn.dropout(current_input, hparams.input_dropout)
 
       with tf.variable_scope('project_input'):
@@ -184,6 +175,7 @@ class LISAModel:
             special_attn = []
             special_values = []
             if i in self.attention_config:
+
               this_layer_attn_config = self.attention_config[i]
 
               if 'attention_fns' in this_layer_attn_config:

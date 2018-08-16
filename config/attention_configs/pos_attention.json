@@ -1,0 +1,21 @@
+{
+  "pos_attention": {
+    "value_fns": {
+      "pos": {
+        "name": "label_attention",
+        "params": {
+          "train_label_scores": {
+            "label": "gold_pos"
+          },
+          "eval_label_scores": {
+            "layer": "joint_pos_predicate",
+            "output": "gold_pos_probabilities"
+          },
+          "label_embeddings": {
+            "embeddings": "gold_pos"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,44 @@
 import tensorflow as tf
+import json
+import re
+import sys
+from pathlib import Path
+
+
+def load_json_configs(config_file_list, args=None):
+  """
+  Loads a list of json configuration files into one combined map. Configuration files
+  at the end of the list take precedece over earlier configuration files (so they will
+  overwrite earlier configs!)
+
+  If args is passed, then this function will attempt to replace
+
+  :param config_file_list: list of json configuration files to load
+  :param args: command line args to replace special strings in json
+  :return: map containing combined configurations
+  """
+  combined_config = {}
+  config_files = config_file_list.split(',')
+  for config_file in config_files:
+    if args:
+      # read the json in as a string so that we can run a replace on it
+      json_str = Path(config_file).read_text()
+      # todo use cosntant for %%
+      matches = re.findall(r'.*%%(.*)%%.*', json_str)
+      for match in matches:
+        try:
+          value = getattr(args, match)
+          json_str = json_str.replace(match, value)
+        except AttributeError:
+          tf.logging.log(tf.logging.ERROR, 'Could not find "%s" attribute in command line args when parsing: %s' %
+                         (match, config_file))
+          sys.exit(1)
+      config = json.loads(json_str)
+    else:
+      with open(config_file) as f:
+        config = json.load(f)
+    combined_config = {**combined_config, **config}
+  return combined_config
 
 
 def copy_without_dropout(hparams):

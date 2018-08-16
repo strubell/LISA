@@ -1,0 +1,65 @@
+{
+  "best_eval_key": "srl_f1",
+  "srl": {
+    "penalty": 1.0,
+    "viterbi": true,
+    // todo load this more generically, prob by adding a group of command line params, so that we can have diff stats per task
+    "transition_stats": "%%transition_stats%%",
+    "output_fn": {
+      "name": "srl_bilinear",
+      "params": {
+        "predicate_targets": {
+          "label": "predicate"
+        },
+        "predicate_preds_train": {
+          "label": "predicate"
+        },
+        "predicate_preds_eval": {
+          "layer": "joint_pos_predicate",
+          "output": "predicate_predictions"
+        }
+      }
+    },
+    "eval_fns": {
+      "srl_f1": {
+        "name": "conll_srl_eval",
+        "params": {
+          "gold_srl_eval_file": {
+            "value": "%%save_dir%%/srl_gold.txt"
+          },
+          "pred_srl_eval_file": {
+            "value": "%%save_dir%%/srl_preds.txt"
+          },
+          "reverse_maps": {
+            "reverse_maps": [
+              "word",
+              "srl",
+              "gold_pos"
+            ]
+          },
+          "targets": {
+            "layer": "srl",
+            "output": "targets"
+          },
+          "predicate_targets": {
+            "label": "predicate"
+          },
+          "words": {
+            "feature": "word"
+          },
+          "predicate_predictions": {
+            "layer": "joint_pos_predicate",
+            "output": "predicate_predictions"
+          },
+          "pos_predictions": {
+            "layer": "joint_pos_predicate",
+            "output": "gold_pos_predictions"
+          },
+          "pos_targets": {
+            "label": "gold_pos"
+          }
+        }
+      }
+    }
+  }
+}

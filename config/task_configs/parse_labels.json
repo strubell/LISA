@@ -1,0 +1,58 @@
+{
+"parse_label": {
+  // todo: currently can't have parse eval be best parse key since it's a list
+  "penalty": 0.1,
+  "output_fn": {
+    "name": "conditional_bilinear",
+    "params": {
+      "dep_rel_mlp": {
+        "layer": "parse_head",
+        "output": "dep_rel_mlp"
+      },
+      "head_rel_mlp": {
+        "layer": "parse_head",
+        "output": "head_rel_mlp"
+      },
+      "parse_preds_train": {
+        "label": "parse_head"
+      },
+      "parse_preds_eval": {
+        "layer": "parse_head",
+        "output": "predictions"
+      }
+    }
+  },
+  "eval_fns": {
+    "parse_eval": {
+      "name": "conll_parse_eval",
+      "params": {
+        "gold_parse_eval_file": {
+          "value": "%%save_dir%%/parse_gold.txt"
+        },
+        "pred_parse_eval_file": {
+          "value": "%%save_dir%%/parse_preds.txt"
+        },
+        "reverse_maps": {
+          "reverse_maps": [
+            "word",
+            "parse_label",
+            "gold_pos"
+          ]
+        },
+        "parse_head_predictions": {
+          "layer": "parse_head",
+          "output": "predictions"
+        },
+        "parse_head_targets": {
+          "label": "parse_head",
+        },
+        "words": {
+          "feature": "word",
+        },
+        "pos_targets": {
+          "label": "gold_pos"
+        }
+      }
+    }
+  }
+}
