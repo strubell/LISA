@@ -23,7 +23,7 @@ def load_json_configs(config_file_list, args=None):
     if args:
       # read the json in as a string so that we can run a replace on it
       json_str = Path(config_file).read_text()
-      # todo use cosntant for %%
+      # todo use constant for %%
       matches = re.findall(r'.*%%(.*)%%.*', json_str)
       for match in matches:
         try:
@@ -33,10 +33,20 @@ def load_json_configs(config_file_list, args=None):
           tf.logging.log(tf.logging.ERROR, 'Could not find "%s" attribute in command line args when parsing: %s' %
                          (match, config_file))
           sys.exit(1)
-      config = json.loads(json_str)
+      try:
+        config = json.loads(json_str)
+      except json.decoder.JSONDecodeError as e:
+        tf.logging.log(tf.logging.ERROR, 'Error reading json: "%s"' % config_file)
+        tf.logging.log(tf.logging.ERROR, e.msg)
+        sys.exit(1)
     else:
       with open(config_file) as f:
-        config = json.load(f)
+        try:
+          config = json.load(f)
+        except json.decoder.JSONDecodeError as e:
+          tf.logging.log(tf.logging.ERROR, 'Error reading json: "%s"' % config_file)
+          tf.logging.log(tf.logging.ERROR, e.msg)
+          sys.exit(1)
     combined_config = {**combined_config, **config}
   return combined_config
 
