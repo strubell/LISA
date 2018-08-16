@@ -62,7 +62,7 @@ def get_vars_for_moving_average(average_norms):
     vars_to_average = [v for v in tf.trainable_variables() if 'norm' not in v.name]
 
   tf.logging.log(tf.logging.INFO, "Creating moving averages for %d variables." % len(vars_to_average))
-  tf.logging.log(tf.logging.INFO, "Creating moving averages for variables: %s" % str([v.name for v in vars_to_average]))
+  # tf.logging.log(tf.logging.INFO, "Creating moving averages for variables: %s" % str([v.name for v in vars_to_average]))
   return vars_to_average
 
 

@@ -47,7 +47,7 @@ model_config = train_utils.load_json_configs(args.model_configs)
 task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
 
-attention_configs = {}
+attention_config = {}
 if args.attention_configs and args.attention_configs != '':
   attention_config = train_utils.load_json_configs(args.attention_configs)
 
@@ -70,10 +70,6 @@ for task_or_attn_name, layer in layer_config.items():
     tf.logging.log(tf.logging.ERROR, 'No task or attention config "%s"' % task_or_attn_name)
     sys.exit(1)
 
-print("layer task config", layer_task_config)
-
-print("layer attn config", layer_attention_config)
-
 tf.logging.set_verbosity(tf.logging.INFO)
 tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
 
@@ -90,6 +86,8 @@ if 'hparams' in model_config:
 # Override those with command line hyperparams
 if args.hparams:
   hparams.parse(args.hparams)
+
+tf.logging.log(tf.logging.INFO, "Using hyperparameters: \n%s" % str(hparams.values()))
 
 # todo make these hparams
 shuffle_buffer_multiplier = 100
@@ -155,6 +153,9 @@ for i, f in enumerate([d for d in data_config.keys() if
 # Initialize the model
 model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
                   vocab)
+
+if args.debug:
+  tf.logging.log(tf.logging.INFO, "Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
 
 # Set up the Estimator
 checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
