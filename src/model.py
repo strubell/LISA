@@ -210,9 +210,10 @@ class LISAModel:
                 with tf.variable_scope("crf"):  # to share parameters, change scope here
                   transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
 
-                  # todo vocab_lookups not yet initialized -- fix
-                  transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
-                                                           self.vocab.vocab_maps[task]) if transition_stats_file else None
+                  transition_stats = None
+                  if transition_stats_file:
+                    transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
+                                                             self.vocab.vocab_maps[task])
 
                   # create transition parameters if training or decoding with crf/viterbi
                   task_crf = 'crf' in task_map and task_map['crf']
@@ -266,9 +267,7 @@ class LISAModel:
                                                             num_updates=tf.train.get_global_step())
         moving_average_op = moving_averager.apply(train_utils.get_vars_for_moving_average(hparams.average_norms))
         # tf.logging.log(tf.logging.INFO,
-        #                "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()]))
-        tf.logging.log(tf.logging.INFO, "%s moving averages for %d variables." %
-                       ("Creating" if mode == ModeKeys.TRAIN else "Using", len(tf.trainable_variables())))
+        #                "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()])
 
         tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 

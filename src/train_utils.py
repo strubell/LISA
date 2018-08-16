@@ -57,10 +57,13 @@ def copy_without_dropout(hparams):
 
 
 def get_vars_for_moving_average(average_norms):
-  all_vars = tf.trainable_variables()
+  vars_to_average = tf.trainable_variables()
   if not average_norms:
-    return [v for v in all_vars if 'norm' not in v.name]
-  return all_vars
+    vars_to_average = [v for v in tf.trainable_variables() if 'norm' not in v.name]
+
+  tf.logging.log(tf.logging.INFO, "Creating moving averages for %d variables." % len(vars_to_average))
+  tf.logging.log(tf.logging.INFO, "Creating moving averages for variables: %s" % str([v.name for v in vars_to_average]))
+  return vars_to_average
 
 
 def learning_rate(hparams, global_step):
