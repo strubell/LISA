@@ -27,7 +27,7 @@ hparams = {
   'gradient_clip_norm': 5.0,
   'label_smoothing': 0.1,
   'moving_average_decay': 0.999,
-  'average_norms': False,
+  'average_norms': True,
   'input_dropout': 1.0,
   'bilinear_dropout': 1.0,
   'mlp_dropout': 1.0,
