@@ -80,14 +80,15 @@ hparams = tf.contrib.training.HParams(**constants.hparams)
 # First get default hyperparams from the model config
 if 'hparams' in model_config:
   # todo don't dump once this is actually json
-  hparams_json = json.dumps(model_config['hparams'])
-  hparams.parse_json(hparams_json)
+  # hparams_json = json.dumps(model_config['hparams'])
+  # hparams.parse_json(hparams_json)
+  hparams.override_from_dict(model_config['hparams'])
 
 # Override those with command line hyperparams
 if args.hparams:
   hparams.parse(args.hparams)
 
-tf.logging.log(tf.logging.INFO, "Using hyperparameters: \n%s" % str(hparams.values()))
+tf.logging.log(tf.logging.INFO, "Using hyperparameters: %s" % str(hparams.values()))
 
 # todo make these hparams
 shuffle_buffer_multiplier = 100
