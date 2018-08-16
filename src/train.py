@@ -21,7 +21,7 @@ arg_parser.add_argument('--save_dir', required=True,
 # todo load this more generically, so that we can have diff stats per task
 arg_parser.add_argument('--transition_stats',
                         help='Transition statistics between labels')
-arg_parser.add_argument('--hparams',
+arg_parser.add_argument('--hparams', type=str,
                         help='Comma separated list of "name=value" hyperparameter settings.')
 arg_parser.add_argument('--debug', dest='debug', action='store_true',
                         help='Whether to run in debug mode: a little faster and smaller')
