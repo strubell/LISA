@@ -1,6 +1,5 @@
 {
   "parse_label": {
-    // todo: currently can't have parse eval be best parse key since it's a list
     "penalty": 0.1,
     "output_fn": {
       "name": "conditional_bilinear",
