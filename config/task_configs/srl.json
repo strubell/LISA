@@ -3,7 +3,6 @@
   "srl": {
     "penalty": 1.0,
     "viterbi": true,
-    // todo load this more generically, prob by adding a group of command line params, so that we can have diff stats per task
     "transition_stats": "%%transition_stats%%",
     "output_fn": {
       "name": "srl_bilinear",
