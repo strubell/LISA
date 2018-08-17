@@ -10,8 +10,8 @@ arg_parser.add_argument('--test_files',
                         help='Comma-separated list of test data files')
 arg_parser.add_argument('--dev_files',
                         help='Comma-separated list of development data files')
-arg_parser.add_argument('--load_dir', required=True,
-                        help='Directory to load model from')
+arg_parser.add_argument('--save_dir', required=True,
+                        help='Directory containing saved model')
 # todo load this more generically, so that we can have diff stats per task
 arg_parser.add_argument('--transition_stats',
                         help='Transition statistics between labels')
@@ -68,7 +68,7 @@ hparams = train_utils.load_hparams(args, model_config)
 dev_filenames = args.dev_files.split(',')
 test_filenames = args.test_files.split(',') if args.test_files else []
 
-vocab = Vocab(data_config, args.load_dir)
+vocab = Vocab(data_config, args.save_dir)
 vocab.update(test_filenames)
 
 embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in model_config['embeddings'].values()
@@ -96,7 +96,7 @@ model = LISAModel(hparams, model_config, layer_task_config, layer_attention_conf
                   vocab)
 
 # Set up the Estimator
-estimator = tf.estimator.Estimator(model_fn=model.model_fn) #model_dir=args.load_dir)
+estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
 
 def dev_input_fn():
@@ -104,12 +104,12 @@ def dev_input_fn():
                                   embedding_files=embedding_files)
 
 
-estimator.evaluate(input_fn=dev_input_fn, checkpoint_path=args.load_dir)
+estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
 for test_file in test_filenames:
   def test_input_fn():
     return train_utils.get_input_fn(vocab, data_config, test_file, hparams.batch_size, num_epochs=1, shuffle=False,
                                     embedding_files=embedding_files)
 
-  estimator.evaluate(input_fn=test_input_fn, checkpoint_path=args.load_dir)
+  estimator.evaluate(input_fn=test_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
