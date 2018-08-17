@@ -2,12 +2,9 @@ import tensorflow as tf
 import argparse
 import os
 from functools import partial
-import constants
 import train_utils
-import dataset
 from vocab import Vocab
 from model import LISAModel
-import json
 import numpy as np
 import sys
 

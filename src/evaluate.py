@@ -19,7 +19,8 @@ arg_parser.add_argument('--debug', dest='debug', action='store_true',
                         help='Whether to run in debug mode: a little faster and smaller')
 arg_parser.add_argument('--data_config', required=True,
                         help='Path to data configuration json')
-
+arg_parser.add_argument('--hparams', type=str,
+                        help='Comma separated list of "name=value" hyperparameter settings.')
 # todo: are these necessary?
 arg_parser.add_argument('--model_configs', required=True,
                         help='Comma-separated list of paths to model configuration json.')
