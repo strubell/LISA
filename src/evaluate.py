@@ -68,7 +68,7 @@ hparams = train_utils.load_hparams(args, model_config)
 dev_filenames = args.dev_files.split(',')
 test_filenames = args.test_files.split(',') if args.test_files else []
 
-vocab = Vocab(data_config, args.save_dir)
+vocab = Vocab(data_config, args.load_dir)
 vocab.update(test_filenames)
 
 embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in model_config['embeddings'].values()
