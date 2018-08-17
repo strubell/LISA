@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import time
 import os
 from subprocess import check_output, CalledProcessError
 
@@ -171,8 +172,8 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
   sent_lens = np.sum(mask, -1).astype(np.int32)
 
   # import time
-  # debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
-  # write_srl_debug(debug_fname, words, predicate_targets, sent_lens, srl_targets, pos_predictions, pos_targets)
+  debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
+  write_srl_debug(debug_fname, words, predicate_targets, sent_lens, srl_targets, pos_predictions, pos_targets)
 
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
