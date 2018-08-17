@@ -16,8 +16,6 @@ argparser.add_argument('--script', type=str)
 args = argparser.parse_args(sys.argv[1:])
 
 user = os.environ["USER"]
-# base_cmd = os.environ["CMD"]
-# out_dir = os.environ["OUT_DIR"]
 
 datetime_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 
@@ -26,10 +24,6 @@ print("Writing to output dir: %s" % out_dir)
 
 if not os.path.exists(out_dir):
   os.makedirs(out_dir)
-
-# if not base_cmd or not out_dir:
-#     print('CMD or OUT_DIR not set')
-#     sys.exit(1)
 
 partition_maxjobs = [p.split(':') for p in args.partition.split(',')]
 partition_maxjobs = [(s, int(v)) for s, v in partition_maxjobs]
@@ -41,7 +35,7 @@ params = {
   'beta2': [0.98],
   'epsilon': [1e-12],
   'moving_average_decay': [0.0, 0.9999],
-  'average_norms': [True, False],
+  'average_norms': [False],
   'batch_size': [256],
   'gradient_clip_norm': [5.0],
 
