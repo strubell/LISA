@@ -2,7 +2,40 @@ import tensorflow as tf
 import json
 import re
 import sys
+import dataset
+import constants
 from pathlib import Path
+
+
+def load_hparams(args, model_config):
+  # Create a HParams object specifying the names and values of the model hyperparameters
+  hparams = tf.contrib.training.HParams(**constants.hparams)
+
+  # First get default hyperparams from the model config
+  if 'hparams' in model_config:
+    hparams.override_from_dict(model_config['hparams'])
+
+  if args.debug:
+    hparams.set_hparam('shuffle_buffer_multiplier', 10)
+    hparams.set_hparam('eval_throttle_secs', 60)
+    hparams.set_hparam('eval_every_steps', 100)
+
+  # Override those with command line hyperparams
+  if args.hparams:
+    hparams.parse(args.hparams)
+
+  tf.logging.log(tf.logging.INFO, "Using hyperparameters: %s" % str(hparams.values()))
+
+  return hparams
+
+
+def get_input_fn(vocab, data_config, data_files, batch_size, num_epochs, shuffle,
+                 shuffle_buffer_multiplier=1, embedding_files=None):
+  # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
+  vocab_lookup_ops = vocab.create_vocab_lookup_ops(embedding_files)
+
+  return dataset.get_data_iterator(data_files, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
+                                   shuffle_buffer_multiplier)
 
 
 def load_json_configs(config_file_list, args=None):
@@ -23,7 +56,6 @@ def load_json_configs(config_file_list, args=None):
     if args:
       # read the json in as a string so that we can run a replace on it
       json_str = Path(config_file).read_text()
-      # todo use constant for %%
       matches = re.findall(r'.*##(.*)##.*', json_str)
       for match in matches:
         try:
@@ -60,9 +92,7 @@ def get_vars_for_moving_average(average_norms):
   vars_to_average = tf.trainable_variables()
   if not average_norms:
     vars_to_average = [v for v in tf.trainable_variables() if 'norm' not in v.name]
-
   tf.logging.log(tf.logging.INFO, "Creating moving averages for %d variables." % len(vars_to_average))
-  # tf.logging.log(tf.logging.INFO, "Creating moving averages for variables: %s" % str([v.name for v in vars_to_average]))
   return vars_to_average
 
 
