@@ -105,12 +105,12 @@ def dev_input_fn():
                                   embedding_files=embedding_files)
 
 
-estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
+estimator.evaluate(input_fn=dev_input_fn) #checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
 for test_file in test_filenames:
   def test_input_fn():
     return train_utils.get_input_fn(vocab, data_config, test_file, hparams.batch_size, num_epochs=1, shuffle=False,
                                     embedding_files=embedding_files)
 
-  estimator.evaluate(input_fn=test_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
+  estimator.evaluate(input_fn=test_input_fn) #, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
