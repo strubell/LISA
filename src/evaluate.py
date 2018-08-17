@@ -69,9 +69,6 @@ hparams = train_utils.load_hparams(args, model_config)
 dev_filenames = args.dev_files.split(',')
 test_filenames = args.test_files.split(',') if args.test_files else []
 
-print("dev filenames: ", dev_filenames)
-print("test filenames: ", test_filenames)
-
 vocab = Vocab(data_config, args.save_dir)
 vocab.update(test_filenames)
 
@@ -113,7 +110,7 @@ estimator.evaluate(input_fn=dev_input_fn) #checkpoint_path="%s/export/best_expor
 
 for test_file in test_filenames:
   def test_input_fn():
-    return train_utils.get_input_fn(vocab, data_config, test_file, hparams.batch_size, num_epochs=1, shuffle=False,
+    return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
                                     embedding_files=embedding_files)
 
 
