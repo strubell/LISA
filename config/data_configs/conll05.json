@@ -52,7 +52,7 @@
     }
   },
   "predicate": {
-    "conll_idx": 9,
+    "conll_idx": 10,
     "label": true,
     "vocab": "predicate",
     "converter": {
