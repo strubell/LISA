@@ -105,6 +105,7 @@ def dev_input_fn():
                                   embedding_files=embedding_files)
 
 
+tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
 estimator.evaluate(input_fn=dev_input_fn) #checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
 for test_file in test_filenames:
@@ -112,5 +113,7 @@ for test_file in test_filenames:
     return train_utils.get_input_fn(vocab, data_config, test_file, hparams.batch_size, num_epochs=1, shuffle=False,
                                     embedding_files=embedding_files)
 
+
+  tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
   estimator.evaluate(input_fn=test_input_fn) #, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
