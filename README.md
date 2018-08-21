@@ -20,7 +20,14 @@ Data setup:
 
 Train a model:
 ----
-To train a model with save directory `model`:
+To train a model with save directory `model` using the configuration `conll05-lisa.conf`:
 ```
-bin/train.sh --save_dir model
+bin/train.sh config/conll05-lisa.conf --save_dir model
+```
+
+Evaluate a model:
+----
+To evaluate the latest checkpoint saved in the directory `model`:
+```
+bin/evaluate.sh config/conll05-lisa.conf --save_dir model
 ```
