@@ -80,6 +80,8 @@ if not os.path.exists(args.save_dir):
 train_filenames = args.train_files.split(',')
 dev_filenames = args.dev_files.split(',')
 
+print("train filesnames", train_filenames)
+
 vocab = Vocab(data_config, args.save_dir, train_filenames)
 vocab.update(dev_filenames)
 
