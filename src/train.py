@@ -123,7 +123,7 @@ if args.debug:
   tf.logging.log(tf.logging.INFO, "Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
 
 # Set up the Estimator
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=eval_every_steps, keep_checkpoint_max=1)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_steps, keep_checkpoint_max=1)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
 # Set up early stopping -- always keep the model with the best F1
@@ -134,7 +134,7 @@ save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.be
 
 # Train forever until killed
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=eval_throttle_secs,
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=hparams.eval_throttle_secs,
                                   exporters=[save_best_exporter])
 
 # Run training
