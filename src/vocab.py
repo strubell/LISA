@@ -92,6 +92,7 @@ class Vocab:
     vocabs = []
     vocabs_index = {}
     for d in data_config:
+      print("d", d)
       updatable = 'updatable' in data_config[d] and data_config[d]['updatable']
       if 'vocab' in data_config[d] and data_config[d]['vocab'] == d and (updatable or not update_only):
         this_vocab = {}
