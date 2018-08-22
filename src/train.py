@@ -80,7 +80,7 @@ if not os.path.exists(args.save_dir):
 train_filenames = args.train_files.split(',')
 dev_filenames = args.dev_files.split(',')
 
-vocab = Vocab(train_filenames, data_config, args.save_dir)
+vocab = Vocab(data_config, args.save_dir, train_filenames)
 vocab.update(dev_filenames)
 
 embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in model_config['embeddings'].values()
