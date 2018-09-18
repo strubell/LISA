@@ -22,7 +22,8 @@ Data setup (CoNLL-2005):
     wget -P embeddings http://nlp.stanford.edu/data/glove.6B.zip
     unzip -j embeddings/glove.6B.zip glove.6B.100d.txt -d embeddings
     ```
-2. Get CoNLL-2005 data in the right format using [this repo](https://github.com/strubell/preprocess-conll05).
+2. Get CoNLL-2005 data in the right format using [this repo](https://github.com/strubell/preprocess-conll05). 
+Follow the instructions all the way through [further preprocessing](https://github.com/strubell/preprocess-conll05#further-pre-processing-eg-for-lisa).
 3. Make sure the correct data paths are set in `config/conll05.conf`
 
 Quick start:
