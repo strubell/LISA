@@ -14,6 +14,8 @@ Requirements:
 - \>= Python 3.6
 - \>= TensorFlow 1.10
 
+Quick start:
+============
 
 Data setup (CoNLL-2005):
 ----
@@ -25,9 +27,6 @@ Data setup (CoNLL-2005):
 2. Get CoNLL-2005 data in the right format using [this repo](https://github.com/strubell/preprocess-conll05). 
 Follow the instructions all the way through [further preprocessing](https://github.com/strubell/preprocess-conll05#further-pre-processing-eg-for-lisa).
 3. Make sure the correct data paths are set in `config/conll05.conf`
-
-Quick start:
-============
 
 Train a model:
 ----
