@@ -9,8 +9,8 @@ linguistically-informed self-attention (LISA) model described in the following p
 > *Conference on Empirical Methods in Natural Language Processing (EMNLP)*. 
 > Brussels, Belgium. October 2018. 
 
-To exactly replicate the results in the paper at the cost of an unpleasantly hacky codebase, you
-can use the [original LISA code here](https://github.com/strubell/LISA-v1).
+**To exactly replicate the results in the paper at the cost of an unpleasantly hacky codebase, you
+can use the [original LISA code here](https://github.com/strubell/LISA-v1).**
 
 Requirements:
 ----
