@@ -1,5 +1,7 @@
 import argparse
+import nltk
 from nltk.tokenize.nist import NISTTokenizer
+nltk.download('perluniprops')
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('--file1', type=str)
