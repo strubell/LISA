@@ -23,7 +23,7 @@
    "ff_hidden_size": 2048
  },
  "embeddings": {
-   "lang1": {
+   "word_type": {
      "embedding_dim": 512
    }
  },
