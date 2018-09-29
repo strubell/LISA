@@ -4,6 +4,42 @@ import nn_utils
 import tf_utils
 
 
+def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, transition_params):
+
+  with tf.name_scope('softmax_classifier'):
+
+    # # todo pass this as initial proj dim (which is optional)
+    # projection_dim = model_config['predicate_pred_mlp_size']
+    #
+    # with tf.variable_scope('MLP'):
+    #   mlp = nn_utils.MLP(inputs, projection_dim, keep_prob=hparams.mlp_dropout, n_splits=1)
+    with tf.variable_scope('Classifier'):
+      logits = nn_utils.MLP(inputs, num_labels, keep_prob=hparams.mlp_dropout, n_splits=1)
+
+    # todo implement this
+    if transition_params is not None:
+      print('Transition params not yet supported in softmax_classifier')
+      exit(1)
+
+    # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
+    targets_onehot = tf.one_hot(indices=targets, depth=num_labels, axis=-1)
+    loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(logits, [-1, num_labels]),
+                                           onehot_labels=tf.reshape(targets_onehot, [-1, num_labels]),
+                                           weights=tf.reshape(tokens_to_keep, [-1]),
+                                           label_smoothing=hparams.label_smoothing,
+                                           reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+
+    predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
+
+    output = {
+      'loss': loss,
+      'predictions': predictions,
+      'scores': logits
+    }
+
+  return output
+
+
 def get_separate_scores_preds_from_joint(joint_outputs, joint_maps, joint_num_labels):
   predictions = joint_outputs['predictions']
   scores = joint_outputs['scores']
@@ -239,6 +275,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 dispatcher = {
   'srl_bilinear': srl_bilinear,
   'joint_softmax_classifier': joint_softmax_classifier,
+  'softmax_classifier': softmax_classifier,
   'parse_bilinear': parse_bilinear,
   'conditional_bilinear': conditional_bilinear,
 }
