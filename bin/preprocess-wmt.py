@@ -16,6 +16,8 @@ PAD_STR = "<PAD>"
 source_files = args.source_files.split(",")
 target_files = args.target_files.split(",")
 
+print("Writing to file: %s" % args.output_file)
+
 source_max_len = 0
 target_max_len = 0
 target_2x_source = 0
