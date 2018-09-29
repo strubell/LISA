@@ -24,7 +24,7 @@
  },
  "embeddings": {
    "lang1": {
-     "embedding_dim": 512,
+     "embedding_dim": 512
    }
  },
  "inputs": [
