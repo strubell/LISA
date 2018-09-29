@@ -1,0 +1,25 @@
+{
+  "best_eval_key": "lang2_acc",
+  "lang2": {
+    "penalty": 1.0,
+    "output_fn": {
+      "name": "softmax_classifier",
+      "params": {
+      }
+    },
+    "eval_fns": {
+      "lang2_acc": {
+        "name": "accuracy",
+        "params": {
+          "predictions": {
+            "layer": "lang2",
+            "output": "predictions"
+          },
+          "targets": {
+            "label": "lang2"
+          }
+        }
+      }
+    }
+  }
+}
