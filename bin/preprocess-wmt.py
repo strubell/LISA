@@ -1,22 +1,36 @@
 import argparse
-# import nltk
 from nltk.tokenize.nist import NISTTokenizer
-# nltk.download('perluniprops')
 
 arg_parser = argparse.ArgumentParser()
-arg_parser.add_argument('--file1', type=str)
-arg_parser.add_argument('--file2', type=str)
+arg_parser.add_argument('--source_file', type=str)
+arg_parser.add_argument('--target_file', type=str)
 
 args = arg_parser.parse_args()
 
 tokenizer = NISTTokenizer()
 
-with open(args.file1, 'r') as f1, open(args.file2, 'r') as f2:
-  for line1, line2 in zip(f1, f2):
-    line1_toks = tokenizer.tokenize(line1)
-    line2_toks = tokenizer.tokenize(line2)
-    print(line1_toks)
-    print(line2_toks)
+source_max_len = 0
+target_max_len = 0
+target_2x_source = 0
+with open(args.source_file, 'r') as source, open(args.target_file, 'r') as target:
+  for source_line, target_line in zip(source, target):
+    source_toks = tokenizer.tokenize(source_line)
+    target_toks = tokenizer.tokenize(target_line)
+    source_len = len(source_toks)
+    target_len = len(target_toks)
+    if source_len > source_max_len:
+      source_max_len = source_len
+    if target_len > target_max_len:
+      target_max_len = target_len
+
+    if target_len > 2 * source_len:
+      target_2x_source += 1
+
+print("max source len: %d" % source_max_len)
+print("max target len: %d" % target_max_len)
+print("target > 2 * source: %d" % target_2x_source)
+
+
 
 
 
