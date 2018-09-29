@@ -42,6 +42,7 @@ with open(args.source_file, 'r') as source, \
 
     for source_tok, target_tok in zip(source_toks, target_toks):
       print("%s\t%s" % (source_tok, target_tok), file=output)
+    print("", file=output)
 
     line_count += 1
     if line_count % 10000 == 0:
