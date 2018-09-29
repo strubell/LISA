@@ -1,11 +1,11 @@
 {
   "lang1": {
-    "conll_idx": 1,
+    "conll_idx": 0,
     "vocab": "lang1",
     "feature": true
   },
   "lang2": {
-    "conll_idx": 2,
+    "conll_idx": 1,
     "vocab": "lang2",
     "label": true
   }
