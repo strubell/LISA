@@ -1,7 +1,7 @@
 {
-  "lang1": {
+  "word_type": {
     "conll_idx": 0,
-    "vocab": "lang1",
+    "vocab": "word_type",
     "feature": true
   },
   "lang2": {
