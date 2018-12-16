@@ -1,0 +1,17 @@
+{
+  "parse_attention": {
+    "attention_fns": {
+      "parse_heads": {
+        "name": "copy_from_predicted",
+        "params": {
+          "train_attention_to_copy": {
+            "label": "parse_head"
+          },
+          "eval_attention_to_copy": {
+            "label": "parse_head"
+          }
+        }
+      }
+    }
+  }
+}

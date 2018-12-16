@@ -104,11 +104,11 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
 
 
 # Write to this format for eval.pl:
-# 1       The     _       DT      _       _       2       det
-# 2       economy _       NN      _       _       4       poss
-# 3       's      _       POS     _       _       2       possessive
+# 1       The             _       DT      _       _       2       det
+# 2       economy         _       NN      _       _       4       poss
+# 3       's              _       POS     _       _       2       possessive
 # 4       temperature     _       NN      _       _       7       nsubjpass
-# 5       will    _       MD      _       _       7       aux
+# 5       will            _       MD      _       _       7       aux
 def write_parse_eval(filename, words, parse_heads, sent_lens, parse_labels, pos_tags):
   with open(filename, 'w') as f:
 
