@@ -126,7 +126,7 @@ with tf.Session() as sess:
 
   print(predictions.keys())
 
-  srl_predictions = predictions['srl_predictions'],
+  srl_predictions = predictions['srl_predictions'][0],
   predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
   feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
