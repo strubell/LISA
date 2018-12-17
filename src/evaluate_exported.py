@@ -159,7 +159,7 @@ with tf.Session() as sess:
 
   print("labels", labels['srl'].shape)
 
-  str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in labels['srl']]
+  str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, t)) for s in labels['srl'] for t in s]
   predicate_targets = labels['predicate']
 
   print("predicates", predicate_targets)
