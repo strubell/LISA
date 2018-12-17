@@ -145,6 +145,10 @@ with tf.Session() as sess:
   print(input_np.shape)
   print(feats['word'])
 
+  print("predicates", predicate_targets)
+  print(np.sum(predicate_targets, -1))
+  print(np.sum(predicate_predictions, -1))
+
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
   print(task_config['srl']['eval_fns']['srl_f1'])
