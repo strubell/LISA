@@ -150,7 +150,7 @@ with tf.Session() as sess:
     labels[l] = these_labels_masked
 
   str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
-  predicate_targets = np.transpose(labels['predicate'], [0, 2, 1])
+  predicate_targets = labels['predicate']
 
   print("predicates", predicate_targets)
   print(np.sum(predicate_targets, -1))
