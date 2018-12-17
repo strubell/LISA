@@ -134,10 +134,6 @@ with tf.Session() as sess:
   str_srl_predictions = map(vocab.reverse_maps['srl'].get, srl_predictions)
   str_words = map(vocab.reverse_maps['word'].get, feats['word'])
 
-  print("predicates", predicate_targets)
-  print(np.sum(predicate_targets, -1))
-  print(np.sum(predicate_predictions, -1))
-
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
   labels = {}
@@ -156,12 +152,9 @@ with tf.Session() as sess:
   str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
   predicate_targets = np.transpose(labels['predicate'], [0, 2, 1])
 
-  print(feats.keys())
-  print(labels.keys())
-
-
-
-  print(task_config['srl']['eval_fns']['srl_f1'])
+  print("predicates", predicate_targets)
+  print(np.sum(predicate_targets, -1))
+  print(np.sum(predicate_predictions, -1))
 
   srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
                                                                    str_words, tokens_to_keep, str_srl_targets,
