@@ -129,13 +129,16 @@ with tf.Session() as sess:
   predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
   feats = {f: input[:, :, idx] for f, idx in feature_idx_map.items()}
+  labels = {}
+  for l, idx in label_idx_map.items():
+    these_labels = input[:, :, idx[0]:idx[1]] if idx[1] != -1 else input[:, :, idx[0]:]
 
   print(feats.keys())
 
   str_srl_predictions = map(vocab.reverse_maps['srl'].get, srl_predictions)
   str_words = map(vocab.reverse_maps['word'].get, feats['word'])
-  str_srl_targets = map(vocab.reverse_maps['srl'].get, feats['srl'])
-  predicate_targets = feats['predicate']
+  str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
+  predicate_targets = labels['predicate']
 
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
