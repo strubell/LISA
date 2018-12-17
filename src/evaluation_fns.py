@@ -97,7 +97,8 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       # for each token in the sentence
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         tok_role_labels = sent_role_labels[j] if sent_role_labels else []
-        predicate_str = word.decode('utf-8') if predicate else '-'
+        word = word if type(word) == 'str' else word.decode('utf-8')
+        predicate_str = word if predicate else '-'
         roles_str = '\t'.join(tok_role_labels)
         print("%s\t%s" % (predicate_str, roles_str), file=f)
       print(file=f)
@@ -172,7 +173,7 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
   sent_lens = np.sum(mask, -1).astype(np.int32)
 
   # import time
-  debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
+  # debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
   # write_srl_debug(debug_fname, words, predicate_targets, sent_lens, srl_targets, pos_predictions, pos_targets)
 
   # write gold labels
