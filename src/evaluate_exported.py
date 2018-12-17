@@ -115,10 +115,10 @@ input = dev_input_fn()
 
 input = tf.Print(input, [input], summarize=500)
 
-with tf.get_default_session() as sess:
-  input = {'input': input.eval(sess=sess)}
+with tf.Session() as sess:
+  predictor_input = {'input': input.eval(sess=sess)}
 
-  predictions = predict_fn(input)
+  predictions = predict_fn(predictor_input)
   print(predictions)
 
 
