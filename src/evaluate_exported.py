@@ -153,8 +153,6 @@ with tf.Session() as sess:
   predicate_targets = labels['predicate']
 
   print("predicates", predicate_targets)
-  print(np.sum(predicate_targets, -1))
-  print(np.sum(predicate_predictions, -1))
 
   srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
                                                                    str_words, tokens_to_keep, str_srl_targets,
