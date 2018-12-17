@@ -140,10 +140,7 @@ with tf.Session() as sess:
   str_srl_predictions = map(vocab.reverse_maps['srl'].get, srl_predictions)
   str_words = map(vocab.reverse_maps['word'].get, feats['word'])
   str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
-  predicate_targets = labels['predicate']
-
-  print(input_np.shape)
-  print(feats['word'])
+  predicate_targets = np.transpose(labels['predicate'], [0, 2, 1])
 
   print("predicates", predicate_targets)
   print(np.sum(predicate_targets, -1))
