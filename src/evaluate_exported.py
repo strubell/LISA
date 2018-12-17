@@ -143,6 +143,8 @@ with tf.Session() as sess:
 
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
+  print(task_config['srl']['eval_fns']['srl_f1'])
+
   srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
                                                                    str_words, tokens_to_keep, str_srl_targets,
                                                                    predicate_targets,
