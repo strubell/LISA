@@ -116,6 +116,7 @@ input = dev_input_fn()
 input = tf.Print(input, [input], summarize=500)
 
 with tf.Session() as sess:
+  sess.run(tf.tables_initializer())
   predictor_input = {'input': input.eval()}
 
   predictions = predict_fn(predictor_input)
