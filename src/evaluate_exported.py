@@ -101,7 +101,7 @@ for i, f in enumerate([d for d in data_config.keys() if
 # estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
 
-predict_fn = predictor.from_saved_model("%s/export/best_exporter" % args.save_dir)
+predict_fn = predictor.from_saved_model(args.save_dir)
 
 
 def dev_input_fn():
