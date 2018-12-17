@@ -102,7 +102,7 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       # for each token in the sentence
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         tok_role_labels = sent_role_labels[j] if sent_role_labels else []
-        word = word if type(word) == 'str' else word.decode('utf-8')
+        word = word if type(word) == type('') else word.decode('utf-8')
         predicate_str = word if predicate else '-'
         roles_str = '\t'.join(tok_role_labels)
         print("%s\t%s" % (predicate_str, roles_str), file=f)
