@@ -136,7 +136,8 @@ with tf.Session() as sess:
   print(srl_predictions.shape)
   print(predicate_predictions)
 
-  str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
+  # str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
+  str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, t)) for s in srl_predictions for t in s]
   str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
 
   print(str_words)
