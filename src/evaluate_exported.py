@@ -131,9 +131,10 @@ with tf.Session() as sess:
   feats = {f: input[:, :, idx] for f, idx in feature_idx_map.items()}
   labels = {}
   for l, idx in label_idx_map.items():
-    these_labels = input[:, :, idx[0]:idx[1]] if idx[1] != -1 else input[:, :, idx[0]:]
+    labels = input[:, :, idx[0]:idx[1]] if idx[1] != -1 else input[:, :, idx[0]:]
 
   print(feats.keys())
+  print(labels.keys())
 
   str_srl_predictions = map(vocab.reverse_maps['srl'].get, srl_predictions)
   str_words = map(vocab.reverse_maps['word'].get, feats['word'])
