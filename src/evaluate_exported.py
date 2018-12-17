@@ -141,6 +141,9 @@ with tf.Session() as sess:
   str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
   predicate_targets = labels['predicate']
 
+  print(input.shape)
+  print(feats['word'])
+
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
   print(task_config['srl']['eval_fns']['srl_f1'])
