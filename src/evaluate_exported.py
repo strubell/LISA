@@ -132,7 +132,7 @@ with tf.Session() as sess:
   feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
   str_srl_predictions = map(vocab.reverse_maps['srl'].get, srl_predictions)
-  str_words = map(vocab.reverse_maps['word'].get, feats['word'])
+  str_words = list(map(vocab.reverse_maps['word'].get, feats['word']))
 
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
