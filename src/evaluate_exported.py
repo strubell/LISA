@@ -115,8 +115,8 @@ input = dev_input_fn()
 
 input = tf.Print(input, [input], summarize=500)
 
-with tf.get_default_session():
-  input = {'input': input.eval()}
+with tf.get_default_session() as sess:
+  input = {'input': input.eval(sess=sess)}
 
   predictions = predict_fn(input)
   print(predictions)
