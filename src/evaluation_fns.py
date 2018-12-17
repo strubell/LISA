@@ -100,6 +100,8 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       role_labels_start_idx += sent_num_predicates
 
       # for each token in the sentence
+      print(sent_words[:sent_len])
+      print(sent_predicates[:sent_len])
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         tok_role_labels = sent_role_labels[j] if sent_role_labels else []
         word = word if isinstance(word, str) else word.decode('utf-8')
