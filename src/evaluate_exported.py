@@ -133,7 +133,7 @@ with tf.Session() as sess:
 
   print('word', feats['word'])
 
-  print(srl_predictions)
+  print(srl_predictions.shape)
   print(predicate_predictions)
 
   str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
@@ -156,9 +156,9 @@ with tf.Session() as sess:
       these_labels_masked = np.squeeze(these_labels_masked, -1)
     labels[l] = these_labels_masked
 
-  print("labels", labels['srl'])
+  print("labels", labels['srl'].shape)
 
-  str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in labels['srl']]
+  str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, t)) for s in labels['srl'] for t in s]
   predicate_targets = labels['predicate']
 
   print("predicates", predicate_targets)
