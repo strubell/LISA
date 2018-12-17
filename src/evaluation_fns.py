@@ -162,7 +162,7 @@ def write_srl_debug(filename, words, predicates, sent_lens, role_labels, pos_pre
 
 
 def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
-                      pred_srl_eval_file, gold_srl_eval_file, pos_predictions, pos_targets):
+                      pred_srl_eval_file, gold_srl_eval_file, pos_predictions=None, pos_targets=None):
 
   # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
   # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
@@ -173,7 +173,7 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
 
   # import time
   debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
-  write_srl_debug(debug_fname, words, predicate_targets, sent_lens, srl_targets, pos_predictions, pos_targets)
+  # write_srl_debug(debug_fname, words, predicate_targets, sent_lens, srl_targets, pos_predictions, pos_targets)
 
   # write gold labels
   write_srl_eval(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)

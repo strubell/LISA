@@ -1,9 +1,12 @@
 import tensorflow as tf
+import numpy as np
 import argparse
 import train_utils
 from vocab import Vocab
 import sys
 from tensorflow.contrib import predictor
+import evaluation_fns as eval_fns
+import constants
 
 
 arg_parser = argparse.ArgumentParser(description='')
@@ -118,10 +121,26 @@ input = tf.Print(input, [input], summarize=500)
 with tf.Session() as sess:
   sess.run(tf.tables_initializer())
   predictor_input = {'input': input.eval()}
-
   predictions = predict_fn(predictor_input)
-  print(predictions)
 
+  srl_predictions = predictions['srl_predictions'],
+  predicate_predictions = predictions['predicate_predictions']
+
+  feats = {f: input[:, :, idx] for f, idx in feature_idx_map.items()}
+
+  str_srl_predictions = map(vocab.reverse_maps['srl'].apply(), srl_predictions)
+  str_words = map(vocab.reverse_maps['word'].apply(), feats['word'])
+  str_srl_targets = map(vocab.reverse_maps['srl'].apply(), feats['srl'])
+  predicate_targets = feats['predicate']
+
+  tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
+
+  srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
+                                                                   str_words, tokens_to_keep, str_srl_targets,
+                                                                   predicate_targets,
+                                                                   task_config['srl']['eval_fns']['srl_f1']['pred_srl_eval_file']['value'],
+                                                                   task_config['srl']['eval_fns']['srl_f1']['gold_srl_eval_file']['value'])
+  print(srl_correct, srl_excess, srl_missed)
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
