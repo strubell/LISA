@@ -117,7 +117,7 @@ input = tf.Print(input, [input], summarize=500)
 
 print(predict_fn._feed_tensors.keys())
 
-predictions = predict_fn({'input': input})
+predictions = predict_fn({'input': input.eval()})
 print(predictions)
 
 
