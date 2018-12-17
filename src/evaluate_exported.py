@@ -115,10 +115,11 @@ input = dev_input_fn()
 
 input = tf.Print(input, [input], summarize=500)
 
-print(predict_fn._feed_tensors.keys())
+with tf.get_default_session():
+  input = {'input': input.eval()}
 
-predictions = predict_fn({'input': input.eval()})
-print(predictions)
+  predictions = predict_fn(input)
+  print(predictions)
 
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
