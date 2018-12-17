@@ -111,8 +111,11 @@ def dev_input_fn():
 
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
 
+input = dev_input_fn()
 
-predictions = predict_fn(dev_input_fn())
+input = tf.Print(input, [input], summarize=500)
+
+predictions = predict_fn(input)
 print(predictions)
 
 
