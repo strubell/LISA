@@ -148,8 +148,8 @@ with tf.Session() as sess:
   srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
                                                                    str_words, tokens_to_keep, str_srl_targets,
                                                                    predicate_targets,
-                                                                   task_config['srl']['eval_fns']['srl_f1']['pred_srl_eval_file']['value'],
-                                                                   task_config['srl']['eval_fns']['srl_f1']['gold_srl_eval_file']['value'])
+                                                                   task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value'],
+                                                                   task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value'])
   print(srl_correct, srl_excess, srl_missed)
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
