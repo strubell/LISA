@@ -123,8 +123,10 @@ with tf.Session() as sess:
   predictor_input = {'input': input.eval()}
   predictions = predict_fn(predictor_input)
 
+  print(predictions.keys())
+
   srl_predictions = predictions['srl_predictions'],
-  predicate_predictions = predictions['predicate_predictions']
+  predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
   feats = {f: input[:, :, idx] for f, idx in feature_idx_map.items()}
 
