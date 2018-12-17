@@ -130,6 +130,8 @@ with tf.Session() as sess:
 
   feats = {f: input[:, :, idx] for f, idx in feature_idx_map.items()}
 
+  print(feats.keys())
+
   str_srl_predictions = map(vocab.reverse_maps['srl'].get, srl_predictions)
   str_words = map(vocab.reverse_maps['word'].get, feats['word'])
   str_srl_targets = map(vocab.reverse_maps['srl'].get, feats['srl'])
