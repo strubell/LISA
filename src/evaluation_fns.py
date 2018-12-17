@@ -171,6 +171,7 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
 
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
+  print(sent_lens)
 
   # import time
   # debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
