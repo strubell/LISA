@@ -120,7 +120,8 @@ input = tf.Print(input, [input], summarize=500)
 
 with tf.Session() as sess:
   sess.run(tf.tables_initializer())
-  predictor_input = {'input': input.eval()}
+  input_np = input.eval()
+  predictor_input = {'input': input_np}
   predictions = predict_fn(predictor_input)
 
   print(predictions.keys())
@@ -128,10 +129,10 @@ with tf.Session() as sess:
   srl_predictions = predictions['srl_predictions'],
   predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
-  feats = {f: input[:, :, idx] for f, idx in feature_idx_map.items()}
+  feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
   labels = {}
   for l, idx in label_idx_map.items():
-    labels[l] = input[:, :, idx[0]:idx[1]] if idx[1] != -1 else input[:, :, idx[0]:]
+    labels[l] = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
 
   print(feats.keys())
   print(labels.keys())
@@ -141,7 +142,7 @@ with tf.Session() as sess:
   str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
   predicate_targets = labels['predicate']
 
-  print(input.shape)
+  print(input_np.shape)
   print(feats['word'])
 
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
