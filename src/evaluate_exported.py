@@ -139,14 +139,14 @@ with tf.Session() as sess:
   labels = {}
   for l, idx in label_idx_map.items():
     these_labels = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
-    these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
+    these_labels_masked = np.multiply(these_labels, np.expand_dims(tokens_to_keep, -1))
     # check if we need to mask another dimension
     if idx[1] == -1:
-      last_dim = tf.shape(these_labels)[2]
+      last_dim = these_labels.shape[2]
       this_mask = np.where(these_labels_masked == constants.PAD_VALUE, 0, 1)
-      these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+      these_labels_masked = np.multiply(these_labels_masked, this_mask)
     else:
-      these_labels_masked = tf.squeeze(these_labels_masked, -1)
+      these_labels_masked = np.squeeze(these_labels_masked, -1)
     labels[l] = these_labels_masked
 
   str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
