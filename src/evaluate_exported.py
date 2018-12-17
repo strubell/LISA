@@ -130,23 +130,36 @@ with tf.Session() as sess:
   predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
   feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
-  labels = {}
-  for l, idx in label_idx_map.items():
-    labels[l] = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
-
-  print(feats.keys())
-  print(labels.keys())
 
   str_srl_predictions = map(vocab.reverse_maps['srl'].get, srl_predictions)
   str_words = map(vocab.reverse_maps['word'].get, feats['word'])
-  str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
-  predicate_targets = np.transpose(labels['predicate'], [0, 2, 1])
 
   print("predicates", predicate_targets)
   print(np.sum(predicate_targets, -1))
   print(np.sum(predicate_predictions, -1))
 
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
+
+  labels = {}
+  for l, idx in label_idx_map.items():
+    these_labels = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
+    these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
+    # check if we need to mask another dimension
+    if idx[1] == -1:
+      last_dim = tf.shape(these_labels)[2]
+      this_mask = np.where(these_labels_masked == constants.PAD_VALUE, 0, 1)
+      these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+    else:
+      these_labels_masked = tf.squeeze(these_labels_masked, -1)
+    labels[l] = these_labels_masked
+
+  str_srl_targets = map(vocab.reverse_maps['srl'].get, labels['srl'])
+  predicate_targets = np.transpose(labels['predicate'], [0, 2, 1])
+
+  print(feats.keys())
+  print(labels.keys())
+
+
 
   print(task_config['srl']['eval_fns']['srl_f1'])
 
