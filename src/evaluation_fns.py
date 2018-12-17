@@ -84,12 +84,12 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
     role_labels_start_idx = 0
     num_predicates_per_sent = np.sum(predicates, -1)
 
-    print("role_labels", role_labels)
+    print("role_labels", len(role_labels))
 
-    print("words", words)
-    print("predicates", predicates)
-    print("sent lens", sent_lens)
-    print("num_predicates_per_sent", num_predicates_per_sent)
+    # print("words", words)
+    # print("predicates", predicates)
+    # print("sent lens", sent_lens)
+    # print("num_predicates_per_sent", num_predicates_per_sent)
     # for each sentence in the batch
     for sent_words, sent_predicates, sent_len, sent_num_predicates in zip(words, predicates, sent_lens,
                                                                           num_predicates_per_sent):
