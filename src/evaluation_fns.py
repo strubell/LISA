@@ -99,6 +99,8 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
 
+      print(len(sent_role_labels), sent_role_labels)
+
       # for each token in the sentence
       print(len(sent_words[:sent_len]))
       print(len(sent_predicates[:sent_len]))
