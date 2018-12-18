@@ -255,12 +255,6 @@ class LISAModel:
                 # add this loss to the overall loss being minimized
                 loss += this_task_loss
 
-                # todo add the predictions to export_outputs
-                # todo add un-joint predictions too?
-                # predict_output = tf.estimator.export.PredictOutput({'scores': task_outputs['scores'],
-                #                                                     'predictions': task_outputs['predictions']})
-                # export_outputs['%s_predict' % task] = predict_output
-
       # set up moving average variables
       assign_moving_averages_dep = tf.no_op()
       if hparams.moving_average_decay > 0.:
