@@ -7,6 +7,7 @@ import sys
 from tensorflow.contrib import predictor
 import evaluation_fns as eval_fns
 import constants
+import os
 
 
 def sequence_mask_np(lengths, maxlen=None):
@@ -116,7 +117,15 @@ gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_sr
 # estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
 
-predict_fn = predictor.from_saved_model(args.save_dir)
+def get_immediate_subdirectories(a_dir):
+  return [name for name in os.listdir(a_dir)
+          if os.path.isdir(os.path.join(a_dir, name))]
+
+
+if args.ensemble:
+  predict_fns = [predictor.from_saved_model("%s/%s" % (args.save_dir, subdir)) for subdir in get_immediate_subdirectories(args.save_dir)]
+else:
+  predict_fns = [predictor.from_saved_model(args.save_dir)]
 
 
 def dev_input_fn():
@@ -132,10 +141,14 @@ def eval_fn(input_op, sess):
       # input_np = sess.run(dev_input_fn())
       input_np = sess.run(input_op)
       predictor_input = {'input': input_np}
-      predictions = predict_fn(predictor_input)
+      predictions = [predict_fn(predictor_input) for predict_fn in predict_fns]
 
-      srl_predictions = predictions['srl_predictions']
-      predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
+      print(predictions.keys())
+
+      # for
+
+      # srl_predictions = predictions['srl_predictions']
+      # predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
