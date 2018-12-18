@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import os
 import constants
 import data_converters
 
@@ -21,6 +22,9 @@ class Vocab:
     self.oovs = {}
 
     self.vocab_names_sizes = self.make_vocab_files(self.data_config, self.save_dir, data_filenames)
+
+    # make directory for vocabs
+    os.mkdir("%s/assets.extra" % save_dir)
 
   '''
   Creates tf.contrib.lookup ops for all the vocabs defined in self.data_config.
