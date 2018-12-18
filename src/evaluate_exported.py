@@ -176,7 +176,7 @@ def eval_fn(input_fn):
         srl_missed_total += srl_missed
       except tf.errors.OutOfRangeError:
         break
-  
+
   precision = srl_correct_total / (srl_correct_total + srl_excess_total)
   recall = srl_correct_total / (srl_correct_total + srl_missed_total)
   f1 = 2 * precision * recall / (precision + recall)
@@ -186,7 +186,7 @@ def eval_fn(input_fn):
 
 
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
-eval_fn(dev_input_fn())
+eval_fn(dev_input_fn)
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
@@ -197,5 +197,5 @@ for test_file in test_filenames:
 
 
   tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
-  eval_fn(test_input_fn())
+  eval_fn(test_input_fn)
 
