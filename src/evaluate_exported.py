@@ -187,19 +187,19 @@ with tf.Session() as sess:
 
   dev_input_op = dev_input_fn()
 
+  test_input_ops = {}
+  for test_file in test_filenames:
+    def test_input_fn():
+      return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
+                                      embedding_files=embedding_files)
+    test_input_ops[test_file] = test_input_fn()
+
   sess.run(tf.tables_initializer())
 
   tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
   eval_fn(dev_input_op, sess)
 
-  for test_file in test_filenames:
-    def test_input_fn():
-      return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
-                                      embedding_files=embedding_files)
-
-
-    test_input_op = test_input_fn()
-
+  for test_file, test_input_op in test_input_ops:
     tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
     eval_fn(test_input_op, sess)
 
