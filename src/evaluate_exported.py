@@ -121,79 +121,81 @@ def dev_input_fn():
                                   embedding_files=embedding_files)
 
 
-tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
-
-input = dev_input_fn()
 #
 # input = tf.Print(input, [input], summarize=500)
 
-srl_correct_total = srl_excess_total = srl_missed_total = 0.
+def eval_fn(input_fn):
+  input_op = input_fn()
+  srl_correct_total = srl_excess_total = srl_missed_total = 0.
+  with tf.Session() as sess:
+    sess.run(tf.tables_initializer())
+    while True:
+      try:
+        # input_np = sess.run(dev_input_fn())
+        input_np = input_op.eval()
+        predictor_input = {'input': input_np}
+        predictions = predict_fn(predictor_input)
 
-with tf.Session() as sess:
-  sess.run(tf.tables_initializer())
-  while True:
-    try:
-      # input_np = sess.run(dev_input_fn())
-      input_np = input.eval()
-      predictor_input = {'input': input_np}
-      predictions = predict_fn(predictor_input)
+        srl_predictions = predictions['srl_predictions']
+        predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
-      srl_predictions = predictions['srl_predictions']
-      predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
+        feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
-      feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
+        str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
+        str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
 
-      str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
-      str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
+        tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
-      tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
+        labels = {}
+        for l, idx in label_idx_map.items():
+          these_labels = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
+          these_labels_masked = np.multiply(these_labels, np.expand_dims(tokens_to_keep, -1))
+          # check if we need to mask another dimension
+          if idx[1] == -1:
+            this_mask = np.where(these_labels_masked == constants.PAD_VALUE, 0, 1)
+            these_labels_masked = np.multiply(these_labels_masked, this_mask)
+          else:
+            these_labels_masked = np.squeeze(these_labels_masked, -1)
+          labels[l] = these_labels_masked
 
-      labels = {}
-      for l, idx in label_idx_map.items():
-        these_labels = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
-        these_labels_masked = np.multiply(these_labels, np.expand_dims(tokens_to_keep, -1))
-        # check if we need to mask another dimension
-        if idx[1] == -1:
-          last_dim = these_labels.shape[2]
-          this_mask = np.where(these_labels_masked == constants.PAD_VALUE, 0, 1)
-          these_labels_masked = np.multiply(these_labels_masked, this_mask)
-        else:
-          these_labels_masked = np.squeeze(these_labels_masked, -1)
-        labels[l] = these_labels_masked
+        predicate_targets = labels['predicate']
 
-      predicate_targets = labels['predicate']
+        predicates_per_sent = np.sum(predicate_targets, axis=-1)
+        predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
+        srl_targets = np.transpose(labels['srl'], [0, 2, 1])
+        gathered_srl_targets = srl_targets[predicates_indices]
+        str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
 
-      predicates_per_sent = np.sum(predicate_targets, axis=-1)
-      predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
-      srl_targets = np.transpose(labels['srl'], [0, 2, 1])
-      gathered_srl_targets = srl_targets[predicates_indices]
-      str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
+        srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
+                                                                         str_words, tokens_to_keep, str_srl_targets,
+                                                                         predicate_targets,
+                                                                         pred_srl_eval_file, gold_srl_eval_file)
 
-      srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
-                                                                       str_words, tokens_to_keep, str_srl_targets,
-                                                                       predicate_targets,
-                                                                       pred_srl_eval_file, gold_srl_eval_file)
+        srl_correct_total += srl_correct
+        srl_excess_total += srl_excess
+        srl_missed_total += srl_missed
+      except tf.errors.OutOfRangeError:
+        break
+  
+  precision = srl_correct_total / (srl_correct_total + srl_excess_total)
+  recall = srl_correct_total / (srl_correct_total + srl_missed_total)
+  f1 = 2 * precision * recall / (precision + recall)
 
-      srl_correct_total += srl_correct
-      srl_excess_total += srl_excess
-      srl_missed_total += srl_missed
-    except tf.errors.OutOfRangeError:
-      break
+  tf.logging.log(tf.logging.INFO,
+                 "SRL precision: %2.2f; recall: %2.2f; F1: %2.2f" % (precision * 100, recall * 100, f1 * 100))
 
-precision = srl_correct_total / (srl_correct_total + srl_excess_total)
-recall = srl_correct_total / (srl_correct_total + srl_missed_total)
-f1 = 2 * precision * recall / (precision + recall)
 
-print("SRL precision: %2.2f; recall: %2.2f; F1: %2.2f" % (precision * 100, recall * 100, f1 * 100))
+tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
+eval_fn(dev_input_fn())
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
-# for test_file in test_filenames:
-#   def test_input_fn():
-#     return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
-#                                     embedding_files=embedding_files)
-#
-#
-#   tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
-#   estimator.evaluate(input_fn=test_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
-#
+for test_file in test_filenames:
+  def test_input_fn():
+    return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
+                                    embedding_files=embedding_files)
+
+
+  tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
+  eval_fn(test_input_fn())
+
