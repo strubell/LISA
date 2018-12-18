@@ -147,7 +147,7 @@ with tf.Session() as sess:
       these_labels_masked = np.squeeze(these_labels_masked, -1)
     labels[l] = these_labels_masked
 
-  print("labels", labels['srl'])
+  # print("labels", labels['srl'])
 
   # str_srl_targets = np.transpose(np.array([list(map(vocab.reverse_maps['srl'].get, t)) for s in labels['srl'] for t in s]))
   orig_shape = labels['srl'].shape
@@ -158,16 +158,21 @@ with tf.Session() as sess:
 
   predicate_targets = labels['predicate']
 
-  # print("predicates", predicate_targets)
+
+
+  print("predicates", predicate_targets.shape, predicate_targets)
+
 
   # print(str_srl_predictions)
-  print(str_srl_targets)
+  # print(str_srl_targets)
+
+  pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
+  gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
 
   srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
                                                                    str_words, tokens_to_keep, str_srl_targets,
                                                                    predicate_targets,
-                                                                   task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value'],
-                                                                   task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value'])
+                                                                   pred_srl_eval_file, gold_srl_eval_file)
   print(srl_correct, srl_excess, srl_missed)
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
