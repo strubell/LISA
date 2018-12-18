@@ -145,18 +145,30 @@ def eval_fn(input_op, sess):
 
       print(predictions[0].keys())
 
-      for i in layer_task_config:
-        for task, task_map in layer_task_config[i].items():
-          for eval_name, eval_map in task_map['eval_fns'].items():
-            print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
-            # print('task: ', task, 'map:', eval_map)
-            # eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
-            #                                            task_labels, self.vocab.reverse_maps, tokens_to_keep)
-            # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-            # eval_metric_ops[eval_name] = eval_result
+      combined_scores = {}
+      for model_outputs in predictions:
+        for key, val in model_outputs.items():
+          if key.endswith("_scores"):
+            if key not in combined_scores:
+              combined_scores[key] = val
+            else:
+              # product of experts ensembling
+              combined_scores[key] = np.multiply(combined_scores[key], val)
 
-      srl_predictions = predictions[0]['srl_predictions']
-      predicate_predictions = predictions[0]['joint_pos_predicate_predicate_predictions']
+      combined_predictions = {k: np.argmax(v) for k, v in combined_scores.items()}
+
+      # for i in layer_task_config:
+      #   for task, task_map in layer_task_config[i].items():
+      #     for eval_name, eval_map in task_map['eval_fns'].items():
+      #       print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
+      #       print('map:', eval_map)
+      #       # eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
+      #       #                                            task_labels, self.vocab.reverse_maps, tokens_to_keep)
+      #       # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
+      #       # eval_metric_ops[eval_name] = eval_result
+
+      srl_predictions = combined_predictions['srl_predictions']
+      predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
 
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
