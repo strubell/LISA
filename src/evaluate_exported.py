@@ -72,6 +72,7 @@ for task_or_attn_name, layer in layer_config.items():
     sys.exit(1)
 
 tf.logging.set_verbosity(tf.logging.INFO)
+tf.logging.log(tf.logging.INFO, "Using Python version %s" % sys.version)
 tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
 
 hparams = train_utils.load_hparams(args, model_config)
@@ -160,7 +161,7 @@ with tf.Session() as sess:
   # str_srl_targets = np.transpose(np.reshape(np.array(list(map(vocab.reverse_maps['srl'].get, labels['srl'].flatten()))), orig_shape), [0, 2, 1])
 
   # print(str_srl_targets.shape)
-  # print(len(str_srl_predictions), len(str_srl_predictions[0]))
+  print(len(str_srl_predictions), len(str_srl_predictions[0]))
 
   predicate_targets = labels['predicate']
 
@@ -174,7 +175,8 @@ with tf.Session() as sess:
 
   str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
 
-  # print(gathered_srl_targets.shape, gathered_srl_targets)
+  print(len(str_srl_targets), len(str_srl_targets[0]))
+
   # print(str_srl_predictions)
   # print(str_srl_targets)
 
