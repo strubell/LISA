@@ -6,6 +6,8 @@ source ${config_file}
 
 params=${@:2}
 
+echo "Using CUDA_VISIBLE_DEVICES="$CUDA_VISIBLE_DEVICES
+
 transition_stats=$data_dir/transition_probs.tsv
 
 python3 src/evaluate_exported.py \
