@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import sys
 import constants
 import data_converters
 
@@ -24,7 +25,14 @@ class Vocab:
     self.vocab_names_sizes = self.make_vocab_files(self.data_config, self.save_dir, data_filenames)
 
     # make directory for vocabs
-    os.mkdir("%s/assets.extra" % save_dir)
+    self.vocabs_dir = "%s/assets.extra" % save_dir
+    try:
+      os.mkdir(self.vocabs_dir)
+    except OSError:
+      tf.logging.log(tf.logging.ERROR, "Failed to create vocabs directory: %s" % self.vocabs_dir)
+      sys.exit(1)
+    else:
+      tf.logging.log(tf.logging.ERROR, "Successfully created vocabs directory: %s" % self.vocabs_dir)
 
   '''
   Creates tf.contrib.lookup ops for all the vocabs defined in self.data_config.
