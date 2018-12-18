@@ -151,7 +151,7 @@ with tf.Session() as sess:
 
   # str_srl_targets = np.transpose(np.array([list(map(vocab.reverse_maps['srl'].get, t)) for s in labels['srl'] for t in s]))
   orig_shape = labels['srl'].shape
-  str_srl_targets = np.reshape(np.array(list(map(vocab.reverse_maps['srl'].get, labels['srl'].flatten()))), orig_shape)
+  str_srl_targets = np.transpose(np.reshape(np.array(list(map(vocab.reverse_maps['srl'].get, labels['srl'].flatten()))), orig_shape), [0, 2, 1])
 
   predicate_targets = labels['predicate']
 
