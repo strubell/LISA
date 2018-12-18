@@ -145,6 +145,8 @@ def eval_fn(input_op, sess):
 
       print(predictions[0].keys())
 
+      print(task_config)
+
       if i in task_config:
         for task, task_map in task_config[i].items():
           for eval_name, eval_map in task_map['eval_fns'].items():
@@ -219,7 +221,7 @@ with tf.Session() as sess:
   tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
   eval_fn(dev_input_op, sess)
 
-  for test_file, test_input_op in test_input_ops:
+  for test_file, test_input_op in test_input_ops.items():
     tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
     eval_fn(test_input_op, sess)
 
