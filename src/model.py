@@ -300,6 +300,8 @@ class LISAModel:
         # need to flatten the dict of predictions to make Estimator happy
         flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
 
+        print("flat predictions keys:", flat_predictions.keys())
+
         export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
                           tf.estimator.export.PredictOutput(flat_predictions)}
 

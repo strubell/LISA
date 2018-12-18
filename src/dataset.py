@@ -53,7 +53,7 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     dataset = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names), num_parallel_calls=8)
     # dataset = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names))
 
-    # dataset = dataset.cache()
+    dataset = dataset.cache()
 
     # do batching
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=lambda d: tf.shape(d)[0],
