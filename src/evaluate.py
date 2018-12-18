@@ -106,7 +106,7 @@ def dev_input_fn():
 
 
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
-estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
+estimator.evaluate(input_fn=dev_input_fn)
 
 for test_file in test_filenames:
   def test_input_fn():
@@ -115,5 +115,5 @@ for test_file in test_filenames:
 
 
   tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
-  estimator.evaluate(input_fn=test_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
+  estimator.evaluate(input_fn=test_input_fn)
 
