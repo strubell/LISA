@@ -102,6 +102,8 @@ for i, f in enumerate([d for d in data_config.keys() if
     else:
       label_idx_map[f] = (i, i+1)
 
+pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
+gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
 
 # Initialize the model
 # model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
@@ -121,17 +123,16 @@ def dev_input_fn():
 
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
 
-# input = dev_input_fn()
+input = dev_input_fn()
 #
 # input = tf.Print(input, [input], summarize=500)
 
 with tf.Session() as sess:
   sess.run(tf.tables_initializer())
-
   while True:
     try:
-      input_np = sess.run(dev_input_fn())
-      # input_np = input.eval()
+      # input_np = sess.run(dev_input_fn())
+      input_np = input.eval()
       predictor_input = {'input': input_np}
       predictions = predict_fn(predictor_input)
 
@@ -165,9 +166,6 @@ with tf.Session() as sess:
       srl_targets = np.transpose(labels['srl'], [0, 2, 1])
       gathered_srl_targets = srl_targets[predicates_indices]
       str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
-
-      pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
-      gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
 
       srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
                                                                        str_words, tokens_to_keep, str_srl_targets,
