@@ -124,20 +124,12 @@ with tf.Session() as sess:
   predictor_input = {'input': input_np}
   predictions = predict_fn(predictor_input)
 
-  print(predictions.keys())
-
   srl_predictions = predictions['srl_predictions']
   predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
   feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
-  # print('word', feats['word'])
-
-  # print(srl_predictions.shape)
-  # print(predicate_predictions)
-
   str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
-  # str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, t)) for s in srl_predictions for t in s]
   str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
 
   tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
@@ -155,14 +147,14 @@ with tf.Session() as sess:
       these_labels_masked = np.squeeze(these_labels_masked, -1)
     labels[l] = these_labels_masked
 
-  # print("labels", labels['srl'].shape)
+  print("labels", labels['srl'])
 
   str_srl_targets = np.transpose(np.array([list(map(vocab.reverse_maps['srl'].get, t)) for s in labels['srl'] for t in s]))
   predicate_targets = labels['predicate']
 
   # print("predicates", predicate_targets)
 
-  print(str_srl_predictions)
+  # print(str_srl_predictions)
   print(str_srl_targets)
 
   srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
