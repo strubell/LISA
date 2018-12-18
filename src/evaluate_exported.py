@@ -148,10 +148,11 @@ def eval_fn(input_op, sess):
       if i in task_config:
         for task, task_map in task_config[i].items():
           for eval_name, eval_map in task_map['eval_fns'].items():
-            eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
-                                                       task_labels, self.vocab.reverse_maps, tokens_to_keep)
-            eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-            eval_metric_ops[eval_name] = eval_result
+            print(task, eval_map['name'])
+            # eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
+            #                                            task_labels, self.vocab.reverse_maps, tokens_to_keep)
+            # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
+            # eval_metric_ops[eval_name] = eval_result
 
       # srl_predictions = predictions['srl_predictions']
       # predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
