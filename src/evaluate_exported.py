@@ -124,11 +124,14 @@ def dev_input_fn():
 #
 # input = tf.Print(input, [input], summarize=500)
 
+with tf.Session() as sess:
+  sess.run(tf.tables_initializer())
+
+
 def eval_fn(input_fn):
   input_op = input_fn()
   srl_correct_total = srl_excess_total = srl_missed_total = 0.
-  with tf.Session() as sess:
-    sess.run(tf.tables_initializer())
+  with tf.Session():
     while True:
       try:
         # input_np = sess.run(dev_input_fn())
