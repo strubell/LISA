@@ -124,13 +124,6 @@ def dev_input_fn():
                                   embedding_files=embedding_files)
 
 
-#
-# input = tf.Print(input, [input], summarize=500)
-
-with tf.Session() as sess:
-  sess.run(tf.tables_initializer())
-
-
 def eval_fn(input_fn):
   input_op = input_fn()
   srl_correct_total = srl_excess_total = srl_missed_total = 0.
@@ -191,10 +184,11 @@ def eval_fn(input_fn):
                  "SRL precision: %2.2f; recall: %2.2f; F1: %2.2f" % (precision * 100, recall * 100, f1 * 100))
 
 
+with tf.Session() as sess:
+  sess.run(tf.tables_initializer())
+
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
 eval_fn(dev_input_fn)
-
-# estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
 for test_file in test_filenames:
   def test_input_fn():
