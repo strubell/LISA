@@ -124,8 +124,7 @@ def dev_input_fn():
                                   embedding_files=embedding_files)
 
 
-def eval_fn(input_fn, sess):
-  input_op = input_fn()
+def eval_fn(input_op, sess):
   srl_correct_total = srl_excess_total = srl_missed_total = 0.
 
   while True:
@@ -186,10 +185,12 @@ def eval_fn(input_fn, sess):
 
 with tf.Session() as sess:
 
+  dev_input_op = dev_input_fn()
+
   sess.run(tf.tables_initializer())
 
   tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
-  eval_fn(dev_input_fn, sess)
+  eval_fn(dev_input_op, sess)
 
   for test_file in test_filenames:
     def test_input_fn():
@@ -197,6 +198,8 @@ with tf.Session() as sess:
                                       embedding_files=embedding_files)
 
 
+    test_input_op = test_input_fn()
+
     tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
-    eval_fn(test_input_fn, sess)
+    eval_fn(test_input_op, sess)
 
