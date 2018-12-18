@@ -32,7 +32,7 @@ arg_parser.add_argument('--layer_configs', required=True,
                         help='Comma-separated list of paths to layer configuration json.')
 arg_parser.add_argument('--attention_configs',
                         help='Comma-separated list of paths to attention configuration json.')
-arg_parser.add_argument('--num_gpus',
+arg_parser.add_argument('--num_gpus', type=int,
                         help='Number of GPUs for distributed training.')
 
 arg_parser.set_defaults(debug=False, num_gpus=1)
