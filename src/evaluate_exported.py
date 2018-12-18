@@ -127,7 +127,10 @@ def dev_input_fn():
 def eval_fn(input_fn):
   input_op = input_fn()
   srl_correct_total = srl_excess_total = srl_missed_total = 0.
-  with tf.get_default_session() as sess:
+  with tf.Session() as sess:
+
+    sess.run(tf.tables_initializer())
+
     while True:
       try:
         # input_np = sess.run(dev_input_fn())
@@ -182,10 +185,6 @@ def eval_fn(input_fn):
 
   tf.logging.log(tf.logging.INFO,
                  "SRL precision: %2.2f; recall: %2.2f; F1: %2.2f" % (precision * 100, recall * 100, f1 * 100))
-
-
-with tf.Session() as sess:
-  sess.run(tf.tables_initializer())
 
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
 eval_fn(dev_input_fn)
