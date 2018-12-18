@@ -145,9 +145,7 @@ def eval_fn(input_op, sess):
 
       print(predictions[0].keys())
 
-      print(layer_task_config)
-
-      if i in layer_task_config:
+      for i in layer_task_config:
         for task, task_map in layer_task_config[i].items():
           for eval_name, eval_map in task_map['eval_fns'].items():
             print(task, eval_map['name'])
