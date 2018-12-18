@@ -216,7 +216,9 @@ def eval_fn(input_op, sess):
                  "SRL precision: %2.2f; recall: %2.2f; F1: %2.2f" % (precision * 100, recall * 100, f1 * 100))
 
 
+with tf.Session() as sess:
 
+  dev_input_op = dev_input_fn()
 
   # test_input_ops = {}
   # for test_file in test_filenames:
