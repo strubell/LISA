@@ -9,6 +9,12 @@ import evaluation_fns as eval_fns
 import constants
 
 
+def sequence_mask_np(lengths, maxlen=None):
+  if not maxlen:
+    maxlen = np.max(lengths)
+  return np.arange(maxlen) < np.array(lengths)[:, None]
+
+
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--test_files',
                         help='Comma-separated list of test data files')
@@ -162,7 +168,10 @@ with tf.Session() as sess:
 
   print("predicates", predicate_targets.shape, predicate_targets)
 
-
+  predicates_per_sent = np.sum(predicate_targets, axis=-1)
+  predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
+  gathered_srl_targets = str_srl_targets[predicates_indices]
+  print(gathered_srl_targets.shape, gathered_srl_targets)
   # print(str_srl_predictions)
   # print(str_srl_targets)
 

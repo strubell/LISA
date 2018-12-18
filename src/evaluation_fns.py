@@ -84,12 +84,6 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
     role_labels_start_idx = 0
     num_predicates_per_sent = np.sum(predicates, -1)
 
-    print("role_labels", len(role_labels))
-
-    # print("words", words)
-    # print("predicates", predicates)
-    # print("sent lens", sent_lens)
-    # print("num_predicates_per_sent", num_predicates_per_sent)
     # for each sentence in the batch
     for sent_words, sent_predicates, sent_len, sent_num_predicates in zip(words, predicates, sent_lens,
                                                                           num_predicates_per_sent):
@@ -98,7 +92,6 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
 
       print("sent_role_labels_bio", len(sent_role_labels_bio), sent_role_labels_bio)
-
 
       # this is a list of sent_num_predicates lists of srl role labels
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
@@ -185,7 +178,6 @@ def conll_srl_eval_py(srl_predictions, predicate_predictions, words, mask, srl_t
 
   # need to print for every word in every sentence
   sent_lens = np.sum(mask, -1).astype(np.int32)
-  print(sent_lens)
 
   # import time
   # debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
