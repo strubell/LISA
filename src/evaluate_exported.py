@@ -150,8 +150,10 @@ def eval_fn(input_op, sess):
         for key, val in model_outputs.items():
           if key.endswith("_scores"):
             if key not in combined_scores:
+              print("init", key)
               combined_scores[key] = val
             else:
+              print("adding ", key)
               # product of experts ensembling
               combined_scores[key] = np.multiply(combined_scores[key], val)
 
