@@ -127,11 +127,11 @@ def dev_input_fn():
 def eval_fn(input_fn):
   input_op = input_fn()
   srl_correct_total = srl_excess_total = srl_missed_total = 0.
-  with tf.get_default_session():
+  with tf.get_default_session() as sess:
     while True:
       try:
         # input_np = sess.run(dev_input_fn())
-        input_np = input_op.eval()
+        input_np = sess.run(input_op)
         predictor_input = {'input': input_np}
         predictions = predict_fn(predictor_input)
 
