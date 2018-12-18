@@ -155,7 +155,8 @@ def eval_fn(input_op, sess):
             else:
               print("adding ", key)
               # product of experts ensembling
-              combined_scores[key] = np.multiply(combined_scores[key], val)
+              if val.shape == combined_scores[key].shape:
+                combined_scores[key] = np.multiply(combined_scores[key], val)
 
       combined_predictions = {k: np.argmax(v) for k, v in combined_scores.items()}
 
