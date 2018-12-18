@@ -154,8 +154,8 @@ def eval_fn(input_op, sess):
             # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
             # eval_metric_ops[eval_name] = eval_result
 
-      # srl_predictions = predictions['srl_predictions']
-      # predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
+      srl_predictions = predictions[0]['srl_predictions']
+      predicate_predictions = predictions[0]['joint_pos_predicate_predicate_predictions']
 
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
