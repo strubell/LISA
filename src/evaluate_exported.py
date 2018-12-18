@@ -149,17 +149,17 @@ def eval_fn(input_op, sess):
       combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
       # for model_outputs in predictions:
       #   for key, val in model_outputs.items():
-      #     if key.endswith("_scores"):
-      #       if key not in combined_scores:
+      #     if key.endswith("_probabilities"):
+      #       if key not in combined_probabilities:
       #         print("init", key)
-      #         combined_scores[key] = val
+      #         combined_probabilities[key] = val
       #       else:
       #         print("adding ", key)
       #         # product of experts ensembling
-      #         if val.shape == combined_scores[key].shape:
-      #           combined_scores[key] = np.multiply(combined_scores[key], val)
-      #
-      combined_predictions = {k.replace('scores', 'predictions'): np.argmax(v) for k, v in combined_probabilities.items()}
+      #         if val.shape == combined_probabilities[key].shape:
+      #           combined_scores[key] = np.multiply(combined_probabilities[key], val)
+
+      combined_predictions = {k.replace('probabilities', 'predictions'): np.argmax(v) for k, v in combined_probabilities.items()}
 
       # for i in layer_task_config:
       #   for task, task_map in layer_task_config[i].items():

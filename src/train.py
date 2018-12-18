@@ -32,8 +32,10 @@ arg_parser.add_argument('--layer_configs', required=True,
                         help='Comma-separated list of paths to layer configuration json.')
 arg_parser.add_argument('--attention_configs',
                         help='Comma-separated list of paths to attention configuration json.')
+arg_parser.add_argument('--num_gpus',
+                        help='Number of GPUs for distributed training.')
 
-arg_parser.set_defaults(debug=False)
+arg_parser.set_defaults(debug=False, num_gpus=1)
 
 args, leftovers = arg_parser.parse_known_args()
 
@@ -122,8 +124,12 @@ model = LISAModel(hparams, model_config, layer_task_config, layer_attention_conf
 if args.debug:
   tf.logging.log(tf.logging.INFO, "Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
 
+# Distributed training
+distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if args.num_gpus > 1 else None
+
 # Set up the Estimator
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_steps, keep_checkpoint_max=1)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_steps, keep_checkpoint_max=1,
+                                              train_distribute=distribution)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
 # Set up early stopping -- always keep the model with the best F1
