@@ -34,8 +34,10 @@ arg_parser.add_argument('--attention_configs',
                         help='Comma-separated list of paths to attention configuration json.')
 arg_parser.add_argument('--num_gpus', type=int,
                         help='Number of GPUs for distributed training.')
+arg_parser.add_argument('--keep_k_best_models', type=int,
+                        help='Number of best models to keep.')
 
-arg_parser.set_defaults(debug=False, num_gpus=1)
+arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1)
 
 args, leftovers = arg_parser.parse_known_args()
 
@@ -134,9 +136,14 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 
 # Set up early stopping -- always keep the model with the best F1
 # todo: don't keep 5
+export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_dir, vocab_name)
+                 for vocab_name in vocab.vocab_names_sizes.keys()}
+tf.logging.log(tf.logging.INFO, "Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=task_config['best_eval_key']),
-                                               serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
+                                               serving_input_receiver_fn=train_utils.serving_input_receiver_fn,
+                                               assets_extra=export_assets,
+                                               exports_to_keep=args.keep_k_best_models)
 
 # Train forever until killed
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn)
