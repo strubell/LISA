@@ -171,8 +171,11 @@ with tf.Session() as sess:
 
   predicates_per_sent = np.sum(predicate_targets, axis=-1)
   predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
-  srl_targets = np.transpose(labels['srl'], [0, 2, 1])
-  gathered_srl_targets = srl_targets[predicates_indices]
+  # srl_targets = np.transpose(labels['srl'], [0, 2, 1])
+  gathered_srl_targets = labels['srl'][predicates_indices]
+
+  print("orig shape", labels['srl'].shape)
+  print("gathered shape", gathered_srl_targets.shape)
 
   str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
 
