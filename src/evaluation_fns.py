@@ -91,17 +91,11 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
 
-      print("sent_role_labels_bio", len(sent_role_labels_bio), sent_role_labels_bio)
-
       # this is a list of sent_num_predicates lists of srl role labels
       sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
 
-      print("sent_role_labels", len(sent_role_labels), sent_role_labels)
-
       # for each token in the sentence
-      print(len(sent_words[:sent_len]))
-      print(len(sent_predicates[:sent_len]))
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         tok_role_labels = sent_role_labels[j] if sent_role_labels else []
         word = word if isinstance(word, str) else word.decode('utf-8')

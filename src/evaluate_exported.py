@@ -121,77 +121,63 @@ def dev_input_fn():
 
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
 
-input = dev_input_fn()
-
-input = tf.Print(input, [input], summarize=500)
+# input = dev_input_fn()
+#
+# input = tf.Print(input, [input], summarize=500)
 
 with tf.Session() as sess:
   sess.run(tf.tables_initializer())
-  input_np = input.eval()
-  predictor_input = {'input': input_np}
-  predictions = predict_fn(predictor_input)
 
-  srl_predictions = predictions['srl_predictions']
-  predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
+  while True:
+    try:
+      input_np = sess.run(dev_input_fn())
+      # input_np = input.eval()
+      predictor_input = {'input': input_np}
+      predictions = predict_fn(predictor_input)
 
-  feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
+      srl_predictions = predictions['srl_predictions']
+      predicate_predictions = predictions['joint_pos_predicate_predicate_predictions']
 
-  str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
-  str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
+      feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
-  tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
+      str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
+      str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
 
-  labels = {}
-  for l, idx in label_idx_map.items():
-    these_labels = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
-    these_labels_masked = np.multiply(these_labels, np.expand_dims(tokens_to_keep, -1))
-    # check if we need to mask another dimension
-    if idx[1] == -1:
-      last_dim = these_labels.shape[2]
-      this_mask = np.where(these_labels_masked == constants.PAD_VALUE, 0, 1)
-      these_labels_masked = np.multiply(these_labels_masked, this_mask)
-    else:
-      these_labels_masked = np.squeeze(these_labels_masked, -1)
-    labels[l] = these_labels_masked
+      tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
-  # print("labels", labels['srl'])
+      labels = {}
+      for l, idx in label_idx_map.items():
+        these_labels = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
+        these_labels_masked = np.multiply(these_labels, np.expand_dims(tokens_to_keep, -1))
+        # check if we need to mask another dimension
+        if idx[1] == -1:
+          last_dim = these_labels.shape[2]
+          this_mask = np.where(these_labels_masked == constants.PAD_VALUE, 0, 1)
+          these_labels_masked = np.multiply(these_labels_masked, this_mask)
+        else:
+          these_labels_masked = np.squeeze(these_labels_masked, -1)
+        labels[l] = these_labels_masked
 
-  # str_srl_targets = np.transpose(np.array([list(map(vocab.reverse_maps['srl'].get, t)) for s in labels['srl'] for t in s]))
-  orig_shape = labels['srl'].shape
-  # str_srl_targets = np.transpose(np.reshape(np.array(list(map(vocab.reverse_maps['srl'].get, labels['srl'].flatten()))), orig_shape), [0, 2, 1])
+      predicate_targets = labels['predicate']
 
-  # print(str_srl_targets.shape)
-  print(len(str_srl_predictions), len(str_srl_predictions[0]))
+      predicates_per_sent = np.sum(predicate_targets, axis=-1)
+      predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
+      srl_targets = np.transpose(labels['srl'], [0, 2, 1])
+      gathered_srl_targets = srl_targets[predicates_indices]
+      str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
 
-  predicate_targets = labels['predicate']
+      pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
+      gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
 
+      srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
+                                                                       str_words, tokens_to_keep, str_srl_targets,
+                                                                       predicate_targets,
+                                                                       pred_srl_eval_file, gold_srl_eval_file)
 
+      print(srl_correct, srl_excess, srl_missed)
+    except tf.errors.OutOfRangeError:
+      break
 
-  # print("predicates", predicate_targets.shape, predicate_targets)
-
-  predicates_per_sent = np.sum(predicate_targets, axis=-1)
-  predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
-  # srl_targets = np.transpose(labels['srl'], [0, 2, 1])
-  gathered_srl_targets = labels['srl'][predicates_indices]
-
-  print("orig shape", labels['srl'].shape)
-  print("gathered shape", gathered_srl_targets.shape)
-
-  str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
-
-  print(len(str_srl_targets), len(str_srl_targets[0]))
-
-  # print(str_srl_predictions)
-  # print(str_srl_targets)
-
-  pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
-  gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
-
-  srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
-                                                                   str_words, tokens_to_keep, str_srl_targets,
-                                                                   predicate_targets,
-                                                                   pred_srl_eval_file, gold_srl_eval_file)
-  print(srl_correct, srl_excess, srl_missed)
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
