@@ -41,7 +41,10 @@ arg_parser.add_argument('--layer_configs', required=True,
 arg_parser.add_argument('--attention_configs',
                         help='Comma-separated list of paths to attention configuration json.')
 
-arg_parser.set_defaults(debug=False)
+arg_parser.add_argument('--ensemble', dest='ensemble', action='store_true',
+                        help='Whether to ensemble models in save dir.')
+
+arg_parser.set_defaults(debug=False, ensemble=False)
 
 args, leftovers = arg_parser.parse_known_args()
 
@@ -131,7 +134,7 @@ with tf.Session() as sess:
 def eval_fn(input_fn):
   input_op = input_fn()
   srl_correct_total = srl_excess_total = srl_missed_total = 0.
-  with tf.Session():
+  with tf.get_default_session():
     while True:
       try:
         # input_np = sess.run(dev_input_fn())
