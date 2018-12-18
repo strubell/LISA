@@ -157,21 +157,24 @@ with tf.Session() as sess:
 
   # str_srl_targets = np.transpose(np.array([list(map(vocab.reverse_maps['srl'].get, t)) for s in labels['srl'] for t in s]))
   orig_shape = labels['srl'].shape
-  str_srl_targets = np.transpose(np.reshape(np.array(list(map(vocab.reverse_maps['srl'].get, labels['srl'].flatten()))), orig_shape), [0, 2, 1])
+  # str_srl_targets = np.transpose(np.reshape(np.array(list(map(vocab.reverse_maps['srl'].get, labels['srl'].flatten()))), orig_shape), [0, 2, 1])
 
-  print(str_srl_targets.shape)
-  print(len(str_srl_predictions), len(str_srl_predictions[0]))
+  # print(str_srl_targets.shape)
+  # print(len(str_srl_predictions), len(str_srl_predictions[0]))
 
   predicate_targets = labels['predicate']
 
 
 
-  print("predicates", predicate_targets.shape, predicate_targets)
+  # print("predicates", predicate_targets.shape, predicate_targets)
 
   predicates_per_sent = np.sum(predicate_targets, axis=-1)
   predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
-  gathered_srl_targets = str_srl_targets[predicates_indices]
-  print(gathered_srl_targets.shape, gathered_srl_targets)
+  gathered_srl_targets = labels['srl'][predicates_indices]
+
+  str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
+
+  # print(gathered_srl_targets.shape, gathered_srl_targets)
   # print(str_srl_predictions)
   # print(str_srl_targets)
 
