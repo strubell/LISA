@@ -236,6 +236,7 @@ class LISAModel:
                 # - predictions
                 # - loss
                 # - scores
+                # - probabilities
                 predictions[task] = task_outputs
 
                 # do the evaluation

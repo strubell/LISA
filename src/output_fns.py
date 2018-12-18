@@ -34,7 +34,8 @@ def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels,
     output = {
       'loss': loss,
       'predictions': predictions,
-      'scores': logits
+      'scores': logits,
+      'probabilities': tf.nn.softmax(logits, -1)
     }
 
   return output
@@ -91,7 +92,8 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
     output = {
       'loss': loss,
       'predictions': predictions,
-      'scores': logits
+      'scores': logits,
+      'probabilities': tf.nn.softmax(logits, -1)
     }
 
     # now get separate-task scores and predictions for each of the maps we've passed through
@@ -267,6 +269,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
         'predictions': predictions,
         'scores': srl_logits_transposed,
         'targets': srl_targets_gold_predicates,
+        'probabilities': tf.nn.softmax(srl_logits_transposed, -1)
       }
 
       return output

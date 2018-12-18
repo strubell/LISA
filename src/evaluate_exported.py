@@ -145,20 +145,21 @@ def eval_fn(input_op, sess):
 
       print(predictions[0].keys())
 
-      combined_scores = {}
-      for model_outputs in predictions:
-        for key, val in model_outputs.items():
-          if key.endswith("_scores"):
-            if key not in combined_scores:
-              print("init", key)
-              combined_scores[key] = val
-            else:
-              print("adding ", key)
-              # product of experts ensembling
-              if val.shape == combined_scores[key].shape:
-                combined_scores[key] = np.multiply(combined_scores[key], val)
-
-      combined_predictions = {k: np.argmax(v) for k, v in combined_scores.items()}
+      # todo: implement ensembling
+      combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
+      # for model_outputs in predictions:
+      #   for key, val in model_outputs.items():
+      #     if key.endswith("_scores"):
+      #       if key not in combined_scores:
+      #         print("init", key)
+      #         combined_scores[key] = val
+      #       else:
+      #         print("adding ", key)
+      #         # product of experts ensembling
+      #         if val.shape == combined_scores[key].shape:
+      #           combined_scores[key] = np.multiply(combined_scores[key], val)
+      #
+      combined_predictions = {k.replace('scores', 'predictions'): np.argmax(v) for k, v in combined_probabilities.items()}
 
       # for i in layer_task_config:
       #   for task, task_map in layer_task_config[i].items():
@@ -170,8 +171,11 @@ def eval_fn(input_op, sess):
       #       # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
       #       # eval_metric_ops[eval_name] = eval_result
 
+      joint_predicate_predictions = combined_predictions['joint_pos_predicate_predictions']
+
+
+
       srl_predictions = combined_predictions['srl_predictions']
-      predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
 
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
