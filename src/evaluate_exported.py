@@ -127,6 +127,8 @@ input = dev_input_fn()
 #
 # input = tf.Print(input, [input], summarize=500)
 
+srl_correct_total = srl_excess_total = srl_missed_total = 0.
+
 with tf.Session() as sess:
   sess.run(tf.tables_initializer())
   while True:
@@ -172,10 +174,17 @@ with tf.Session() as sess:
                                                                        predicate_targets,
                                                                        pred_srl_eval_file, gold_srl_eval_file)
 
-      print(srl_correct, srl_excess, srl_missed)
+      srl_correct_total += srl_correct
+      srl_excess_total += srl_excess
+      srl_missed_total += srl_missed
     except tf.errors.OutOfRangeError:
       break
 
+precision = srl_correct_total / (srl_correct_total + srl_excess_total)
+recall = srl_correct_total / (srl_correct_total + srl_missed_total)
+f1 = 2 * precision * recall / (precision + recall)
+
+print("SRL precision: %2.2f; recall: %2.2f; F1: %2.2f" % (precision * 100, recall * 100, f1 * 100))
 
 # estimator.evaluate(input_fn=dev_input_fn, checkpoint_path="%s/export/best_exporter" % args.save_dir)
 
