@@ -158,10 +158,15 @@ def eval_fn(input_op, sess):
       #           combined_scores[key] = np.multiply(combined_probabilities[key], val)
 
       combined_predictions = {k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()}
-      
-      print(predictions[0]['joint_pos_predicate_predicate_predictions'])
 
-      print(combined_predictions['joint_pos_predicate_predicate_predictions'])
+      np.set_printoptions(threshold=np.nan)
+
+      print(predictions[0]['joint_pos_predicate_predicate_predictions'] == combined_predictions['joint_pos_predicate_predicate_predictions'])
+
+      print(predictions[0]['srl_predictions'] == combined_predictions['srl_predictions'])
+
+
+      print()
 
       for k, v in combined_probabilities.items():
         print(k, v.shape)
