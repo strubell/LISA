@@ -124,7 +124,7 @@ for i in layer_task_config:
         sys.exit(1)
       if transition_params_file and task_viterbi_decode:
         transitions = util.load_transitions(transition_params_file, vocab.vocab_names_sizes[task],
-                                                  vocab.vocab_maps[task])
+                                            vocab.vocab_maps[task])
         transition_params[task] = transitions
 
 # create transition parameters if training or decoding with crf/viterbi
@@ -197,7 +197,10 @@ def eval_fn(input_op, sess):
 
       srl_predictions = np.empty_like(combined_predictions['srl_predictions'])
       if 'srl' in transition_params:
+        print(combined_predictions['srl_predictions'].shape, sent_lens_predicates.shape, transition_params['srl'].shape)
         for idx, (sent, sent_len) in enumerate(zip(combined_predictions['srl_predictions'], sent_lens_predicates)):
+          print("sent_len: ", sent_len)
+          print(sent.shape)
           viterbi_sequence = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
           srl_predictions[idx, :sent_len] = viterbi_sequence
 
