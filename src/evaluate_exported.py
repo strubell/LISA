@@ -171,7 +171,7 @@ def eval_fn(input_op, sess):
       tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
       # todo: implement ensembling
-      combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
+      combined_scores = {k: v for k, v in predictions[0].items() if k.endswith("_scores")}
       # for model_outputs in predictions:
       #   for key, val in model_outputs.items():
       #     if key.endswith("_probabilities"):
@@ -184,7 +184,7 @@ def eval_fn(input_op, sess):
       #         if val.shape == combined_probabilities[key].shape:
       #           combined_scores[key] = np.multiply(combined_probabilities[key], val)
 
-      combined_predictions = {k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()}
+      combined_predictions = {k.replace('scores', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_scores.items()}
 
       predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
 
@@ -197,8 +197,8 @@ def eval_fn(input_op, sess):
 
       srl_predictions = np.empty_like(combined_predictions['srl_predictions'])
       if 'srl' in transition_params:
-        print(combined_predictions['srl_predictions'].shape, sent_lens_predicates.shape, transition_params['srl'].shape)
-        for idx, (sent, sent_len) in enumerate(zip(combined_predictions['srl_predictions'], sent_lens_predicates)):
+        print(combined_scores['srl_predictions'].shape, sent_lens_predicates.shape, transition_params['srl'].shape)
+        for idx, (sent, sent_len) in enumerate(zip(combined_scores['srl_predictions'], sent_lens_predicates)):
           print("sent_len: ", sent_len)
           print(sent.shape)
           viterbi_sequence = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
