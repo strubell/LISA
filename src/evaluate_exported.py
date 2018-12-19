@@ -143,8 +143,6 @@ def eval_fn(input_op, sess):
       predictor_input = {'input': input_np}
       predictions = [predict_fn(predictor_input) for predict_fn in predict_fns]
 
-      print(predictions[0].keys())
-
       # todo: implement ensembling
       combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
       # for model_outputs in predictions:
@@ -171,8 +169,10 @@ def eval_fn(input_op, sess):
       #       # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
       #       # eval_metric_ops[eval_name] = eval_result
 
-      predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
-      srl_predictions = combined_predictions['srl_predictions']
+      # predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
+      # srl_predictions = combined_predictions['srl_predictions']
+      predicate_predictions = predictions[0]['joint_pos_predicate_predicate_predictions']
+      srl_predictions = predictions[0]['srl_predictions']
 
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
 
