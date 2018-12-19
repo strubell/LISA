@@ -161,9 +161,9 @@ def eval_fn(input_op, sess):
 
       np.set_printoptions(threshold=np.nan)
 
-      print(predictions[0]['joint_pos_predicate_predicate_predictions'] == combined_predictions['joint_pos_predicate_predicate_predictions'])
+      print("predicates", predictions[0]['joint_pos_predicate_predicate_predictions'] == combined_predictions['joint_pos_predicate_predicate_predictions'])
 
-      print(predictions[0]['srl_predictions'] == combined_predictions['srl_predictions'])
+      print("srls", predictions[0]['srl_predictions'] == combined_predictions['srl_predictions'])
 
 
       print()
