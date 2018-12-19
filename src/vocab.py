@@ -31,9 +31,9 @@ class Vocab:
         tf.logging.log(tf.logging.ERROR, "Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
         sys.exit(1)
       else:
-        tf.logging.log(tf.logging.ERROR, "Successfully created vocabs directory: %s" % self.vocabs_dir)
+        tf.logging.log(tf.logging.INFO, "Successfully created vocabs directory: %s" % self.vocabs_dir)
     else:
-      tf.logging.log(tf.logging.ERROR, "Using vocabs directory: %s" % self.vocabs_dir)
+      tf.logging.log(tf.logging.INFO, "Using vocabs directory: %s" % self.vocabs_dir)
 
     self.vocab_names_sizes = self.make_vocab_files(self.data_config, self.save_dir, data_filenames)
 
