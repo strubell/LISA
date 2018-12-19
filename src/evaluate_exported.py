@@ -195,7 +195,7 @@ def eval_fn(input_op, sess):
       toks_to_keep_predicates = toks_to_keep_tiled[np.where(predicate_predictions == 1)]
       sent_lens_predicates = np.sum(toks_to_keep_predicates, axis=-1)
 
-      srl_predictions = np.empty_like(combined_predictions['srl'])
+      srl_predictions = np.empty_like(combined_predictions['srl_predictions'])
       if 'srl' in transition_params:
         for idx, (sent, sent_len) in enumerate(zip(combined_predictions['srl_predictions'], sent_lens_predicates)):
           viterbi_sequence = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
