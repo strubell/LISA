@@ -8,6 +8,7 @@ from tensorflow.contrib import predictor
 import evaluation_fns as eval_fns
 import constants
 import os
+import util
 
 
 def sequence_mask_np(lengths, maxlen=None):
@@ -109,6 +110,25 @@ for i, f in enumerate([d for d in data_config.keys() if
 pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
 gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
 
+transition_params = {}
+for i in layer_task_config:
+  for task, task_map in layer_task_config[i].items():
+    task_crf = 'crf' in task_map and task_map['crf']
+    task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
+    if task_viterbi_decode:
+      transition_params_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
+      if not transition_params_file:
+        # todo make error func
+        tf.logging.log(tf.logging.ERROR, "Failed to load transition stats for task '%s' with crf=%r and viterbi=%r" %
+                       (task, task_crf, task_viterbi_decode))
+        sys.exit(1)
+      if transition_params_file and task_viterbi_decode:
+        transitions = util.load_transitions(transition_params_file, vocab.vocab_names_sizes[task],
+                                                  vocab.vocab_maps[task])
+        transition_params[task] = transitions
+
+# create transition parameters if training or decoding with crf/viterbi
+
 # Initialize the model
 # model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
 #                   vocab)
@@ -143,6 +163,13 @@ def eval_fn(input_op, sess):
       predictor_input = {'input': input_np}
       predictions = [predict_fn(predictor_input) for predict_fn in predict_fns]
 
+      shape = input_np.shape
+      batch_size = shape[0]
+      batch_seq_len = shape[1]
+
+      feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
+      tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
+
       # todo: implement ensembling
       combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
       # for model_outputs in predictions:
@@ -159,17 +186,20 @@ def eval_fn(input_op, sess):
 
       combined_predictions = {k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()}
 
+      predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
+
       np.set_printoptions(threshold=np.nan)
 
-      print("predicates", predictions[0]['joint_pos_predicate_predicate_predictions'] == combined_predictions['joint_pos_predicate_predicate_predictions'])
+      # need a version of this for predicates_in_batch first dim
+      toks_to_keep_tiled = np.reshape(np.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
+      toks_to_keep_predicates = toks_to_keep_tiled[np.where(predicate_predictions == 1)]
+      sent_lens_predicates = np.sum(toks_to_keep_predicates, axis=-1)
 
-      print("srls", predictions[0]['srl_predictions'] == combined_predictions['srl_predictions'])
-
-
-      print()
-
-      for k, v in combined_probabilities.items():
-        print(k, v.shape)
+      srl_predictions = np.empty_like(combined_predictions['srl'])
+      if 'srl' in transition_params:
+        for idx, (sent, sent_len) in enumerate(zip(combined_predictions['srl_predictions'], sent_lens_predicates)):
+          viterbi_sequence = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
+          srl_predictions[idx, :sent_len] = viterbi_sequence
 
       # for i in layer_task_config:
       #   for task, task_map in layer_task_config[i].items():
@@ -181,17 +211,12 @@ def eval_fn(input_op, sess):
       #       # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
       #       # eval_metric_ops[eval_name] = eval_result
 
-      # predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
       # srl_predictions = combined_predictions['srl_predictions']
-      predicate_predictions = predictions[0]['joint_pos_predicate_predicate_predictions']
-      srl_predictions = predictions[0]['srl_predictions']
-
-      feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
+      # predicate_predictions = predictions[0]['joint_pos_predicate_predicate_predictions']
+      # srl_predictions = predictions[0]['srl_predictions']
 
       str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
       str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
-
-      tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
       labels = {}
       for l, idx in label_idx_map.items():

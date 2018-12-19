@@ -9,6 +9,7 @@ import output_fns
 import transformer
 import nn_utils
 import train_utils
+import util
 from lazy_adam_v2 import LazyAdamOptimizer
 
 
@@ -31,21 +32,12 @@ class LISAModel:
       return self.train_hparams
     return self.test_hparams
 
-  @staticmethod
-  def load_transitions(transition_statistics, num_classes, vocab_map):
-    transition_statistics_np = np.zeros((num_classes, num_classes))
-    with open(transition_statistics, 'r') as f:
-      for line in f:
-        tag1, tag2, prob = line.split("\t")
-        transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
-    return transition_statistics_np
-
   def get_embedding_table(self, name, embedding_dim, include_oov, pretrained_fname=None, num_embeddings=None):
 
     with tf.variable_scope("%s_embeddings" % name):
       initializer = tf.random_normal_initializer()
       if pretrained_fname:
-        pretrained_embeddings = self.load_pretrained_embeddings(pretrained_fname)
+        pretrained_embeddings = util.load_pretrained_embeddings(pretrained_fname)
         initializer = tf.constant_initializer(pretrained_embeddings)
         pretrained_num_embeddings, pretrained_embedding_dim = pretrained_embeddings.shape
         if pretrained_embedding_dim != embedding_dim:
@@ -70,22 +62,6 @@ class LISAModel:
                                     name="embeddings_table")
 
       return embedding_table
-
-  @staticmethod
-  def load_pretrained_embeddings(pretrained_fname):
-    tf.logging.log(tf.logging.INFO, "Loading pre-trained embedding file: %s" % pretrained_fname)
-
-    # TODO: np.loadtxt refuses to work for some reason
-    # pretrained_embeddings = np.loadtxt(self.args.word_embedding_file, usecols=range(1, word_embedding_size+1))
-    pretrained_embeddings = []
-    with open(pretrained_fname, 'r') as f:
-      for line in f:
-        split_line = line.split()
-        embedding = list(map(float, split_line[1:]))
-        pretrained_embeddings.append(embedding)
-    pretrained_embeddings = np.array(pretrained_embeddings)
-    pretrained_embeddings /= np.std(pretrained_embeddings)
-    return pretrained_embeddings
 
   def model_fn(self, features, mode):
 
@@ -212,7 +188,7 @@ class LISAModel:
 
                   transition_stats = None
                   if transition_stats_file:
-                    transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
+                    transition_stats = util.load_transitions(transition_stats_file, task_vocab_size,
                                                              self.vocab.vocab_maps[task])
 
                   # create transition parameters if training or decoding with crf/viterbi
