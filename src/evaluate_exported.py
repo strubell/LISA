@@ -159,6 +159,9 @@ def eval_fn(input_op, sess):
 
       combined_predictions = {k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()}
 
+      for k, v in combined_probabilities.items():
+        print(k, v.shape)
+
       # for i in layer_task_config:
       #   for task, task_map in layer_task_config[i].items():
       #     for eval_name, eval_map in task_map['eval_fns'].items():
