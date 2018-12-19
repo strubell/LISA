@@ -159,7 +159,7 @@ def eval_fn(input_op, sess):
       #         if val.shape == combined_probabilities[key].shape:
       #           combined_scores[key] = np.multiply(combined_probabilities[key], val)
 
-      combined_predictions = {k.replace('probabilities', 'predictions'): np.argmax(v) for k, v in combined_probabilities.items()}
+      combined_predictions = {k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()}
 
       # for i in layer_task_config:
       #   for task, task_map in layer_task_config[i].items():
@@ -171,9 +171,9 @@ def eval_fn(input_op, sess):
       #       # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
       #       # eval_metric_ops[eval_name] = eval_result
 
+      print(combined_predictions)
+
       joint_predicate_predictions = combined_predictions['joint_pos_predicate_predictions']
-
-
 
       srl_predictions = combined_predictions['srl_predictions']
 
