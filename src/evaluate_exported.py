@@ -174,6 +174,8 @@ def eval_fn(input_op, sess):
 
       # todo: implement ensembling
       combined_scores = {k: v for k, v in predictions[0].items() if k.endswith("_scores")}
+      combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
+
 
       print("combined scores", combined_scores.keys())
 
@@ -190,6 +192,7 @@ def eval_fn(input_op, sess):
       #           combined_scores[key] = np.multiply(combined_probabilities[key], val)
 
       combined_predictions = {k.replace('scores', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_scores.items()}
+      combined_predictions.update({k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()})
 
       predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
 
