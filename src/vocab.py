@@ -24,13 +24,16 @@ class Vocab:
 
     # make directory for vocabs
     self.vocabs_dir = "%s/assets.extra" % save_dir
-    try:
-      os.mkdir(self.vocabs_dir)
-    except OSError as e:
-      tf.logging.log(tf.logging.ERROR, "Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
-      sys.exit(1)
+    if not os.path.exists(self.vocabs_dir):
+      try:
+        os.mkdir(self.vocabs_dir)
+      except OSError as e:
+        tf.logging.log(tf.logging.ERROR, "Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
+        sys.exit(1)
+      else:
+        tf.logging.log(tf.logging.ERROR, "Successfully created vocabs directory: %s" % self.vocabs_dir)
     else:
-      tf.logging.log(tf.logging.ERROR, "Successfully created vocabs directory: %s" % self.vocabs_dir)
+      tf.logging.log(tf.logging.ERROR, "Using vocabs directory: %s" % self.vocabs_dir)
 
     self.vocab_names_sizes = self.make_vocab_files(self.data_config, self.save_dir, data_filenames)
 
@@ -53,7 +56,7 @@ class Vocab:
       for v in self.vocab_names_sizes.keys():
         if v in self.data_config:
           num_oov = 1 if 'oov' in self.data_config[v] and self.data_config[v]['oov'] else 0
-          this_lookup = tf.contrib.lookup.index_table_from_file("%s/assets.extra/%s.txt" % (self.save_dir, v),
+          this_lookup = tf.contrib.lookup.index_table_from_file("%s/%s.txt" % (self.vocabs_dir, v),
                                                                 num_oov_buckets=num_oov,
                                                                 key_column_index=0)
           vocab_lookup_ops[v] = this_lookup
@@ -137,7 +140,7 @@ class Vocab:
     else:
       for d in vocabs_index.keys():
         this_vocab_map = vocabs[vocabs_index[d]]
-        with open("%s/assets.extra/%s.txt" % (save_dir, d), 'r') as f:
+        with open("%s/%s.txt" % (self.vocabs_dir, d), 'r') as f:
           for line in f:
             datum, count = line.strip().split()
             this_vocab_map[datum] = int(count)
@@ -177,7 +180,7 @@ class Vocab:
 
     for d in vocabs_index.keys():
       this_vocab_map = vocabs[vocabs_index[d]]
-      with open("%s/assets.extra/%s.txt" % (save_dir, d), 'w') as f:
+      with open("%s/%s.txt" % (self.vocabs_dir, d), 'w') as f:
         for k, v in this_vocab_map.items():
           print("%s\t%d" % (k, v), file=f)
 
