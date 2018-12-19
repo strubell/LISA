@@ -26,8 +26,8 @@ class Vocab:
     self.vocabs_dir = "%s/assets.extra" % save_dir
     try:
       os.mkdir(self.vocabs_dir)
-    except OSError:
-      tf.logging.log(tf.logging.ERROR, "Failed to create vocabs directory: %s" % self.vocabs_dir)
+    except OSError as e:
+      tf.logging.log(tf.logging.ERROR, "Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
       sys.exit(1)
     else:
       tf.logging.log(tf.logging.ERROR, "Successfully created vocabs directory: %s" % self.vocabs_dir)
