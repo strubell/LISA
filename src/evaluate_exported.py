@@ -210,6 +210,7 @@ def eval_fn(input_op, sess):
         for idx, (sent, sent_len) in enumerate(zip(combined_scores['srl_scores'], sent_lens_predicates)):
           print("sent_len: ", sent_len)
           print(sent.shape)
+          print(sent[:sent_len].shape)
           viterbi_sequence = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
           print(len(viterbi_sequence))
           print(srl_predictions[idx, :sent_len].shape)
