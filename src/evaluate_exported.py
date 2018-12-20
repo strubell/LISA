@@ -170,15 +170,9 @@ def eval_fn(input_op, sess):
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
       tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
-      print("predictions", predictions[0].keys())
-
       # todo: implement ensembling
       combined_scores = {k: v for k, v in predictions[0].items() if k.endswith("_scores")}
       combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
-
-      print(np.sum(predictions[0]['joint_pos_predicate_predicate_predictions']))
-
-      print("combined scores", combined_scores.keys())
 
       # for model_outputs in predictions:
       #   for key, val in model_outputs.items():
