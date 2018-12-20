@@ -50,8 +50,8 @@ def get_separate_scores_preds_from_joint(joint_outputs, joint_maps, joint_num_la
   sep_outputs = {}
   for map_name, label_comp_map in joint_maps.items():
     short_map_name = map_name.split('_to_')[-1]
-    label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
-    sep_outputs["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
+    # label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
+    # sep_outputs["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
 
     # marginalize out probabilities for this task
     task_num_labels = tf.shape(tf.unique(tf.reshape(label_comp_map, [-1]))[0])[0]
@@ -61,6 +61,9 @@ def get_separate_scores_preds_from_joint(joint_outputs, joint_maps, joint_num_la
     segment_scores = tf.unsorted_segment_sum(tf.transpose(joint_probabilities_flat), segment_ids, task_num_labels)
     segment_scores = tf.reshape(tf.transpose(segment_scores), [batch_size, batch_seq_len, task_num_labels])
     sep_outputs["%s_probabilities" % short_map_name] = segment_scores
+
+    # use marginalized probabilities to get predictions
+    sep_outputs["%s_predictions" % short_map_name] = tf.arg_max(segment_scores, -1)
   return sep_outputs
 
 
