@@ -212,7 +212,7 @@ def eval_fn(input_op, sess):
           print(sent.shape)
           print(sent[:sent_len].shape)
           viterbi_sequence = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
-          print(len(viterbi_sequence))
+          print(viterbi_sequence)
           print(srl_predictions[idx, :sent_len].shape)
           srl_predictions[idx, :sent_len] = viterbi_sequence
 
