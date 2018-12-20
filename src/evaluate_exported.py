@@ -176,6 +176,7 @@ def eval_fn(input_op, sess):
       combined_scores = {k: v for k, v in predictions[0].items() if k.endswith("_scores")}
       combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
 
+      print(np.sum(predictions[0]['joint_pos_predicate_predicate_predictions']))
 
       print("combined scores", combined_scores.keys())
 
@@ -210,6 +211,8 @@ def eval_fn(input_op, sess):
           print("sent_len: ", sent_len)
           print(sent.shape)
           viterbi_sequence = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
+          print(len(viterbi_sequence))
+          print(srl_predictions[idx, :sent_len].shape)
           srl_predictions[idx, :sent_len] = viterbi_sequence
 
       # for i in layer_task_config:
