@@ -251,7 +251,7 @@ def eval_fn(input_op, sess):
       for i in layer_task_config:
         for task, task_map in layer_task_config[i].items():
           for eval_name, eval_map in task_map['eval_fns'].items():
-            print("%s(%s)" % (eval_map['name'], ["%s=%s" % () for k, v in eval_map['params'].items()]))
+            # print("%s(%s)" % (eval_map['name'], ["%s=%s" % () for k, v in eval_map['params'].items()]))
             # print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
             # print('map:', eval_map)
             # eval_fn_params = get_params(task_outputs, eval_map, predictions, feats, labels,
