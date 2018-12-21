@@ -261,14 +261,13 @@ def conll_parse_eval_np(predictions, targets, parse_head_predictions, words, mas
                         gold_parse_eval_file, pred_parse_eval_file, pos_targets, accumulator):
 
   # first, use reverse maps to convert ints to strings
-  # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-  str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-  str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), predictions)
-  str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), targets)
-  str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+  str_words = [list(map(reverse_maps['word'].get, s)) for s in words]
+  str_predictions = [list(map(reverse_maps['parse_label'].get, s)) for s in predictions]
+  str_targets = [list(map(reverse_maps['parse_label'].get, s)) for s in targets]
+  str_pos_targets = [list(map(reverse_maps['gold_pos'].get, s)) for s in pos_targets]
 
-  total, corrects = conll_parse_eval(str_predictions, parse_head_predictions, str_words, mask, str_targets, parse_head_targets,
-                    pred_parse_eval_file, gold_parse_eval_file, str_pos_targets)
+  total, corrects = conll_parse_eval(str_predictions, parse_head_predictions, str_words, mask, str_targets,
+                                     parse_head_targets, pred_parse_eval_file, gold_parse_eval_file, str_pos_targets)
 
   accumulator['total'] += total
   accumulator['corrects'] += corrects
