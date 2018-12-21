@@ -136,6 +136,10 @@ for i in layer_task_config:
 # # Set up the Estimator
 # estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
 
+      # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
+      # print(eval_result)
+      # eval_metric_ops[eval_name] = eval_result
+
 
 def get_immediate_subdirectories(a_dir):
   return [name for name in os.listdir(a_dir)
@@ -203,20 +207,9 @@ def eval_fn(input_op, sess):
         for idx, (sent, sent_len) in enumerate(zip(combined_scores['srl_scores'], sent_lens_predicates)):
           viterbi_sequence, score = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
           srl_predictions[idx, :sent_len] = viterbi_sequence
+      combined_predictions['srl_predictions'] = srl_predictions
 
-      for i in layer_task_config:
-        for task, task_map in layer_task_config[i].items():
-          for eval_name, eval_map in task_map['eval_fns'].items():
-            print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
-            print('map:', eval_map)
-            # eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
-            #                                            task_labels, self.vocab.reverse_maps, tokens_to_keep)
-            # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-            # eval_metric_ops[eval_name] = eval_result
-
-      # srl_predictions = combined_predictions['srl_predictions']
-      # predicate_predictions = predictions[0]['joint_pos_predicate_predicate_predictions']
-      # srl_predictions = predictions[0]['srl_predictions']
+      print("combined predictions: ", combined_predictions)
 
       str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
       str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
@@ -234,6 +227,37 @@ def eval_fn(input_op, sess):
         labels[l] = these_labels_masked
 
       predicate_targets = labels['predicate']
+
+      def get_params(task, eval_map, predictions, feats, labels, reverse_maps, tokens_to_keep):
+        # always pass through predictions, targets and mask
+        params = {'predictions': predictions['%s_predictions' % task], 'targets': task_labels, 'mask': tokens_to_keep}
+        if 'params' in task_map:
+          params_map = task_map['params']
+          for param_name, param_values in params_map.items():
+            if 'reverse_maps' in param_values:
+              params[param_name] = {map_name: reverse_maps[map_name] for map_name in param_values['reverse_maps']}
+            elif 'label' in param_values:
+              params[param_name] = labels[param_values['label']]
+            elif 'feature' in param_values:
+              params[param_name] = features[param_values['feature']]
+            elif 'layer' in param_values:
+              outputs_layer = train_outputs[param_values['layer']]
+              params[param_name] = outputs_layer[param_values['output']]
+            else:
+              params[param_name] = param_values['value']
+        return params
+
+      for i in layer_task_config:
+        for task, task_map in layer_task_config[i].items():
+          for eval_name, eval_map in task_map['eval_fns'].items():
+            print("%s(%s)" % (eval_map['name'], ["%s=%s" % () for k, v in eval_map['params'].items()]))
+            # print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
+            # print('map:', eval_map)
+            # eval_fn_params = get_params(task_outputs, eval_map, predictions, feats, labels,
+            #                             task_labels, self.vocab.reverse_maps, tokens_to_keep)
+            eval_fn_params = get_params(task, eval_map, combined_predictions, feats, labels, vocab.reverse_maps, tokens_to_keep)
+            print("%s(%s)" % (eval_map['name'], str(eval_fn_params)))
+
 
       predicates_per_sent = np.sum(predicate_targets, axis=-1)
       predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
