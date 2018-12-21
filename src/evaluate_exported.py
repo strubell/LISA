@@ -168,9 +168,7 @@ def eval_fn(input_op, sess):
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
       tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
-
       combined_predictions = predictions[0]
-      print("orig predictions keys", combined_predictions.keys())
 
       # todo: implement ensembling
       combined_scores = {k: v for k, v in combined_predictions.items() if k.endswith("_scores")}
@@ -210,8 +208,6 @@ def eval_fn(input_op, sess):
             task_predictions[idx, :sent_len] = viterbi_sequence
         combined_predictions['%s_predictions' % task] = task_predictions
 
-      print("combined predictions: ", combined_predictions.keys())
-
       labels = {}
       for l, idx in label_idx_map.items():
         these_labels = input_np[:, :, idx[0]:idx[1]] if idx[1] != -1 else input_np[:, :, idx[0]:]
@@ -224,45 +220,17 @@ def eval_fn(input_op, sess):
           these_labels_masked = np.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
 
-      # predicate_targets = labels['predicate']
-
       for i in layer_task_config:
         for task, task_map in layer_task_config[i].items():
           for eval_name, eval_map in task_map['eval_fns'].items():
-            # print("task map", task_map)
             eval_fn_params = eval_fns.get_params(task, eval_map, combined_predictions, feats, labels,
                                                  vocab.reverse_maps, tokens_to_keep)
             eval_fn_params['accumulator'] = eval_accumulators[eval_name]
-            # print("%s(%s)" % (eval_map['name'], str(eval_fn_params.keys())))
             eval_result = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
-            eval_results['task'] = eval_result
+            eval_results[task] = eval_result
 
-
-      # str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
-      # str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
-      # predicates_per_sent = np.sum(predicate_targets, axis=-1)
-      # predicates_indices = np.where(util.sequence_mask_np(predicates_per_sent))
-      # srl_targets = np.transpose(labels['srl'], [0, 2, 1])
-      # gathered_srl_targets = srl_targets[predicates_indices]
-      # str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
-      #
-      # srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval(str_srl_predictions, predicate_predictions,
-      #                                                               str_words, tokens_to_keep, str_srl_targets,
-      #                                                               predicate_targets,
-      #                                                               pred_srl_eval_file, gold_srl_eval_file)
-
-      # srl_correct_total += srl_correct
-      # srl_excess_total += srl_excess
-      # srl_missed_total += srl_missed
     except tf.errors.OutOfRangeError:
       break
-
-  # precision = srl_correct_total / (srl_correct_total + srl_excess_total)
-  # recall = srl_correct_total / (srl_correct_total + srl_missed_total)
-  # f1 = 2 * precision * recall / (precision + recall)
-
-  # tf.logging.log(tf.logging.INFO,
-  #                "SRL precision: %2.2f; recall: %2.2f; F1: %2.2f" % (precision * 100, recall * 100, f1 * 100))
 
   tf.logging.log(tf.logging.INFO, eval_results)
 
