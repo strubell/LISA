@@ -65,8 +65,16 @@ def convert_bilou(bio_predicted_roles):
   return converted
 
 
-def accuracy_np(predictions, targets, mask):
-  return np.multiply(predictions == targets, mask)
+def accuracy_np(predictions, targets, mask, accumulator):
+
+  correct = np.sum(np.multiply(predictions == targets, mask))
+  total = np.sum(mask)
+
+  accumulator['correct'] = correct
+  accumulator['total'] = total
+
+  accuracy = correct / total
+  return accuracy
 
 
 # Write targets file w/ format:
@@ -277,7 +285,7 @@ fn_dispatcher = {
 }
 
 accumulator_dispatcher = {
-  'accuracy': {'counts': 0., 'total': 0.},
+  'accuracy': {'correct': 0., 'total': 0.},
   'conll_srl_eval': {'correct': 0., 'excess': 0., 'missed': 0.},
   'conll_parse_eval': {'total': 0., 'corrects': np.zeros(3)},
 }
