@@ -228,8 +228,7 @@ def eval_fn(input_op, sess):
             eval_fn_params = eval_fns.get_params(task, eval_map, combined_predictions, feats, labels,
                                                  vocab.reverse_maps, tokens_to_keep)
             eval_fn_params['accumulator'] = eval_accumulators[eval_name]
-            eval_result, _ = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
-            # eval_accumulators[eval_name] = accumulator
+            eval_result = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
             eval_results[eval_name] = eval_result
     except tf.errors.OutOfRangeError:
       break
