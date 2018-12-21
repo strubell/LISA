@@ -256,7 +256,7 @@ def eval_fn(input_op, sess):
             # eval_fn_params = get_params(task_outputs, eval_map, predictions, feats, labels,
             #                             task_labels, self.vocab.reverse_maps, tokens_to_keep)
             eval_fn_params = get_params(task, eval_map, combined_predictions, feats, labels, vocab.reverse_maps, tokens_to_keep)
-            print("%s(%s)" % (eval_map['name'], str(eval_fn_params)))
+            print("%s(%s)" % (eval_map['name'], str(eval_fn_params.keys())))
 
 
       predicates_per_sent = np.sum(predicate_targets, axis=-1)
