@@ -228,7 +228,8 @@ def eval_fn(input_op, sess):
 
       predicate_targets = labels['predicate']
 
-      def get_params(task, eval_map, predictions, feats, labels, reverse_maps, tokens_to_keep):
+      def get_params(task_outputs, task_map, train_outputs, features, labels, task_labels, reverse_maps,
+                     tokens_to_keep):
         # always pass through predictions, targets and mask
         params = {'predictions': predictions['%s_predictions' % task], 'targets': task_labels, 'mask': tokens_to_keep}
         if 'params' in task_map:
