@@ -241,8 +241,7 @@ def eval_fn(input_op, sess):
             elif 'feature' in param_values:
               params[param_name] = features[param_values['feature']]
             elif 'layer' in param_values:
-              outputs_layer = predictions[param_values['layer']]
-              params[param_name] = outputs_layer[param_values['output']]
+              params[param_name] = predictions['%s_%s' % (param_values['layer'], param_values['output'])]
             else:
               params[param_name] = param_values['value']
         return params
