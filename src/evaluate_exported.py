@@ -154,6 +154,7 @@ def dev_input_fn():
 def eval_fn(input_op, sess):
   eval_accumulators = eval_fns.get_accumulators(layer_task_config)
   eval_results = {}
+  i = 0
   while True:
     try:
       # input_np = sess.run(dev_input_fn())
@@ -228,10 +229,10 @@ def eval_fn(input_op, sess):
             eval_fn_params['accumulator'] = eval_accumulators[eval_name]
             eval_result, accumulator = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
             eval_accumulators[eval_name] = accumulator
-            print(accumulator)
-            print(eval_result)
+            print(i, accumulator)
+            print(i, eval_result)
             eval_results[eval_name] = eval_result
-
+      i += 1
     except tf.errors.OutOfRangeError:
       break
 
