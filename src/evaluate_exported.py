@@ -156,6 +156,7 @@ def eval_fn(input_op, sess):
   eval_results = {}
   i = 0
   while True:
+    i += 1
     try:
       # input_np = sess.run(dev_input_fn())
       input_np = sess.run(input_op)
@@ -232,7 +233,6 @@ def eval_fn(input_op, sess):
             print(i, accumulator)
             print(i, eval_result)
             eval_results[eval_name] = eval_result
-      i += 1
     except tf.errors.OutOfRangeError:
       break
 
