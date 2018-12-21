@@ -227,6 +227,7 @@ def eval_fn(input_op, sess):
                                                  vocab.reverse_maps, tokens_to_keep)
             eval_fn_params['accumulator'] = eval_accumulators[eval_name]
             eval_result = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
+            print(eval_result)
             eval_results[eval_name] = eval_result
 
     except tf.errors.OutOfRangeError:
