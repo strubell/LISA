@@ -207,6 +207,7 @@ def eval_fn(input_op, sess):
       sent_lens_predicates = np.sum(toks_to_keep_predicates, axis=-1)
 
       # todo do this for everything that's using viterbi (everything that's in the transition_params list above?)
+      # currently sent_lens is broken because of predicates in batch vs sentences in batch distinction
       for task, tran_params in transition_params.items():
         task_predictions = np.empty_like(combined_predictions['%s_predictions' % task])
         if 'srl' in transition_params:
