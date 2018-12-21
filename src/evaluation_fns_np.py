@@ -239,7 +239,7 @@ def conll_parse_eval(parse_label_predictions, parse_head_predictions, words, mas
 
 
 def conll_srl_eval_np(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
-                   gold_srl_eval_file, pred_srl_eval_file, accumulator):
+                   gold_srl_eval_file, pred_srl_eval_file, pos_predictions, pos_targets, accumulator):
 
   # first, use reverse maps to convert ints to strings
   str_srl_predictions = [list(map(reverse_maps['srl'].get, s)) for s in predictions]
