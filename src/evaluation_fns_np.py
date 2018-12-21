@@ -129,7 +129,11 @@ def write_parse_eval(filename, words, parse_heads, sent_lens, parse_labels, pos_
                                                                        sent_parse_labels[:sent_len],
                                                                        sent_pos_tags[:sent_len])):
         parse_head = 0 if j == parse_head else parse_head + 1
-        token_outputs = (j, word.decode('utf-8'), pos_tag.decode('utf-8'), int(parse_head), parse_label.decode('utf-8'))
+        token_outputs = (j,
+                         word if isinstance(word, str) else word.decode('utf-8'),
+                         pos_tag if isinstance(pos_tag, str) else pos_tag.decode('utf-8'),
+                         int(parse_head),
+                         parse_label if isinstance(parse_label, str) else parse_label.decode('utf-8'))
         print("%d\t%s\t_\t%s\t_\t_\t%d\t%s" % token_outputs, file=f)
       print(file=f)
 
