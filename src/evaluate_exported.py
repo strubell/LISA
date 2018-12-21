@@ -5,7 +5,7 @@ import train_utils
 from vocab import Vocab
 import sys
 from tensorflow.contrib import predictor
-import evaluation_fns as eval_fns
+import evaluation_fns_np as eval_fns
 import constants
 import os
 import util
@@ -174,9 +174,13 @@ def eval_fn(input_op, sess):
       feats = {f: input_np[:, :, idx] for f, idx in feature_idx_map.items()}
       tokens_to_keep = np.where(feats['word'] == constants.PAD_VALUE, 0, 1)
 
+
+      combined_predictions = predictions[0]
+      print("orig predictions keys", combined_predictions.keys())
+
       # todo: implement ensembling
-      combined_scores = {k: v for k, v in predictions[0].items() if k.endswith("_scores")}
-      combined_probabilities = {k: v for k, v in predictions[0].items() if k.endswith("_probabilities")}
+      combined_scores = {k: v for k, v in combined_predictions.items() if k.endswith("_scores")}
+      combined_probabilities = {k: v for k, v in combined_predictions.items() if k.endswith("_probabilities")}
 
       # for model_outputs in predictions:
       #   for key, val in model_outputs.items():
@@ -190,7 +194,7 @@ def eval_fn(input_op, sess):
       #         if val.shape == combined_probabilities[key].shape:
       #           combined_scores[key] = np.multiply(combined_probabilities[key], val)
 
-      combined_predictions = {k.replace('scores', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_scores.items()}
+      combined_predictions.update({k.replace('scores', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_scores.items()})
       combined_predictions.update({k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()})
 
       predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
@@ -202,17 +206,16 @@ def eval_fn(input_op, sess):
       toks_to_keep_predicates = toks_to_keep_tiled[np.where(predicate_predictions == 1)]
       sent_lens_predicates = np.sum(toks_to_keep_predicates, axis=-1)
 
-      srl_predictions = np.empty_like(combined_predictions['srl_predictions'])
-      if 'srl' in transition_params:
-        for idx, (sent, sent_len) in enumerate(zip(combined_scores['srl_scores'], sent_lens_predicates)):
-          viterbi_sequence, score = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
-          srl_predictions[idx, :sent_len] = viterbi_sequence
-      combined_predictions['srl_predictions'] = srl_predictions
+      # todo do this for everything that's using viterbi (everything that's in the transition_params list above?)
+      for task, tran_params in transition_params.items():
+        task_predictions = np.empty_like(combined_predictions['%s_predictions' % task])
+        if 'srl' in transition_params:
+          for idx, (sent, sent_len) in enumerate(zip(combined_scores['%s_scores' % task], sent_lens_predicates)):
+            viterbi_sequence, score = tf.contrib.crf.viterbi_decode(sent[:sent_len], tran_params)
+            task_predictions[idx, :sent_len] = viterbi_sequence
+        combined_predictions['%s_predictions' % task] = task_predictions
 
       print("combined predictions: ", combined_predictions.keys())
-
-      str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
-      str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
 
       labels = {}
       for l, idx in label_idx_map.items():
@@ -228,47 +231,26 @@ def eval_fn(input_op, sess):
 
       predicate_targets = labels['predicate']
 
-      def get_params(task, task_map, predictions, features, labels, reverse_maps, tokens_to_keep):
-        # always pass through predictions, targets and mask
-        params = {'predictions': predictions['%s_predictions' % task], 'targets': labels[task], 'mask': tokens_to_keep}
-        if 'params' in task_map:
-          params_map = task_map['params']
-          for param_name, param_values in params_map.items():
-            if 'reverse_maps' in param_values:
-              params[param_name] = {map_name: reverse_maps[map_name] for map_name in param_values['reverse_maps']}
-            elif 'label' in param_values:
-              params[param_name] = labels[param_values['label']]
-            elif 'feature' in param_values:
-              params[param_name] = features[param_values['feature']]
-            elif 'layer' in param_values:
-              params[param_name] = predictions['%s_%s' % (param_values['layer'], param_values['output'])]
-            else:
-              params[param_name] = param_values['value']
-        return params
-
       for i in layer_task_config:
         for task, task_map in layer_task_config[i].items():
           for eval_name, eval_map in task_map['eval_fns'].items():
             print("task map", task_map)
-            # print("%s(%s)" % (eval_map['name'], ["%s=%s" % () for k, v in eval_map['params'].items()]))
-            # print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
-            # print('map:', eval_map)
-            # eval_fn_params = get_params(task_outputs, eval_map, predictions, feats, labels,
-            #                             task_labels, self.vocab.reverse_maps, tokens_to_keep)
-            eval_fn_params = get_params(task, eval_map, combined_predictions, feats, labels, vocab.reverse_maps, tokens_to_keep)
+            eval_fn_params = eval_fns.get_params(task, eval_map, combined_predictions, feats, labels,
+                                                 vocab.reverse_maps, tokens_to_keep)
             print("%s(%s)" % (eval_map['name'], str(eval_fn_params.keys())))
 
-
+      str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
+      str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
       predicates_per_sent = np.sum(predicate_targets, axis=-1)
       predicates_indices = np.where(sequence_mask_np(predicates_per_sent))
       srl_targets = np.transpose(labels['srl'], [0, 2, 1])
       gathered_srl_targets = srl_targets[predicates_indices]
       str_srl_targets = [list(map(vocab.reverse_maps['srl'].get, s)) for s in gathered_srl_targets]
 
-      srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval_py(str_srl_predictions, predicate_predictions,
-                                                                       str_words, tokens_to_keep, str_srl_targets,
-                                                                       predicate_targets,
-                                                                       pred_srl_eval_file, gold_srl_eval_file)
+      srl_correct, srl_excess, srl_missed = eval_fns.conll_srl_eval(str_srl_predictions, predicate_predictions,
+                                                                    str_words, tokens_to_keep, str_srl_targets,
+                                                                    predicate_targets,
+                                                                    pred_srl_eval_file, gold_srl_eval_file)
 
       srl_correct_total += srl_correct
       srl_excess_total += srl_excess
