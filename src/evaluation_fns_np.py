@@ -73,7 +73,7 @@ def accuracy_np(predictions, targets, mask, accumulator):
   accumulator['total'] = total
 
   accuracy = correct / total
-  return accuracy
+  return accuracy, accumulator
 
 
 # Write targets file w/ format:
@@ -257,7 +257,7 @@ def conll_srl_eval_np(predictions, targets, predicate_predictions, words, mask, 
   recall = accumulator['correct'] / (accumulator['correct'] + accumulator['missed'])
   f1 = 2 * precision * recall / (precision + recall)
 
-  return f1
+  return f1, accumulator
 
 
 def conll_parse_eval_np(predictions, targets, parse_head_predictions, words, mask, parse_head_targets, reverse_maps,
@@ -277,7 +277,7 @@ def conll_parse_eval_np(predictions, targets, parse_head_predictions, words, mas
 
   accuracies = accumulator['corrects'] / accumulator['total']
 
-  return accuracies
+  return accuracies, accumulator
 
 
 fn_dispatcher = {

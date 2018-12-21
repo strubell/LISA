@@ -226,7 +226,8 @@ def eval_fn(input_op, sess):
             eval_fn_params = eval_fns.get_params(task, eval_map, combined_predictions, feats, labels,
                                                  vocab.reverse_maps, tokens_to_keep)
             eval_fn_params['accumulator'] = eval_accumulators[eval_name]
-            eval_result = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
+            eval_result, accumulator = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
+            eval_accumulators[eval_name] = accumulator
             print(eval_result)
             eval_results[eval_name] = eval_result
 
