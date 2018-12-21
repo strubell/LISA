@@ -228,7 +228,7 @@ def eval_fn(input_op, sess):
 
       predicate_targets = labels['predicate']
 
-      def get_params(task_outputs, task_map, train_outputs, features, labels, task_labels, reverse_maps,
+      def get_params(task, task_map, predictions, features, labels, task_labels, reverse_maps,
                      tokens_to_keep):
         # always pass through predictions, targets and mask
         params = {'predictions': predictions['%s_predictions' % task], 'targets': task_labels, 'mask': tokens_to_keep}
@@ -242,7 +242,7 @@ def eval_fn(input_op, sess):
             elif 'feature' in param_values:
               params[param_name] = features[param_values['feature']]
             elif 'layer' in param_values:
-              outputs_layer = train_outputs[param_values['layer']]
+              outputs_layer = predictions[param_values['layer']]
               params[param_name] = outputs_layer[param_values['output']]
             else:
               params[param_name] = param_values['value']
@@ -251,6 +251,7 @@ def eval_fn(input_op, sess):
       for i in layer_task_config:
         for task, task_map in layer_task_config[i].items():
           for eval_name, eval_map in task_map['eval_fns'].items():
+            print("task map", task_map)
             # print("%s(%s)" % (eval_map['name'], ["%s=%s" % () for k, v in eval_map['params'].items()]))
             # print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
             # print('map:', eval_map)
