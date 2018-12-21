@@ -275,7 +275,7 @@ def conll_parse_eval_np(predictions, targets, parse_head_predictions, words, mas
   accumulator['total'] += total
   accumulator['corrects'] += corrects
 
-  accuracies = accumulator['total'] / accumulator['corrects']
+  accuracies = accumulator['corrects'] / accumulator['total']
 
   return accuracies
 
