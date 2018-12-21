@@ -204,15 +204,15 @@ def eval_fn(input_op, sess):
           viterbi_sequence, score = tf.contrib.crf.viterbi_decode(sent[:sent_len], transition_params['srl'])
           srl_predictions[idx, :sent_len] = viterbi_sequence
 
-      # for i in layer_task_config:
-      #   for task, task_map in layer_task_config[i].items():
-      #     for eval_name, eval_map in task_map['eval_fns'].items():
-      #       print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
-      #       print('map:', eval_map)
-      #       # eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
-      #       #                                            task_labels, self.vocab.reverse_maps, tokens_to_keep)
-      #       # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-      #       # eval_metric_ops[eval_name] = eval_result
+      for i in layer_task_config:
+        for task, task_map in layer_task_config[i].items():
+          for eval_name, eval_map in task_map['eval_fns'].items():
+            print("%s(%s)" % (eval_map['name'], task + "_predictions" if task + "_predictions" in predictions[0].keys() else ""))
+            print('map:', eval_map)
+            # eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
+            #                                            task_labels, self.vocab.reverse_maps, tokens_to_keep)
+            # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
+            # eval_metric_ops[eval_name] = eval_result
 
       # srl_predictions = combined_predictions['srl_predictions']
       # predicate_predictions = predictions[0]['joint_pos_predicate_predicate_predictions']
