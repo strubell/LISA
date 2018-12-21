@@ -72,7 +72,7 @@ def accuracy_np(predictions, targets, mask, accumulator):
   accumulator['correct'] += correct
   accumulator['total'] += total
 
-  accuracy = correct / total
+  accuracy = accumulator['correct'] / accumulator['total']
   return accuracy
 
 
