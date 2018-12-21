@@ -2,6 +2,12 @@ import numpy as np
 import tensorflow as tf
 
 
+def sequence_mask_np(lengths, maxlen=None):
+  if not maxlen:
+    maxlen = np.max(lengths)
+  return np.arange(maxlen) < np.array(lengths)[:, None]
+
+
 def load_transitions(transition_statistics, num_classes, vocab_map):
   transition_statistics_np = np.zeros((num_classes, num_classes))
   with open(transition_statistics, 'r') as f:

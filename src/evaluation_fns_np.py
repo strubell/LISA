@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import time
+import util
 import os
 from subprocess import check_output, CalledProcessError
 
@@ -228,47 +228,29 @@ def conll_parse_eval(parse_label_predictions, parse_head_predictions, words, mas
 
 
 def conll_srl_eval_np(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
-                   gold_srl_eval_file, pred_srl_eval_file, pos_predictions, pos_targets):
-
-  # create accumulator variables
-  correct_count = 0.
-  excess_count = 0.
-  missed_count = 0.
+                   gold_srl_eval_file, pred_srl_eval_file, accumulator):
 
   # first, use reverse maps to convert ints to strings
-  # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-  str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
-  str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-  str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
+  str_srl_predictions = [list(map(reverse_maps['srl'].get, s)) for s in predictions]
+  str_words = [list(map(reverse_maps['word'].get, s)) for s in words]
+  str_srl_targets = [list(map(reverse_maps['srl'].get, s)) for s in targets]
 
-  str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
-  str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+  correct, excess, missed = conll_srl_eval(str_srl_predictions, predicate_predictions, str_words, mask, str_srl_targets,
+                                           predicate_targets, pred_srl_eval_file, gold_srl_eval_file)
 
-  correct, excess, missed = conll_srl_eval(str_predictions, predicate_predictions, str_words, mask, str_targets,
-                                           predicate_targets, pred_srl_eval_file, gold_srl_eval_file,
-                                           str_pos_predictions, str_pos_targets)
+  accumulator['correct'] += correct
+  accumulator['excess'] += excess
+  accumulator['missed'] += missed
 
-  update_correct_op = tf.assign_add(correct_count, correct)
-  update_excess_op = tf.assign_add(excess_count, excess)
-  update_missed_op = tf.assign_add(missed_count, missed)
-
-  precision_update_op = update_correct_op / (update_correct_op + update_excess_op)
-  recall_update_op = update_correct_op / (update_correct_op + update_missed_op)
-  f1_update_op = 2 * precision_update_op * recall_update_op / (precision_update_op + recall_update_op)
-
-  precision = correct_count / (correct_count + excess_count)
-  recall = correct_count / (correct_count + missed_count)
+  precision = accumulator['correct'] / (accumulator['correct'] + accumulator['excess'])
+  recall = accumulator['correct'] / (accumulator['correct'] + accumulator['missed'])
   f1 = 2 * precision * recall / (precision + recall)
 
-  return f1, f1_update_op
+  return f1
 
 
 def conll_parse_eval_np(predictions, targets, parse_head_predictions, words, mask, parse_head_targets, reverse_maps,
-                   gold_parse_eval_file, pred_parse_eval_file, pos_targets):
-
-  # create accumulator variables
-  total_count = 0.
-  correct_count = [0., 0., 0.]
+                        gold_parse_eval_file, pred_parse_eval_file, pos_targets, accumulator):
 
   # first, use reverse maps to convert ints to strings
   # todo order of map.values() is probably not guaranteed; should prob sort by keys first
@@ -280,28 +262,50 @@ def conll_parse_eval_np(predictions, targets, parse_head_predictions, words, mas
   total, corrects = conll_parse_eval(str_predictions, parse_head_predictions, str_words, mask, str_targets, parse_head_targets,
                     pred_parse_eval_file, gold_parse_eval_file, str_pos_targets)
 
-  update_total_count_op = tf.assign_add(total_count, total)
-  update_correct_op = tf.assign_add(correct_count, corrects)
+  accumulator['total'] += total
+  accumulator['corrects'] += corrects
 
-  update_op = update_correct_op / update_total_count_op
+  accuracies = accumulator['total'] / accumulator['corrects']
 
-  accuracies = correct_count / total_count
+  return accuracies
 
-  return accuracies, update_op
 
-dispatcher = {
+fn_dispatcher = {
   'accuracy': accuracy_np,
   'conll_srl_eval': conll_srl_eval_np,
   'conll_parse_eval': conll_parse_eval_np,
 }
 
+accumulator_dispatcher = {
+  'accuracy': {'counts': 0., 'total': 0.},
+  'conll_srl_eval': {'correct': 0., 'excess': 0., 'missed': 0.},
+  'conll_parse_eval': {'total': 0., 'corrects': np.zeros(3)},
+}
+
 
 def dispatch(fn_name):
   try:
-    return dispatcher[fn_name]
+    return fn_dispatcher[fn_name]
   except KeyError:
     print('Undefined evaluation function `%s' % fn_name)
     exit(1)
+
+
+def get_accumulator(fn_name):
+  try:
+    return accumulator_dispatcher[fn_name]
+  except KeyError:
+    print('Undefined evaluation function `%s' % fn_name)
+    exit(1)
+
+
+def get_accumulators(layer_task_config):
+  eval_accumulators = {}
+  for i in layer_task_config:
+    for task, task_map in layer_task_config[i].items():
+      for eval_name, eval_map in task_map['eval_fns'].items():
+        eval_accumulators[eval_name] = get_accumulator(eval_map['name'])
+  return eval_accumulators
 
 
 def get_params(task, task_map, predictions, features, labels, reverse_maps, tokens_to_keep):
