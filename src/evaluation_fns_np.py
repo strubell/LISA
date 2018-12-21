@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-import util
 import os
 from subprocess import check_output, CalledProcessError
 
