@@ -209,7 +209,7 @@ def eval_fn(input_op, sess):
           srl_predictions[idx, :sent_len] = viterbi_sequence
       combined_predictions['srl_predictions'] = srl_predictions
 
-      print("combined predictions: ", combined_predictions)
+      print("combined predictions: ", combined_predictions.keys())
 
       str_srl_predictions = [list(map(vocab.reverse_maps['srl'].get, s)) for s in srl_predictions]
       str_words = [list(map(vocab.reverse_maps['word'].get, s)) for s in feats['word']]
