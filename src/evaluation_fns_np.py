@@ -304,11 +304,11 @@ def dispatch(fn_name):
 
 def get_accumulator(fn_name):
   try:
-    return accumulator_factory[fn_name]
+    return accumulator_factory[fn_name]()
   except KeyError:
     print('Undefined evaluation function `%s' % fn_name)
     exit(1)
-    
+
 
 # def get_accumulator(fn_name):
 #   if fn_name == 'accuracy':
