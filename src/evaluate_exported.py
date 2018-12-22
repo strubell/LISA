@@ -70,6 +70,8 @@ if args.attention_configs and args.attention_configs != '':
 #     tf.logging.log(tf.logging.ERROR, 'No task or attention config "%s"' % task_or_attn_name)
 #     sys.exit(1)
 
+print(task_config)
+
 tf.logging.set_verbosity(tf.logging.INFO)
 tf.logging.log(tf.logging.INFO, "Using Python version %s" % sys.version)
 tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
