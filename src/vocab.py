@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
-import sys
+import util
 import constants
 import data_converters
 
@@ -28,8 +28,7 @@ class Vocab:
       try:
         os.mkdir(self.vocabs_dir)
       except OSError as e:
-        tf.logging.log(tf.logging.ERROR, "Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
-        sys.exit(1)
+        util.fatal_error("Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
       else:
         tf.logging.log(tf.logging.INFO, "Successfully created vocabs directory: %s" % self.vocabs_dir)
     else:

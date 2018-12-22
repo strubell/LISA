@@ -7,6 +7,7 @@ from vocab import Vocab
 from model import LISAModel
 import numpy as np
 import sys
+import util
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_files', required=True,
@@ -43,36 +44,23 @@ arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1)
 
 args, leftovers = arg_parser.parse_known_args()
 
+util.init_logging(tf.logging.INFO)
+
 # Load all the various configurations
 # todo: validate json
 data_config = train_utils.load_json_configs(args.data_config)
 model_config = train_utils.load_json_configs(args.model_configs)
 task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
+attention_config = train_utils.load_json_configs(args.attention_configs)
 
-attention_config = {}
-if args.attention_configs and args.attention_configs != '':
-  attention_config = train_utils.load_json_configs(args.attention_configs)
+# attention_config = {}
+# if args.attention_configs and args.attention_configs != '':
+#   attention_config = train_utils.load_json_configs(args.attention_configs)
 
 # Combine layer, task and layer, attention maps
-layer_task_config = {}
-layer_attention_config = {}
-for task_or_attn_name, layer in layer_config.items():
-  if task_or_attn_name in attention_config:
-    layer_attention_config[layer] = attention_config[task_or_attn_name]
-  elif task_or_attn_name in task_config:
-    if layer not in layer_task_config:
-      layer_task_config[layer] = {}
-    layer_task_config[layer][task_or_attn_name] = task_config[task_or_attn_name]
-  else:
-    # todo make an error fn that does this
-    tf.logging.log(tf.logging.ERROR, 'No task or attention config "%s"' % task_or_attn_name)
-    sys.exit(1)
-
 # todo save these maps in save_dir
-
-tf.logging.set_verbosity(tf.logging.INFO)
-tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
+layer_task_config, layer_attention_config = util.combine_attn_maps(layer_config, attention_config, task_config)
 
 hparams = train_utils.load_hparams(args, model_config)
 
@@ -105,20 +93,21 @@ def dev_input_fn():
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
-feature_idx_map = {}
-label_idx_map = {}
-for i, f in enumerate([d for d in data_config.keys() if
-                       ('feature' in data_config[d] and data_config[d]['feature']) or
-                       ('label' in data_config[d] and data_config[d]['label'])]):
-  if 'feature' in data_config[f] and data_config[f]['feature']:
-    feature_idx_map[f] = i
-  if 'label' in data_config[f] and data_config[f]['label']:
-    if 'type' in data_config[f] and data_config[f]['type'] == 'range':
-      idx = data_config[f]['conll_idx']
-      j = i + idx[1] if idx[1] != -1 else -1
-      label_idx_map[f] = (i, j)
-    else:
-      label_idx_map[f] = (i, i+1)
+feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
+# feature_idx_map = {}
+# label_idx_map = {}
+# for i, f in enumerate([d for d in data_config.keys() if
+#                        ('feature' in data_config[d] and data_config[d]['feature']) or
+#                        ('label' in data_config[d] and data_config[d]['label'])]):
+#   if 'feature' in data_config[f] and data_config[f]['feature']:
+#     feature_idx_map[f] = i
+#   if 'label' in data_config[f] and data_config[f]['label']:
+#     if 'type' in data_config[f] and data_config[f]['type'] == 'range':
+#       idx = data_config[f]['conll_idx']
+#       j = i + idx[1] if idx[1] != -1 else -1
+#       label_idx_map[f] = (i, j)
+#     else:
+#       label_idx_map[f] = (i, i+1)
 
 
 # Initialize the model
@@ -137,7 +126,6 @@ checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eva
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
 # Set up early stopping -- always keep the model with the best F1
-# todo: don't keep 5
 export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_dir, vocab_name)
                  for vocab_name in vocab.vocab_names_sizes.keys()}
 tf.logging.log(tf.logging.INFO, "Exporting assets: %s" % str(export_assets))

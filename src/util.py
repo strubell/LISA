@@ -9,6 +9,12 @@ def fatal_error(message):
   sys.exit(1)
 
 
+def init_logging(verbosity):
+  tf.logging.set_verbosity(verbosity)
+  tf.logging.log(tf.logging.INFO, "Using Python version %s" % sys.version)
+  tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
+
+
 def sequence_mask_np(lengths, maxlen=None):
   if not maxlen:
     maxlen = np.max(lengths)
@@ -69,3 +75,35 @@ def load_transition_params(task_config, vocab):
                                             vocab.vocab_maps[task])
         transition_params[task] = transitions
   return transition_params
+
+
+def load_feat_label_idx_maps(data_config):
+  feature_idx_map = {}
+  label_idx_map = {}
+  for i, f in enumerate([d for d in data_config.keys() if
+                       ('feature' in data_config[d] and data_config[d]['feature']) or
+                       ('label' in data_config[d] and data_config[d]['label'])]):
+    if 'feature' in data_config[f] and data_config[f]['feature']:
+      feature_idx_map[f] = i
+    if 'label' in data_config[f] and data_config[f]['label']:
+      if 'type' in data_config[f] and data_config[f]['type'] == 'range':
+        idx = data_config[f]['conll_idx']
+        j = i + idx[1] if idx[1] != -1 else -1
+        label_idx_map[f] = (i, j)
+      else:
+        label_idx_map[f] = (i, i+1)
+  return feature_idx_map, label_idx_map
+
+def combine_attn_maps(layer_config, attention_config, task_config):
+  layer_task_config = {}
+  layer_attention_config = {}
+  for task_or_attn_name, layer in layer_config.items():
+    if task_or_attn_name in attention_config:
+      layer_attention_config[layer] = attention_config[task_or_attn_name]
+    elif task_or_attn_name in task_config:
+      if layer not in layer_task_config:
+        layer_task_config[layer] = {}
+      layer_task_config[layer][task_or_attn_name] = task_config[task_or_attn_name]
+    else:
+      fatal_error('No task or attention config "%s"' % task_or_attn_name)
+  return layer_task_config, layer_attention_config

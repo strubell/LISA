@@ -44,20 +44,19 @@ arg_parser.set_defaults(debug=False, ensemble=False)
 
 args, leftovers = arg_parser.parse_known_args()
 
+util.init_logging(tf.logging.INFO)
+
 # Load all the various configurations
 # todo: validate json
 data_config = train_utils.load_json_configs(args.data_config)
 model_config = train_utils.load_json_configs(args.model_configs)
 task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
+attention_config = train_utils.load_json_configs(args.attention_configs)
 
-attention_config = {}
-if args.attention_configs and args.attention_configs != '':
-  attention_config = train_utils.load_json_configs(args.attention_configs)
-
-tf.logging.set_verbosity(tf.logging.INFO)
-tf.logging.log(tf.logging.INFO, "Using Python version %s" % sys.version)
-tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
+# attention_config = {}
+# if args.attention_configs and args.attention_configs != '':
+#   attention_config = train_utils.load_json_configs(args.attention_configs)
 
 hparams = train_utils.load_hparams(args, model_config)
 
@@ -71,38 +70,25 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
                    if 'pretrained_embeddings' in embeddings_map]
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
-feature_idx_map = {}
-label_idx_map = {}
-# todo put this in a function
-for i, f in enumerate([d for d in data_config.keys() if
-                       ('feature' in data_config[d] and data_config[d]['feature']) or
-                       ('label' in data_config[d] and data_config[d]['label'])]):
-  if 'feature' in data_config[f] and data_config[f]['feature']:
-    feature_idx_map[f] = i
-  if 'label' in data_config[f] and data_config[f]['label']:
-    if 'type' in data_config[f] and data_config[f]['type'] == 'range':
-      idx = data_config[f]['conll_idx']
-      j = i + idx[1] if idx[1] != -1 else -1
-      label_idx_map[f] = (i, j)
-    else:
-      label_idx_map[f] = (i, i+1)
+# feature_idx_map = {}
+# label_idx_map = {}
+feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
+# # todo put this in a function
+# for i, f in enumerate([d for d in data_config.keys() if
+#                        ('feature' in data_config[d] and data_config[d]['feature']) or
+#                        ('label' in data_config[d] and data_config[d]['label'])]):
+#   if 'feature' in data_config[f] and data_config[f]['feature']:
+#     feature_idx_map[f] = i
+#   if 'label' in data_config[f] and data_config[f]['label']:
+#     if 'type' in data_config[f] and data_config[f]['type'] == 'range':
+#       idx = data_config[f]['conll_idx']
+#       j = i + idx[1] if idx[1] != -1 else -1
+#       label_idx_map[f] = (i, j)
+#     else:
+#       label_idx_map[f] = (i, i+1)
 
 # create transition parameters if training or decoding with crf/viterbi
 transition_params = util.load_transition_params(task_config, vocab)
-# for task, task_map in task_config.items():
-#   task_crf = 'crf' in task_map and task_map['crf']
-#   task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
-#   if task_viterbi_decode:
-#     transition_params_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
-#     if not transition_params_file:
-#       # todo make error func
-#       tf.logging.log(tf.logging.ERROR, "Failed to load transition stats for task '%s' with crf=%r and viterbi=%r" %
-#                      (task, task_crf, task_viterbi_decode))
-#       sys.exit(1)
-#     if transition_params_file and task_viterbi_decode:
-#       transitions = util.load_transitions(transition_params_file, vocab.vocab_names_sizes[task],
-#                                           vocab.vocab_maps[task])
-#       transition_params[task] = transitions
 
 if args.ensemble:
   predict_fns = [predictor.from_saved_model("%s/%s" % (args.save_dir, subdir))
