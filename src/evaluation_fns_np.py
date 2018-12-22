@@ -310,18 +310,6 @@ def get_accumulator(fn_name):
     exit(1)
 
 
-# def get_accumulator(fn_name):
-#   if fn_name == 'accuracy':
-#     return {'correct': 0., 'total': 0.}
-#   if fn_name == 'conll_srl_eval':
-#     return {'correct': 0., 'excess': 0., 'missed': 0.}
-#   if fn_name == 'conll_parse_eval':
-#     return {'total': 0., 'corrects': np.zeros(3)}
-#   else:
-#     print('Undefined evaluation function `%s' % fn_name)
-#     exit(1)
-
-
 def get_accumulators(layer_task_config):
   eval_accumulators = {}
   for i in layer_task_config:
