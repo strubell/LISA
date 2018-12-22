@@ -36,6 +36,8 @@ arg_parser.add_argument('--num_gpus', type=int,
                         help='Number of GPUs for distributed training.')
 arg_parser.add_argument('--keep_k_best_models', type=int,
                         help='Number of best models to keep.')
+arg_parser.add_argument('--best_eval_key', required=True, type=str,
+                        help='Key corresponding to the evaluation to be used for determining early stopping.')
 
 arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1)
 
@@ -140,7 +142,7 @@ export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_di
                  for vocab_name in vocab.vocab_names_sizes.keys()}
 tf.logging.log(tf.logging.INFO, "Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
-                                                                  key=task_config['best_eval_key']),
+                                                                  key=args.best_eval_key),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn,
                                                assets_extra=export_assets,
                                                exports_to_keep=args.keep_k_best_models)

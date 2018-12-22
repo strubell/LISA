@@ -41,10 +41,11 @@ def get_input_fn(vocab, data_config, data_files, batch_size, num_epochs, shuffle
 def load_json_configs(config_file_list, args=None):
   """
   Loads a list of json configuration files into one combined map. Configuration files
-  at the end of the list take precedece over earlier configuration files (so they will
+  at the end of the list take precedence over earlier configuration files (so they will
   overwrite earlier configs!)
 
-  If args is passed, then this function will attempt to replace
+  If args is passed, then this function will attempt to replace entries surrounded with
+  the special tokens ## ## with an entry from args with the same name.
 
   :param config_file_list: list of json configuration files to load
   :param args: command line args to replace special strings in json

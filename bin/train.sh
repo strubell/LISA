@@ -17,5 +17,6 @@ python3 src/train.py \
 --task_configs $task_configs \
 --layer_configs $layer_configs \
 --attention_configs $attention_configs \
+--best_eval_key $best_eval_key
 $params
 
