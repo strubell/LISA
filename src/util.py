@@ -1,6 +1,12 @@
 import numpy as np
 import tensorflow as tf
 import os
+import sys
+
+
+def fatal_error(message):
+  tf.logging.log(tf.logging.ERROR, message)
+  sys.exit(1)
 
 
 def sequence_mask_np(lengths, maxlen=None):
@@ -46,3 +52,20 @@ def get_token_take_mask(task, task_config, outputs):
     token_take_mask = outputs["%s_%s" % (token_take_conf["layer"], token_take_conf["output"])]
 
   return token_take_mask
+
+
+def load_transition_params(task_config, vocab):
+  transition_params = {}
+  for task, task_map in task_config.items():
+    task_crf = 'crf' in task_map and task_map['crf']
+    task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
+    if task_viterbi_decode:
+      transition_params_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
+      if not transition_params_file:
+        fatal_error("Failed to load transition stats for task '%s' with crf=%r and viterbi=%r" %
+                    (task, task_crf, task_viterbi_decode))
+      if transition_params_file and task_viterbi_decode:
+        transitions = load_transitions(transition_params_file, vocab.vocab_names_sizes[task],
+                                            vocab.vocab_maps[task])
+        transition_params[task] = transitions
+  return transition_params
