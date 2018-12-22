@@ -184,7 +184,7 @@ def eval_fn(input_op, sess):
       for task, tran_params in transition_params.items():
         task_predictions = np.empty_like(combined_predictions['%s_predictions' % task])
         token_take_mask = util.get_token_take_mask(task, task_config, combined_predictions)
-        if token_take_mask:
+        if token_take_mask is not None:
           toks_to_keep_tiled = np.reshape(np.tile(tokens_to_keep, [1, batch_seq_len]),
                                           [batch_size, batch_seq_len, batch_seq_len])
           toks_to_keep_task = toks_to_keep_tiled[np.where(token_take_mask == 1)]
