@@ -232,7 +232,7 @@ with tf.Session() as sess:
                                       embedding_files=embedding_files)
     test_input_ops[test_file] = test_input_fn()
 
-  sess.run(tf.tables_initializer())
+  # sess.run(tf.tables_initializer())
 
   tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
   eval_fn(dev_input_op, sess)
