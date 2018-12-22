@@ -90,6 +90,7 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
 # Generate mappings from feature/label names to indices in the model_fn inputs
 feature_idx_map = {}
 label_idx_map = {}
+# todo put this in a function
 for i, f in enumerate([d for d in data_config.keys() if
                        ('feature' in data_config[d] and data_config[d]['feature']) or
                        ('label' in data_config[d] and data_config[d]['label'])]):
