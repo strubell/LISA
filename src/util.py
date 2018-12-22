@@ -36,3 +36,13 @@ def load_pretrained_embeddings(pretrained_fname):
   pretrained_embeddings = np.array(pretrained_embeddings)
   pretrained_embeddings /= np.std(pretrained_embeddings)
   return pretrained_embeddings
+
+
+def get_token_take_mask(task, task_config, outputs):
+  task_map = task_config[task]
+  token_take_mask = None
+  if "token_take_mask" in task_map:
+    token_take_conf = task_map["token_take_mask"]
+    token_take_mask = outputs["%s_%s" % (token_take_conf["layer"], token_take_conf["output"])]
+
+  return token_take_mask

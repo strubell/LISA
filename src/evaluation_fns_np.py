@@ -310,12 +310,12 @@ def get_accumulator(fn_name):
     exit(1)
 
 
-def get_accumulators(layer_task_config):
+def get_accumulators(task_config):
   eval_accumulators = {}
-  for i in layer_task_config:
-    for task, task_map in layer_task_config[i].items():
-      for eval_name, eval_map in task_map['eval_fns'].items():
-        eval_accumulators[eval_name] = get_accumulator(eval_map['name'])
+  # for i in layer_task_config:
+  for task, task_map in task_config.items():
+    for eval_name, eval_map in task_map['eval_fns'].items():
+      eval_accumulators[eval_name] = get_accumulator(eval_map['name'])
   return eval_accumulators
 
 

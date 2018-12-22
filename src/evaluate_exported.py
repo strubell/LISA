@@ -56,19 +56,19 @@ if args.attention_configs and args.attention_configs != '':
   attention_config = train_utils.load_json_configs(args.attention_configs)
 
 # Combine layer, task and layer, attention maps
-layer_task_config = {}
-layer_attention_config = {}
-for task_or_attn_name, layer in layer_config.items():
-  if task_or_attn_name in attention_config:
-    layer_attention_config[layer] = attention_config[task_or_attn_name]
-  elif task_or_attn_name in task_config:
-    if layer not in layer_task_config:
-      layer_task_config[layer] = {}
-    layer_task_config[layer][task_or_attn_name] = task_config[task_or_attn_name]
-  else:
-    # todo make an error fn that does this
-    tf.logging.log(tf.logging.ERROR, 'No task or attention config "%s"' % task_or_attn_name)
-    sys.exit(1)
+# layer_task_config = {}
+# layer_attention_config = {}
+# for task_or_attn_name, layer in layer_config.items():
+#   if task_or_attn_name in attention_config:
+#     layer_attention_config[layer] = attention_config[task_or_attn_name]
+#   elif task_or_attn_name in task_config:
+#     if layer not in layer_task_config:
+#       layer_task_config[layer] = {}
+#     layer_task_config[layer][task_or_attn_name] = task_config[task_or_attn_name]
+#   else:
+#     # todo make an error fn that does this
+#     tf.logging.log(tf.logging.ERROR, 'No task or attention config "%s"' % task_or_attn_name)
+#     sys.exit(1)
 
 tf.logging.set_verbosity(tf.logging.INFO)
 tf.logging.log(tf.logging.INFO, "Using Python version %s" % sys.version)
@@ -101,26 +101,23 @@ for i, f in enumerate([d for d in data_config.keys() if
     else:
       label_idx_map[f] = (i, i+1)
 
-# pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
-# gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
-
 # create transition parameters if training or decoding with crf/viterbi
 transition_params = {}
-for i in layer_task_config:
-  for task, task_map in layer_task_config[i].items():
-    task_crf = 'crf' in task_map and task_map['crf']
-    task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
-    if task_viterbi_decode:
-      transition_params_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
-      if not transition_params_file:
-        # todo make error func
-        tf.logging.log(tf.logging.ERROR, "Failed to load transition stats for task '%s' with crf=%r and viterbi=%r" %
-                       (task, task_crf, task_viterbi_decode))
-        sys.exit(1)
-      if transition_params_file and task_viterbi_decode:
-        transitions = util.load_transitions(transition_params_file, vocab.vocab_names_sizes[task],
-                                            vocab.vocab_maps[task])
-        transition_params[task] = transitions
+# for i in layer_task_config:
+for task, task_map in task_config.items():
+  task_crf = 'crf' in task_map and task_map['crf']
+  task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
+  if task_viterbi_decode:
+    transition_params_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
+    if not transition_params_file:
+      # todo make error func
+      tf.logging.log(tf.logging.ERROR, "Failed to load transition stats for task '%s' with crf=%r and viterbi=%r" %
+                     (task, task_crf, task_viterbi_decode))
+      sys.exit(1)
+    if transition_params_file and task_viterbi_decode:
+      transitions = util.load_transitions(transition_params_file, vocab.vocab_names_sizes[task],
+                                          vocab.vocab_maps[task])
+      transition_params[task] = transitions
 
 if args.ensemble:
   predict_fns = [predictor.from_saved_model("%s/%s" % (args.save_dir, subdir))
@@ -135,7 +132,7 @@ def dev_input_fn():
 
 
 def eval_fn(input_op, sess):
-  eval_accumulators = eval_fns.get_accumulators(layer_task_config)
+  eval_accumulators = eval_fns.get_accumulators(task_config)
   eval_results = {}
   i = 0
   while True:
@@ -174,20 +171,25 @@ def eval_fn(input_op, sess):
       combined_predictions.update({k.replace('scores', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_scores.items()})
       combined_predictions.update({k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()})
 
-      np.set_printoptions(threshold=np.nan)
-
+      # np.set_printoptions(threshold=np.nan)
       # need a version of this for predicates_in_batch first dim
-      predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
-      toks_to_keep_tiled = np.reshape(np.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
-      toks_to_keep_predicates = toks_to_keep_tiled[np.where(predicate_predictions == 1)]
-      sent_lens_predicates = np.sum(toks_to_keep_predicates, axis=-1)
+      # predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
+      # toks_to_keep_tiled = np.reshape(np.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
+      # toks_to_keep_predicates = toks_to_keep_tiled[np.where(predicate_predictions == 1)]
+      # sent_lens_predicates = np.sum(toks_to_keep_predicates, axis=-1)
 
-      # todo do this for everything that's using viterbi (everything that's in the transition_params list above?)
-      # currently sent_lens is broken because of predicates in batch vs sentences in batch distinction
       for task, tran_params in transition_params.items():
         task_predictions = np.empty_like(combined_predictions['%s_predictions' % task])
+        token_take_mask = util.get_token_take_mask(task, task_config, combined_predictions)
+        if token_take_mask:
+          toks_to_keep_tiled = np.reshape(np.tile(tokens_to_keep, [1, batch_seq_len]),
+                                          [batch_size, batch_seq_len, batch_seq_len])
+          toks_to_keep_task = toks_to_keep_tiled[np.where(token_take_mask == 1)]
+        else:
+          toks_to_keep_task = tokens_to_keep
+        sent_lens_task = np.sum(toks_to_keep_task, axis=-1)
         if 'srl' in transition_params:
-          for idx, (sent, sent_len) in enumerate(zip(combined_scores['%s_scores' % task], sent_lens_predicates)):
+          for idx, (sent, sent_len) in enumerate(zip(combined_scores['%s_scores' % task], sent_lens_task)):
             viterbi_sequence, score = tf.contrib.crf.viterbi_decode(sent[:sent_len], tran_params)
             task_predictions[idx, :sent_len] = viterbi_sequence
         combined_predictions['%s_predictions' % task] = task_predictions
@@ -204,8 +206,8 @@ def eval_fn(input_op, sess):
           these_labels_masked = np.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
 
-      for i in layer_task_config:
-        for task, task_map in layer_task_config[i].items():
+      # for i in layer_task_config:
+        for task, task_map in task_config.items():
           for eval_name, eval_map in task_map['eval_fns'].items():
             eval_fn_params = eval_fns.get_params(task, eval_map, combined_predictions, feats, labels,
                                                  vocab.reverse_maps, tokens_to_keep)
