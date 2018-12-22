@@ -64,10 +64,10 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
 
     # shuffle and expand out epochs if training
     if shuffle:
-      # dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*shuffle_buffer_multiplier,
-      #                                                            count=num_epochs))
-      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size,
+      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*shuffle_buffer_multiplier,
                                                                  count=num_epochs))
+      # dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size,
+      #                                                            count=num_epochs))
 
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
