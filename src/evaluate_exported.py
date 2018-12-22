@@ -70,8 +70,6 @@ if args.attention_configs and args.attention_configs != '':
 #     tf.logging.log(tf.logging.ERROR, 'No task or attention config "%s"' % task_or_attn_name)
 #     sys.exit(1)
 
-print(task_config)
-
 tf.logging.set_verbosity(tf.logging.INFO)
 tf.logging.log(tf.logging.INFO, "Using Python version %s" % sys.version)
 tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
@@ -210,13 +208,13 @@ def eval_fn(input_op, sess):
         labels[l] = these_labels_masked
 
       # for i in layer_task_config:
-        for task, task_map in task_config.items():
-          for eval_name, eval_map in task_map['eval_fns'].items():
-            eval_fn_params = eval_fns.get_params(task, eval_map, combined_predictions, feats, labels,
-                                                 vocab.reverse_maps, tokens_to_keep)
-            eval_fn_params['accumulator'] = eval_accumulators[eval_name]
-            eval_result = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
-            eval_results[eval_name] = eval_result
+      for task, task_map in task_config.items():
+        for eval_name, eval_map in task_map['eval_fns'].items():
+          eval_fn_params = eval_fns.get_params(task, eval_map, combined_predictions, feats, labels,
+                                               vocab.reverse_maps, tokens_to_keep)
+          eval_fn_params['accumulator'] = eval_accumulators[eval_name]
+          eval_result = eval_fns.dispatch(eval_map['name'])(**eval_fn_params)
+          eval_results[eval_name] = eval_result
     except tf.errors.OutOfRangeError:
       break
 
