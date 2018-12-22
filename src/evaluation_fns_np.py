@@ -286,10 +286,11 @@ fn_dispatcher = {
   'conll_parse_eval': conll_parse_eval_np,
 }
 
-accumulator_dispatcher = {
-  'accuracy': {'correct': 0., 'total': 0.},
-  'conll_srl_eval': {'correct': 0., 'excess': 0., 'missed': 0.},
-  'conll_parse_eval': {'total': 0., 'corrects': np.zeros(3)},
+
+accumulator_factory = {
+  'accuracy': lambda: {'correct': 0., 'total': 0.},
+  'conll_srl_eval': lambda: {'correct': 0., 'excess': 0., 'missed': 0.},
+  'conll_parse_eval': lambda: {'total': 0., 'corrects': np.zeros(3)},
 }
 
 
@@ -303,10 +304,22 @@ def dispatch(fn_name):
 
 def get_accumulator(fn_name):
   try:
-    return accumulator_dispatcher[fn_name]
+    return accumulator_factory[fn_name]
   except KeyError:
     print('Undefined evaluation function `%s' % fn_name)
     exit(1)
+    
+
+# def get_accumulator(fn_name):
+#   if fn_name == 'accuracy':
+#     return {'correct': 0., 'total': 0.}
+#   if fn_name == 'conll_srl_eval':
+#     return {'correct': 0., 'excess': 0., 'missed': 0.}
+#   if fn_name == 'conll_parse_eval':
+#     return {'total': 0., 'corrects': np.zeros(3)}
+#   else:
+#     print('Undefined evaluation function `%s' % fn_name)
+#     exit(1)
 
 
 def get_accumulators(layer_task_config):

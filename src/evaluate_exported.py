@@ -101,9 +101,10 @@ for i, f in enumerate([d for d in data_config.keys() if
     else:
       label_idx_map[f] = (i, i+1)
 
-pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
-gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
+# pred_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['pred_srl_eval_file']['value']
+# gold_srl_eval_file = task_config['srl']['eval_fns']['srl_f1']['params']['gold_srl_eval_file']['value']
 
+# create transition parameters if training or decoding with crf/viterbi
 transition_params = {}
 for i in layer_task_config:
   for task, task_map in layer_task_config[i].items():
@@ -121,27 +122,9 @@ for i in layer_task_config:
                                             vocab.vocab_maps[task])
         transition_params[task] = transitions
 
-# create transition parameters if training or decoding with crf/viterbi
-
-# Initialize the model
-# model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
-#                   vocab)
-#
-# # Set up the Estimator
-# estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
-
-      # eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-      # print(eval_result)
-      # eval_metric_ops[eval_name] = eval_result
-
-
-def get_immediate_subdirectories(a_dir):
-  return [name for name in os.listdir(a_dir)
-          if os.path.isdir(os.path.join(a_dir, name))]
-
-
 if args.ensemble:
-  predict_fns = [predictor.from_saved_model("%s/%s" % (args.save_dir, subdir)) for subdir in get_immediate_subdirectories(args.save_dir)]
+  predict_fns = [predictor.from_saved_model("%s/%s" % (args.save_dir, subdir))
+                 for subdir in util.get_immediate_subdirectories(args.save_dir)]
 else:
   predict_fns = [predictor.from_saved_model(args.save_dir)]
 
@@ -191,11 +174,10 @@ def eval_fn(input_op, sess):
       combined_predictions.update({k.replace('scores', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_scores.items()})
       combined_predictions.update({k.replace('probabilities', 'predictions'): np.argmax(v, axis=-1) for k, v in combined_probabilities.items()})
 
-      predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
-
       np.set_printoptions(threshold=np.nan)
 
       # need a version of this for predicates_in_batch first dim
+      predicate_predictions = combined_predictions['joint_pos_predicate_predicate_predictions']
       toks_to_keep_tiled = np.reshape(np.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
       toks_to_keep_predicates = toks_to_keep_tiled[np.where(predicate_predictions == 1)]
       sent_lens_predicates = np.sum(toks_to_keep_predicates, axis=-1)

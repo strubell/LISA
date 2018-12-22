@@ -68,7 +68,7 @@ import evaluation_fns_np
 
 def accuracy_tf(predictions, targets, mask):
   with tf.name_scope('accuracy'):
-    return tf.metrics.accuracy(targets, predictions, weights=mask)
+    return tf.metrics.accuracy(labels=targets, predictions=predictions, weights=mask)
 
 
 # # Write targets file w/ format:

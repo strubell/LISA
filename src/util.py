@@ -1,11 +1,16 @@
 import numpy as np
 import tensorflow as tf
+import os
 
 
 def sequence_mask_np(lengths, maxlen=None):
   if not maxlen:
     maxlen = np.max(lengths)
   return np.arange(maxlen) < np.array(lengths)[:, None]
+
+
+def get_immediate_subdirectories(a_dir):
+  return [name for name in os.listdir(a_dir) if os.path.isdir(os.path.join(a_dir, name))]
 
 
 def load_transitions(transition_statistics, num_classes, vocab_map):
