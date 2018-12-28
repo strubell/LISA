@@ -1,0 +1,63 @@
+{
+  "srl": {
+    "penalty": 1.0,
+    "viterbi": true,
+    "transition_stats": "##transition_stats##",
+    "token_take_mask": {
+      "label": "predicate"
+    },
+    "output_fn": {
+      "name": "srl_bilinear",
+      "params": {
+        "predicate_targets": {
+          "label": "predicate"
+        },
+        "predicate_preds_train": {
+          "label": "predicate"
+        },
+        "predicate_preds_eval": {
+          "label": "predicate"
+        }
+      }
+    },
+    "eval_fns": {
+      "srl_f1": {
+        "name": "conll_srl_eval",
+        "params": {
+          "gold_srl_eval_file": {
+            "value": "##save_dir##/srl_gold.txt"
+          },
+          "pred_srl_eval_file": {
+            "value": "##save_dir##/srl_preds.txt"
+          },
+          "reverse_maps": {
+            "reverse_maps": [
+              "word",
+              "srl",
+              "gold_pos"
+            ]
+          },
+          "targets": {
+            "layer": "srl",
+            "output": "targets"
+          },
+          "predicate_targets": {
+            "label": "predicate"
+          },
+          "words": {
+            "feature": "word"
+          },
+          "predicate_predictions": {
+            "label": "predicate"
+          },
+          "pos_predictions": {
+            "label": "gold_pos"
+          },
+          "pos_targets": {
+            "label": "gold_pos"
+          }
+        }
+      }
+    }
+  }
+}
