@@ -1,11 +1,9 @@
 {
+  "best_eval_key": "srl_f1",
   "srl": {
     "penalty": 1.0,
     "viterbi": true,
     "transition_stats": "##transition_stats##",
-    "token_take_mask": {
-      "label": "predicate"
-    },
     "output_fn": {
       "name": "srl_bilinear",
       "params": {
