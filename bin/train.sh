@@ -16,6 +16,6 @@ python3 src/train.py \
 --model_configs $model_configs \
 --task_configs $task_configs \
 --layer_configs $layer_configs \
---attention_configs \"$attention_configs\" \
+--attention_configs "$attention_configs" \
 $params
 
