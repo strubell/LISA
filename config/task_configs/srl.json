@@ -1,8 +1,6 @@
 {
   "srl": {
     "penalty": 1.0,
-//    "viterbi": true,
-//    "transition_stats": "##transition_stats##",
     "token_take_mask": {
       "layer": "joint_pos_predicate",
       "output": "predicate_predictions"
