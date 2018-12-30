@@ -43,6 +43,11 @@
       "name": "conll09_binary_predicates"
     }
   },
+  "verb_sense": {
+    "conll_idx": 9,
+    "label": true,
+    "vocab": "verb_sense"
+  },
   "joint_pos_predicate": {
     "conll_idx": [3, 8],
     "label": true,
