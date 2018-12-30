@@ -111,6 +111,32 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       print(file=f)
 
 
+def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels):
+  with open(filename, 'w') as f:
+    role_labels_start_idx = 0
+    num_predicates_per_sent = np.sum(predicates, -1)
+
+    # for each sentence in the batch
+    for sent_words, sent_predicates, sent_len, sent_num_predicates in zip(words, predicates, sent_lens,
+                                                                          num_predicates_per_sent):
+      # grab predicates and convert to conll format from bio
+      # this is a sent_num_predicates x batch_seq_len array
+      sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+
+      # this is a list of sent_num_predicates lists of srl role labels
+      sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
+      role_labels_start_idx += sent_num_predicates
+
+      # for each token in the sentence
+      for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
+        tok_role_labels = sent_role_labels[j] if sent_role_labels else []
+        word = word if isinstance(word, str) else word.decode('utf-8')
+        predicate_str = word if predicate else '-'
+        roles_str = '\t'.join(tok_role_labels)
+        print("%s\t%s" % (predicate_str, roles_str), file=f)
+      print(file=f)
+
+
 # Write to this format for eval.pl:
 # 1       The             _       DT      _       _       2       det
 # 2       economy         _       NN      _       _       4       poss
@@ -203,6 +229,40 @@ def conll_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_targ
       correct, excess, missed = map(int, srl_eval.split('\n')[6].split()[1:4])
     except CalledProcessError as e:
       tf.logging.log(tf.logging.ERROR, "Call to srl-eval.pl (conll srl eval) failed.")
+
+  return correct, excess, missed
+
+
+def conll09_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_targets, predicate_targets,
+                      pred_srl_eval_file, gold_srl_eval_file):
+
+  # predictions: num_predicates_in_batch x batch_seq_len tensor of ints
+  # predicate predictions: batch_size x batch_seq_len [ x 1?] tensor of ints (0/1)
+  # words: batch_size x batch_seq_len tensor of ints (0/1)
+
+  # need to print for every word in every sentence
+  sent_lens = np.sum(mask, -1).astype(np.int32)
+
+  # import time
+  # debug_fname = pred_srl_eval_file.decode('utf-8') + str(time.time())
+  # write_srl_debug(debug_fname, words, predicate_targets, sent_lens, srl_targets, pos_predictions, pos_targets)
+
+  # write gold labels
+  write_srl_eval_09(gold_srl_eval_file, words, predicate_targets, sent_lens, srl_targets)
+
+  # write predicted labels
+  write_srl_eval_09(pred_srl_eval_file, words, predicate_predictions, sent_lens, srl_predictions)
+
+  # run eval script
+  correct, excess, missed = 0, 0, 0
+  with open(os.devnull, 'w') as devnull:
+    try:
+      srl_eval = check_output(["perl", "bin/eval09.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
+      srl_eval = srl_eval.decode('utf-8')
+      # print(srl_eval)
+      correct, excess, missed = map(int, srl_eval.split('\n')[6].split()[1:4])
+    except CalledProcessError as e:
+      tf.logging.log(tf.logging.ERROR, "Call to eval09.pl (conll09 srl eval) failed.")
 
   return correct, excess, missed
 

@@ -53,6 +53,43 @@ def conll_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, 
 
     return f1, f1_update_op
 
+def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
+                      gold_srl_eval_file, pred_srl_eval_file):
+
+  with tf.name_scope('conll_srl_eval'):
+
+    # create accumulator variables
+    correct_count = create_metric_variable("correct_count", shape=[], dtype=tf.int64)
+    excess_count = create_metric_variable("excess_count", shape=[], dtype=tf.int64)
+    missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int64)
+
+    # first, use reverse maps to convert ints to strings
+    # todo order of map.values() is probably not guaranteed; should prob sort by keys first
+    str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
+    str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
+    str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
+
+    # need to pass through the stuff for pyfunc
+    # pyfunc is necessary here since we need to write to disk
+    py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
+                      pred_srl_eval_file, gold_srl_eval_file]
+    out_types = [tf.int64, tf.int64, tf.int64]
+    correct, excess, missed = tf.py_func(evaluation_fns_np.conll09_srl_eval, py_eval_inputs, out_types, stateful=False)
+
+    update_correct_op = tf.assign_add(correct_count, correct)
+    update_excess_op = tf.assign_add(excess_count, excess)
+    update_missed_op = tf.assign_add(missed_count, missed)
+
+    precision_update_op = update_correct_op / (update_correct_op + update_excess_op)
+    recall_update_op = update_correct_op / (update_correct_op + update_missed_op)
+    f1_update_op = 2 * precision_update_op * recall_update_op / (precision_update_op + recall_update_op)
+
+    precision = correct_count / (correct_count + excess_count)
+    recall = correct_count / (correct_count + missed_count)
+    f1 = 2 * precision * recall / (precision + recall)
+
+    return f1, f1_update_op
+
 
 # todo share computation with srl eval
 def conll_parse_eval_tf(predictions, targets, parse_head_predictions, words, mask, parse_head_targets, reverse_maps,
@@ -92,6 +129,7 @@ dispatcher = {
   'accuracy': accuracy_tf,
   'conll_srl_eval': conll_srl_eval_tf,
   'conll_parse_eval': conll_parse_eval_tf,
+  'conll09_srl_eval': conll09_srl_eval_tf,
 }
 
 

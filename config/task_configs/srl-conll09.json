@@ -22,7 +22,7 @@
     },
     "eval_fns": {
       "srl_f1": {
-        "name": "conll_srl_eval",
+        "name": "conll09_srl_eval",
         "params": {
           "gold_srl_eval_file": {
             "value": "##save_dir##/srl_gold.txt"
@@ -33,8 +33,7 @@
           "reverse_maps": {
             "reverse_maps": [
               "word",
-              "srl",
-              "gold_pos"
+              "srl"
             ]
           },
           "targets": {
@@ -50,13 +49,6 @@
           "predicate_predictions": {
             "layer": "joint_pos_predicate",
             "output": "predicate_predictions"
-          },
-          "pos_predictions": {
-            "layer": "joint_pos_predicate",
-            "output": "gold_pos_predictions"
-          },
-          "pos_targets": {
-            "label": "gold_pos"
           }
         }
       }
