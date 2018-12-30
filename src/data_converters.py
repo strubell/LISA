@@ -21,6 +21,7 @@ def conll12_binary_predicates_converter(split_line, idx):
 
 
 def conll09_binary_predicates_converter(split_line, idx):
+  print(split_line[idx], " != '_':", split_line[idx] != '_')
   return [str(split_line[idx] != '_')]
 
 
