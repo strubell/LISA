@@ -20,6 +20,10 @@ def conll12_binary_predicates_converter(split_line, idx):
   return [str(split_line[idx] != '-')]
 
 
+def conll09_binary_predicates_converter(split_line, idx):
+  return [str(split_line[idx] != '_')]
+
+
 def joint_converter(split_line, idx, component_converters):
   components = [dispatch(converter)(split_line, i)[0] for i, converter in zip(idx, component_converters)]
   return [constants.JOINT_LABEL_SEP.join(components)]
@@ -39,6 +43,7 @@ dispatcher = {
   'parse_roots_self_loop': parse_roots_self_loop_converter,
   'strip_conll12_domain': strip_conll12_domain_converter,
   'conll12_binary_predicates': conll12_binary_predicates_converter,
+  'conll09_binary_predicates': conll12_binary_predicates_converter,
   'lowercase': lowercase_converter,
   'joint_converter': joint_converter,
   'idx_range_converter': idx_range_converter,
