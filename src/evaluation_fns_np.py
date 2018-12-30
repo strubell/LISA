@@ -63,6 +63,17 @@ def convert_bilou(bio_predicted_roles):
     started_types.pop()
   return converted
 
+def convert_conll(predicted_roles):
+  '''
+
+  :param bio_predicted_roles: sequence of predicted role labels
+  :return: sequence of conll-formatted predicted role labels
+  '''
+
+  converted = []
+  for i, s in enumerate(predicted_roles):
+    s = s if isinstance(s, str) else s.decode('utf-8')
+    print("predicted roles:", s)
 
 def accuracy_np(predictions, targets, mask, accumulator):
 
@@ -124,7 +135,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels):
       sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
 
       # this is a list of sent_num_predicates lists of srl role labels
-      sent_role_labels = list(map(list, zip(*[convert_bilou(j[:sent_len]) for j in sent_role_labels_bio])))
+      sent_role_labels = list(map(list, zip(*[convert_conll(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
 
       # for each token in the sentence
@@ -257,7 +268,7 @@ def conll09_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_ta
   correct, excess, missed = 0, 0, 0
   with open(os.devnull, 'w') as devnull:
     try:
-      srl_eval = check_output(["perl", "bin/eval09.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
+      srl_eval = check_output(["perl", "bin/srl-eval.pl", gold_srl_eval_file, pred_srl_eval_file], stderr=devnull)
       srl_eval = srl_eval.decode('utf-8')
       # print(srl_eval)
       correct, excess, missed = map(int, srl_eval.split('\n')[6].split()[1:4])
