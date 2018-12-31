@@ -1,5 +1,5 @@
 {
-  "pos": {
+  "gold_pos": {
     "penalty": 1.0,
     "output_fn": {
       "name": "softmax_classifier"
