@@ -137,6 +137,10 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
     loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
 
+    loss = tf.Print(loss, [tf.reduce_sum(tokens_to_keep, -1)], "lens", summarize=5000)
+    loss = tf.Print(loss, [tf.reduce_max(targets, -1)], "targs", summarize=5000)
+    loss = tf.Print(loss, [tf.reduce_any(tf.greater_equal(tf.reduce_max(targets, -1), tf.reduce_sum(tokens_to_keep, -1)))], "targs > lens", summarize=5000)
+
     loss = tf.Print(loss, [num_tokens], "num tokens")
     loss = tf.Print(loss, [tf.reduce_sum(cross_entropy)], "cross_entropy")
     loss = tf.Print(loss, [tf.reduce_sum(arc_logits)], "arc_logits", summarize=5000)
