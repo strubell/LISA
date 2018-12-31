@@ -9,7 +9,7 @@
         "name": "accuracy",
         "params": {
           "predictions": {
-            "layer": "pos",
+            "layer": "gold_pos",
             "output": "predictions"
           },
           "targets": {
