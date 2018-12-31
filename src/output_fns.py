@@ -137,22 +137,22 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
     loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
 
-    loss = tf.Print(loss, [tf.reduce_sum(tokens_to_keep, -1)], "lens", summarize=5000)
-    loss = tf.Print(loss, [tf.reduce_max(targets, -1)], "targs", summarize=5000)
-    loss = tf.Print(loss, [tf.greater_equal(tf.reduce_max(targets, -1), tf.cast(tf.reduce_sum(tokens_to_keep, -1), tf.int32))], "targs > lens", summarize=5000)
+    # loss = tf.Print(loss, [tf.reduce_sum(tokens_to_keep, -1)], "lens", summarize=5000)
+    # loss = tf.Print(loss, [tf.reduce_max(targets, -1)], "targs", summarize=5000)
+    # loss = tf.Print(loss, [tf.greater_equal(tf.reduce_max(targets, -1), tf.cast(tf.reduce_sum(tokens_to_keep, -1), tf.int32))], "targs > lens", summarize=5000)
 
-    t_gt_l = tf.reduce_any(tf.greater_equal(tf.reduce_max(targets, -1), tf.cast(tf.reduce_sum(tokens_to_keep, -1), tf.int32)))
-    loss = tf.Print(loss, [t_gt_l], "targs > lens", summarize=5000)
+    # t_gt_l = tf.reduce_any(tf.greater_equal(tf.reduce_max(targets, -1), tf.cast(tf.reduce_sum(tokens_to_keep, -1), tf.int32)))
+    # loss = tf.Print(loss, [t_gt_l], "targs > lens", summarize=5000)
 
     # loss = tf.Print(loss, [tf.gather(tf.reduce_max(targets, -1), tf.where(t_gt_l))], "targets where")
     # loss = tf.Print(loss, [tf.gather(tf.reduce_sum(tokens_to_keep, -1), tf.where(t_gt_l))], "lens where")
 
 
-    loss = tf.Print(loss, [num_tokens], "num tokens")
-    loss = tf.Print(loss, [tf.reduce_sum(cross_entropy)], "cross_entropy")
-    loss = tf.Print(loss, [tf.reduce_sum(arc_logits)], "arc_logits", summarize=5000)
-    # loss = tf.Print(loss, [targets], "targets", summarize=5000)
-    loss = tf.Print(loss, [loss], "loss")
+    # loss = tf.Print(loss, [num_tokens], "num tokens")
+    # loss = tf.Print(loss, [tf.reduce_sum(cross_entropy)], "cross_entropy")
+    # loss = tf.Print(loss, [tf.reduce_sum(arc_logits)], "arc_logits", summarize=5000)
+    # # loss = tf.Print(loss, [targets], "targets", summarize=5000)
+    # loss = tf.Print(loss, [loss], "loss")
 
 
 
