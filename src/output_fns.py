@@ -144,8 +144,8 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
     t_gt_l = tf.reduce_any(tf.greater_equal(tf.reduce_max(targets, -1), tf.cast(tf.reduce_sum(tokens_to_keep, -1), tf.int32)))
     loss = tf.Print(loss, [t_gt_l], "targs > lens", summarize=5000)
 
-    loss = tf.Print(loss, [tf.gather(tf.reduce_max(targets, -1), tf.where(t_gt_l))], "targets where")
-    loss = tf.Print(loss, [tf.gather(tf.reduce_sum(tokens_to_keep, -1), tf.where(t_gt_l))], "lens where")
+    # loss = tf.Print(loss, [tf.gather(tf.reduce_max(targets, -1), tf.where(t_gt_l))], "targets where")
+    # loss = tf.Print(loss, [tf.gather(tf.reduce_sum(tokens_to_keep, -1), tf.where(t_gt_l))], "lens where")
 
 
     loss = tf.Print(loss, [num_tokens], "num tokens")
