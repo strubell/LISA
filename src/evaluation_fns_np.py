@@ -63,6 +63,7 @@ def convert_bilou(bio_predicted_roles):
     started_types.pop()
   return converted
 
+
 def convert_conll(predicted_roles):
   '''
 
@@ -70,10 +71,13 @@ def convert_conll(predicted_roles):
   :return: sequence of conll-formatted predicted role labels
   '''
 
-  converted = []
-  for i, s in enumerate(predicted_roles):
+  def convert_single(s):
     s = s if isinstance(s, str) else s.decode('utf-8')
-    print("predicted roles:", s)
+    return "*" if s == "_" else "(%s*)" % s
+
+  converted = map(convert_single, predicted_roles)
+  return converted
+
 
 def accuracy_np(predictions, targets, mask, accumulator):
 
