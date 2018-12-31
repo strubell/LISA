@@ -139,7 +139,7 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
 
     loss = tf.Print(loss, [num_tokens], "num tokens")
     loss = tf.Print(loss, [tf.reduce_sum(cross_entropy)], "cross_entropy")
-    loss = tf.Print(loss, [arc_logits], "arc_logits", summarize=5000)
+    loss = tf.Print(loss, [tf.reduce_sum(arc_logits)], "arc_logits", summarize=5000)
     loss = tf.Print(loss, [targets], "targets", summarize=5000)
 
     loss = tf.Print(loss, [loss], "loss")

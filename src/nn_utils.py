@@ -221,6 +221,8 @@ def bilinear_classifier(inputs1, inputs2, keep_prob, add_bias1=True, add_bias2=F
 
   output = tf.Print(output, [tf.reduce_sum(inputs1)], "bilinear_classifier inputs1")
   output = tf.Print(output, [tf.reduce_sum(inputs2)], "bilinear_classifier inputs2")
+  output = tf.Print(output, [tf.reduce_sum(output)], "bilinear_classifier output")
+
 
   # output = tf.squeeze(bilin)
   return output
