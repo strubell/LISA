@@ -31,6 +31,10 @@ def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels,
 
     predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
 
+    loss = tf.Print(loss, [tf.reduce_sum(tokens_to_keep)], "pos num tokens")
+    loss = tf.Print(loss, [tf.reduce_sum(logits)], "pos logits")
+    loss = tf.Print(loss, [loss], "pos loss")
+
     output = {
       'loss': loss,
       'predictions': predictions,
@@ -132,6 +136,13 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
     loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
+
+    loss = tf.Print(loss, [num_tokens], "num tokens")
+    loss = tf.Print(loss, [tf.reduce_sum(cross_entropy)], "cross_entropy")
+    loss = tf.Print(loss, [tf.reduce_sum(arc_logits)], "arc_logits")
+    loss = tf.Print(loss, [loss], "loss")
+
+
 
     output = {
       'loss': loss,
