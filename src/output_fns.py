@@ -302,7 +302,7 @@ def get_params(mode, model_config, task_map, train_outputs, features, labels, cu
   params = {'mode': mode, 'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
             'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels, 'transition_params': transition_params,
             'hparams': hparams}
-  params_map = task_map['params']
+  params_map = task_map['params'] if 'params' in task_map else {}
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
     if 'joint_maps' in param_values:
