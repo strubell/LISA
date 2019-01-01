@@ -142,10 +142,10 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
                                                                   parse_heads, parse_labels, pos_tags):
       # grab predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
-      sent_role_labels_bio = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
+      sent_role_labels = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
 
       # this is a list of sent_num_predicates lists of srl role labels
-      sent_role_labels = list(map(list, zip(*[convert_conll(j[:sent_len]) for j in sent_role_labels_bio])))
+      # sent_role_labels = list(map(list, zip(*[convert_conll(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
 
       # for each token in the sentence
@@ -160,7 +160,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
         predicate_str = "Y\t%s:%s" % (word, predicate) if predicate != "_" else '_\t_'
         roles_str = '\t'.join(tok_role_labels)
         print("%s\t%s\t_\t_\t%s\t%s\t_\t_\t%s\t%s\t%s\t%s\t%s\t%s" % (
-          j, word, pos_tag, pos_tag, parse_head, parse_head, parse_label, parse_label, predicate_str, roles_str))
+          j, word, pos_tag, pos_tag, parse_head, parse_head, parse_label, parse_label, predicate_str, roles_str), file=f)
       print(file=f)
 
 
