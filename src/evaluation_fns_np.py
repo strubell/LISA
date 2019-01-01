@@ -143,7 +143,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
       # grab predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
-      sent_role_labels = [r if isinstance(r, str) else r.decode('utf-8') for r in sent_role_labels]
+      # sent_role_labels = [r if isinstance(r, str) else r.decode('utf-8') for r in sent_role_labels]
 
       # this is a list of sent_num_predicates lists of srl role labels
       # sent_role_labels = list(map(list, zip(*[convert_conll(j[:sent_len]) for j in sent_role_labels_bio])))
@@ -159,7 +159,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
         predicate = predicate if isinstance(predicate, str) else predicate.decode('utf-8')
         word = word if isinstance(word, str) else word.decode('utf-8')
         predicate_str = "Y\t%s:%s" % (word, predicate) if predicate != "_" else '_\t_'
-        roles_str = '\t'.join(tok_role_labels)
+        roles_str = '\t'.join([r if isinstance(r, str) else r.decode('utf-8') for r in tok_role_labels])
         parse_label = parse_label if isinstance(parse_label, str) else parse_label.decode('utf-8')
         pos_tag = pos_tag if isinstance(pos_tag, str) else pos_tag.decode('utf-8')
 
