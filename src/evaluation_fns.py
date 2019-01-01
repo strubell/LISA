@@ -73,12 +73,14 @@ def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask
     str_parse_label_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_predictions)
     str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
     str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+    str_predicate_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_predictions)
+    str_predicate_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_targets)
 
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
     #todo pass these thru
-    py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_srl_targets, predicate_targets,
+    py_eval_inputs = [str_predictions, str_predicate_predictions, str_words, mask, str_srl_targets, str_predicate_targets,
                       str_parse_label_predictions, parse_head_predictions, str_parse_label_targets, parse_head_targets,
                       str_pos_targets, str_pos_predictions, pred_srl_eval_file, gold_srl_eval_file]
     out_types = [tf.int64, tf.int64, tf.int64]

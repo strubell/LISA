@@ -362,11 +362,13 @@ def conll09_srl_eval_np(predictions, targets, predicate_predictions, words, mask
   str_pos_predictions = [list(map(reverse_maps['gold_pos'].get, s)) for s in pos_predictions]
   str_parse_label_targets = [list(map(reverse_maps['parse_label'].get, s)) for s in parse_label_targets]
   str_parse_label_predictions = [list(map(reverse_maps['parse_label'].get, s)) for s in parse_label_predictions]
+  str_predicate_predictions = [list(map(reverse_maps['predicate'].get, s)) for s in predicate_predictions]
+  str_predicate_targets = [list(map(reverse_maps['predicate'].get, s)) for s in predicate_targets]
 
-  correct, excess, missed = conll09_srl_eval(str_srl_predictions, predicate_predictions, str_words, mask, str_srl_targets,
-                                             predicate_targets, str_parse_label_predictions, parse_head_predictions,
-                                             str_parse_label_targets, parse_head_targets, str_pos_targets,
-                                             str_pos_predictions, pred_srl_eval_file, gold_srl_eval_file)
+  correct, excess, missed = conll09_srl_eval(str_srl_predictions, str_predicate_predictions, str_words, mask,
+                                             str_srl_targets, str_predicate_targets, str_parse_label_predictions,
+                                             parse_head_predictions, str_parse_label_targets, parse_head_targets,
+                                             str_pos_targets, str_pos_predictions, pred_srl_eval_file, gold_srl_eval_file)
 
   accumulator['correct'] += correct
   accumulator['excess'] += excess
