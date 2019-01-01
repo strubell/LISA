@@ -49,6 +49,7 @@ dispatcher = {
   'strip_conll12_domain': strip_conll12_domain_converter,
   'conll12_binary_predicates': conll12_binary_predicates_converter,
   'conll09_binary_predicates': conll09_binary_predicates_converter,
+  'conll09_predicate_sense': conll09_predicate_sense_converter,
   'lowercase': lowercase_converter,
   'joint_converter': joint_converter,
   'idx_range_converter': idx_range_converter,
