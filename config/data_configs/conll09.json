@@ -49,13 +49,13 @@
     "vocab": "verb_sense"
   },
   "joint_pos_predicate": {
-    "conll_idx": [3, 8],
+    "conll_idx": [3, 9],
     "label": true,
     "vocab": "joint_pos_predicate",
     "converter": {
       "name": "joint_converter",
       "params": {
-        "component_converters": ["default_converter", "conll09_binary_predicates"]
+        "component_converters": ["default_converter", "conll09_predicate_sense"]
       }
     },
     "label_components": [
