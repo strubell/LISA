@@ -239,13 +239,13 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       # (p2) f3 f3 f3
       srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
 
-      gold_predicate_counts = tf.reduce_sum(tf.where(tf.not_equal(predicate_targets, predicate_outside_idx), 1, 0), -1)
+      gold_predicate_counts = tf.reduce_sum(tf.cast(tf.not_equal(predicate_targets, predicate_outside_idx), tf.int32), -1)
       srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
       # num_predicates_in_batch x seq_len
       srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
 
-      predicted_predicate_counts = tf.reduce_sum(tf.where(tf.not_equal(predicate_preds, predicate_outside_idx), 1, 0), -1)
+      predicted_predicate_counts = tf.reduce_sum(tf.cast(tf.not_equal(predicate_preds, predicate_outside_idx), tf.int32), -1)
       srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
       srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
