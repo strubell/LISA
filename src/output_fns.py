@@ -197,6 +197,8 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       predicate_outside_idx = 0
 
       predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
+      predicate_gather_indices = tf.where(tf.not_equal(predicate_preds, predicate_outside_idx))
+
 
       # (1) project into predicate, role representations
       with tf.variable_scope('MLP'):
@@ -211,7 +213,6 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
         # role mlp: batch x seq_len x role_mlp_size
         # gathered roles: need a (batch_seq_len x role_mlp_size) role representation for each predicate,
         # i.e. a (num_predicates_in_batch x batch_seq_len x role_mlp_size) tensor
-        predicate_gather_indices = tf.where(tf.not_equal(predicate_preds, predicate_outside_idx))
         gathered_predicates = tf.expand_dims(tf.gather_nd(predicate_mlp, predicate_gather_indices), 1)
         tiled_roles = tf.reshape(tf.tile(role_mlp, [1, batch_seq_len, 1]),
                                  [batch_size, batch_seq_len, batch_seq_len, role_mlp_size])
@@ -226,7 +227,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 
       # need to repeat each of these once for each target in the sentence
       mask_tiled = tf.reshape(tf.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
-      mask = tf.gather_nd(mask_tiled, tf.where(tf.not_equal(predicate_preds, predicate_outside_idx)))
+      mask = tf.gather_nd(mask_tiled, predicate_gather_indices)
 
       # now we have k sets of targets for the k frames
       # (p1) f1 f2 f3
@@ -238,13 +239,13 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       # (p2) f3 f3 f3
       srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
 
-      gold_predicate_counts = tf.reduce_sum(predicate_targets, -1)
+      gold_predicate_counts = tf.reduce_sum(tf.where(tf.not_equal(predicate_targets, predicate_outside_idx), 1, 0), -1)
       srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
       # num_predicates_in_batch x seq_len
       srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
 
-      predicted_predicate_counts = tf.reduce_sum(predicate_preds, -1)
+      predicted_predicate_counts = tf.reduce_sum(tf.where(tf.not_equal(predicate_preds, predicate_outside_idx), 1, 0), -1)
       srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
       srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
