@@ -193,6 +193,9 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       predicate_mlp_size = model_config['predicate_mlp_size']
       role_mlp_size = model_config['role_mlp_size']
 
+      # TODO this should really be passed in, not assumed...
+      predicate_outside_idx = 0
+
       predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
 
       # (1) project into predicate, role representations
@@ -208,8 +211,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
         # role mlp: batch x seq_len x role_mlp_size
         # gathered roles: need a (batch_seq_len x role_mlp_size) role representation for each predicate,
         # i.e. a (num_predicates_in_batch x batch_seq_len x role_mlp_size) tensor
-        # TODO this should really check for equality with whatever index means yes, this is a predicate
-        predicate_gather_indices = tf.where(tf.equal(predicate_preds, 1))
+        predicate_gather_indices = tf.where(tf.not_equal(predicate_preds, predicate_outside_idx))
         gathered_predicates = tf.expand_dims(tf.gather_nd(predicate_mlp, predicate_gather_indices), 1)
         tiled_roles = tf.reshape(tf.tile(role_mlp, [1, batch_seq_len, 1]),
                                  [batch_size, batch_seq_len, batch_seq_len, role_mlp_size])

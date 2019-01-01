@@ -54,7 +54,8 @@ def conll_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, 
     return f1, f1_update_op
 
 def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
-                      gold_srl_eval_file, pred_srl_eval_file):
+                      gold_srl_eval_file, pred_srl_eval_file, pos_predictions, pos_targets, parse_head_targets,
+                        parse_head_predictions, parse_label_targets, parse_label_predictions):
 
   with tf.name_scope('conll_srl_eval'):
 
@@ -67,12 +68,19 @@ def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask
     # todo order of map.values() is probably not guaranteed; should prob sort by keys first
     str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
     str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-    str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
+    str_srl_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
+    str_parse_label_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_targets)
+    str_parse_label_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_predictions)
+    str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
+    str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
-    py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_targets, predicate_targets,
-                      pred_srl_eval_file, gold_srl_eval_file]
+    #todo pass these thru
+    py_eval_inputs = [str_predictions, predicate_predictions, str_words, mask, str_srl_targets, predicate_targets,
+                      str_parse_label_predictions, parse_head_predictions, str_parse_label_targets, parse_head_targets,
+                      str_pos_targets, str_pos_predictions, pred_srl_eval_file, gold_srl_eval_file]
     out_types = [tf.int64, tf.int64, tf.int64]
     correct, excess, missed = tf.py_func(evaluation_fns_np.conll09_srl_eval, py_eval_inputs, out_types, stateful=False)
 

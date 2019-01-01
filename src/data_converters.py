@@ -24,6 +24,11 @@ def conll09_binary_predicates_converter(split_line, idx):
   return [str(split_line[idx] != '_')]
 
 
+def conll09_predicate_sense_converter(split_line, idx):
+  verb_sense_str = split_line[idx]
+  return verb_sense_str if verb_sense_str == "_" else verb_sense_str.split('.')[1]
+
+
 def joint_converter(split_line, idx, component_converters):
   components = [dispatch(converter)(split_line, i)[0] for i, converter in zip(idx, component_converters)]
   return [constants.JOINT_LABEL_SEP.join(components)]
