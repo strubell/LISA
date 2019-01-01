@@ -156,7 +156,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
                                                                                   sent_parse_heads[:sent_len],
                                                                                   sent_parse_labels[:sent_len],
                                                                                   sent_pos_tags[:sent_len])):
-        tok_role_labels = sent_role_labels[j] if sent_role_labels else []
+        tok_role_labels = sent_role_labels[j]# if sent_role_labels else []
         predicate = predicate if isinstance(predicate, str) else predicate.decode('utf-8')
         word = word if isinstance(word, str) else word.decode('utf-8')
         predicate_str = "Y\t%s:%s" % (word, predicate) if predicate != "_" else '_\t_'
