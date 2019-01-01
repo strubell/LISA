@@ -62,14 +62,14 @@
           },
           "parse_label_predictions": {
             "layer": "parse_label",
-            "output": "parse_label_predictions"
+            "output": "predictions"
           },
           "parse_label_targets": {
             "label": "parse_label"
           },
           "parse_head_predictions": {
             "layer": "parse_head",
-            "output": "parse_head_predictions"
+            "output": "predictions"
           },
           "parse_head_targets": {
             "label": "parse_head"
