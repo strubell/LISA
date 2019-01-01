@@ -76,7 +76,6 @@ def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask
     str_predicate_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_predictions)
     str_predicate_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_targets)
 
-
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
     #todo pass these thru
