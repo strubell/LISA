@@ -226,7 +226,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 
       # need to repeat each of these once for each target in the sentence
       mask_tiled = tf.reshape(tf.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
-      mask = tf.gather_nd(mask_tiled, tf.where(tf.equal(predicate_preds, 1)))
+      mask = tf.gather_nd(mask_tiled, tf.where(tf.not_equal(predicate_preds, predicate_outside_idx)))
 
       # now we have k sets of targets for the k frames
       # (p1) f1 f2 f3
