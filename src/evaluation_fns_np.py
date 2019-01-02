@@ -143,7 +143,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
       # grab predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
-      print(len(sent_role_labels))
+      print(len(sent_role_labels), len(sent_role_labels[0]), len(word))
       # sent_role_labels = [r if isinstance(r, str) else r.decode('utf-8') for r in sent_role_labels]
 
       # this is a list of sent_num_predicates lists of srl role labels
