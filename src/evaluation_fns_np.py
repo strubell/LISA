@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import re
 from subprocess import check_output, CalledProcessError
 
 
@@ -290,17 +291,65 @@ def conll09_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_ta
                     parse_head_predictions, parse_label_predictions, pos_predictions)
 
   # run eval script
-  correct, excess, missed = 0, 0, 0
+  labeled_correct, labeled_excess, labeled_missed, prop_correct, prop_excess, prop_missed = 0., 0., 0., 0., 0., 0.
   with open(os.devnull, 'w') as devnull:
     try:
       srl_eval = check_output(["perl", "bin/eval09.pl", "-g", gold_srl_eval_file, "-s", pred_srl_eval_file], stderr=devnull)
       srl_eval = srl_eval.decode('utf-8')
-      print(srl_eval)
-      correct, excess, missed = map(int, srl_eval.split('\n')[6].split()[1:4])
+      # print(srl_eval)
+      # Looks like this:
+      #   SYNTACTIC SCORES:
+      #   Labeled   attachment score: 2793 / 3125 * 100 = 89.38 %
+      #   Unlabeled attachment score: 2894 / 3125 * 100 = 92.61 %
+      #   Label accuracy score:       2921 / 3125 * 100 = 93.47 %
+      #   Exact syntactic match:      115 / 256 * 100 = 44.92 %
+      #
+      #   SEMANTIC SCORES:
+      #   Labeled precision:          (20 + 486) / (200 + 607) * 100 = 62.70 %
+      #   Labeled recall:             (20 + 486) / (220 + 621) * 100 = 60.17 %
+      #   Labeled F1:                 61.41
+      #   Unlabeled precision:        (51 + 544) / (200 + 607) * 100 = 73.73 %
+      #   Unlabeled recall:           (51 + 544) / (220 + 621) * 100 = 70.75 %
+      #   Unlabeled F1:               72.21
+      #   Proposition precision:      429 / 607 * 100 = 70.68 %
+      #   Proposition recall:         429 / 621 * 100 = 69.08 %
+      #   Proposition F1:             69.87
+      #   Exact semantic match:       110 / 256 * 100 = 42.97 %
+      #
+      #   OVERALL MACRO SCORES (Wsem = 0.50):
+      #   Labeled macro precision:    76.04 %
+      #   Labeled macro recall:       74.77 %
+      #   Labeled macro F1:           75.40 %
+      #   Unlabeled macro precision:  83.17 %
+      #   Unlabeled macro recall:     81.68 %
+      #   Unlabeled macro F1:         82.42 %
+      #   Exact overall match:        56 / 256 * 100 = 21.88 %
+      #
+      #   OVERALL MICRO SCORES:
+      #   Labeled micro precision:    (2793 + 20 + 486) / (3125 + 200 + 607) * 100 = 83.90 %
+      #   Labeled micro recall:       (2793 + 20 + 486) / (3125 + 220 + 621) * 100 = 83.18 %
+      #   Labeled micro F1:           83.54
+      #   Unlabeled micro precision:  (2894 + 51 + 544) / (3125 + 200 + 607) * 100 = 88.73 %
+      #   Unlabeled micro recall:     (2894 + 51 + 544) / (3125 + 220 + 621) * 100 = 87.97 %
+      #   Unlabeled micro F1:         88.35
+      eval_lines = srl_eval.split('\n')
+      labeled_precision_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[7]).split())
+      labeled_recall_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[8]).split())
+      prop_precision_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[13]).split())
+      prop_recall_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[14]).split())
+
+      labeled_correct = labeled_precision_ints[0] + labeled_precision_ints[1]
+      labeled_excess = labeled_correct - labeled_precision_ints[2] - labeled_precision_ints[3]
+      labeled_missed = labeled_correct - labeled_recall_ints[2] - labeled_recall_ints[3]
+
+      prop_correct = prop_precision_ints[0]
+      prop_excess = prop_precision_ints[1] - prop_correct
+      prop_missed = prop_recall_ints[1] - prop_correct
+
     except CalledProcessError as e:
       tf.logging.log(tf.logging.ERROR, "Call to eval09.pl (conll09 srl eval) failed.")
 
-  return correct, excess, missed
+  return labeled_correct, labeled_excess, labeled_missed
 
 
 def conll_parse_eval(parse_label_predictions, parse_head_predictions, words, mask, parse_label_targets,
