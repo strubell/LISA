@@ -134,8 +134,8 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
 def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse_heads, parse_labels, pos_tags):
   with open(filename, 'w') as f:
     role_labels_start_idx = 0
-    print(predicates)
-    num_predicates_per_sent = np.sum((predicates != '_') & (predicates != ""), -1)
+    # print(predicates)
+    num_predicates_per_sent = np.sum(predicates != '_', -1)
 
     # for each sentence in the batch
     for sent_words, sent_predicates, sent_len, sent_num_predicates, \
@@ -144,7 +144,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
       # grab predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
-      print(len(sent_role_labels), len(sent_role_labels[0]), len(word))
+      # print(len(sent_role_labels), len(sent_role_labels[0]), len(word))
       # sent_role_labels = [r if isinstance(r, str) else r.decode('utf-8') for r in sent_role_labels]
 
       # this is a list of sent_num_predicates lists of srl role labels

@@ -186,6 +186,9 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 
     with tf.name_scope('srl_bilinear'):
 
+      def bool_mask_where_predicates(predicates_tensor):
+        return tf.logical_and(tf.not_equal(predicates_tensor, predicate_outside_idx), tf.cast(tokens_to_keep, tf.bool))
+
       input_shape = tf.shape(inputs)
       batch_size = input_shape[0]
       batch_seq_len = input_shape[1]
@@ -197,7 +200,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       predicate_outside_idx = 0
 
       predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
-      predicate_gather_indices = tf.where(tf.not_equal(predicate_preds, predicate_outside_idx))
+      predicate_gather_indices = tf.where(bool_mask_where_predicates(predicate_preds))
 
 
       # (1) project into predicate, role representations
@@ -239,13 +242,13 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       # (p2) f3 f3 f3
       srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
 
-      gold_predicate_counts = tf.reduce_sum(tf.cast(tf.not_equal(predicate_targets, predicate_outside_idx), tf.int32), -1)
+      gold_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_targets), tf.int32), -1)
       srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
       # num_predicates_in_batch x seq_len
       srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
 
-      predicted_predicate_counts = tf.reduce_sum(tf.cast(tf.not_equal(predicate_preds, predicate_outside_idx), tf.int32), -1)
+      predicted_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_preds), tf.int32), -1)
       srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
       srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
