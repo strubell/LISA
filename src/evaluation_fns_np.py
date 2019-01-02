@@ -137,11 +137,7 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
 def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse_heads, parse_labels, pos_tags):
   with open(filename, 'w') as f:
     role_labels_start_idx = 0
-    # print(predicates)
-    np.set_printoptions(threshold=np.nan)
 
-    # predicates = np.reshape(np.array(list(map(lambda p: p if isinstance(p, str) else p.decode('utf-8'),
-    #                                           np.reshape(predicates, [-1])))), predicates.shape)
     predicates = util.batch_str_decode(predicates)
     words = util.batch_str_decode(words)
     parse_labels = util.batch_str_decode(parse_labels)
@@ -150,7 +146,6 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
 
     # todo pretty sure this assumes that 0 == '_'
     num_predicates_per_sent = np.sum(predicates != '_', -1)
-    # print(predicates != '_')
 
     # for each sentence in the batch
     for sent_words, sent_predicates, sent_len, sent_num_predicates, \
@@ -159,13 +154,8 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
       # grab predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
       sent_role_labels = np.transpose(role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates])
-      # print(len(sent_role_labels), len(sent_role_labels[0]), len(sent_words), sent_len)
-      # print(sent_num_predicates, sent_predicates)
-      # print(sent_words)
-      # sent_role_labels = [r if isinstance(r, str) else r.decode('utf-8') for r in sent_role_labels]
 
       # this is a list of sent_num_predicates lists of srl role labels
-      # sent_role_labels = list(map(list, zip(*[convert_conll(j[:sent_len]) for j in sent_role_labels_bio])))
       role_labels_start_idx += sent_num_predicates
 
       # for each token in the sentence
@@ -175,16 +165,10 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
                                                                                   sent_parse_labels[:sent_len],
                                                                                   sent_pos_tags[:sent_len])):
         tok_role_labels = sent_role_labels[j] if len(sent_role_labels) > 0 else []
-        # predicate = predicate if isinstance(predicate, str) else predicate.decode('utf-8')
-        # word = word if isinstance(word, str) else word.decode('utf-8')
         predicate_str = "Y\t%s:%s" % (word, predicate) if predicate != "_" else '_\t_'
-        # roles_str = '\t'.join([r if isinstance(r, str) else r.decode('utf-8') for r in tok_role_labels])
         roles_str = '\t'.join(tok_role_labels)
-        # parse_label = parse_label if isinstance(parse_label, str) else parse_label.decode('utf-8')
-        # pos_tag = pos_tag if isinstance(pos_tag, str) else pos_tag.decode('utf-8')
-
-        print("%s\t%s\t_\t_\t%s\t%s\t_\t_\t%s\t%s\t%s\t%s\t%s\t%s" % (
-          j, word, pos_tag, pos_tag, parse_head, parse_head, parse_label, parse_label, predicate_str, roles_str), file=f)
+        outputs = (j, word, pos_tag, pos_tag, parse_head, parse_head, parse_label, parse_label, predicate_str, roles_str)
+        print("%s\t%s\t_\t_\t%s\t%s\t_\t_\t%s\t%s\t%s\t%s\t%s\t%s" % outputs, file=f)
       print(file=f)
 
 
