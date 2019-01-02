@@ -107,6 +107,8 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
     role_labels_start_idx = 0
     num_predicates_per_sent = np.sum(predicates, -1)
 
+    words = util.batch_str_decode(words)
+
     # for each sentence in the batch
     for sent_words, sent_predicates, sent_len, sent_num_predicates in zip(words, predicates, sent_lens,
                                                                           num_predicates_per_sent):
@@ -121,7 +123,6 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
       # for each token in the sentence
       for j, (word, predicate) in enumerate(zip(sent_words[:sent_len], sent_predicates[:sent_len])):
         tok_role_labels = sent_role_labels[j] if sent_role_labels else []
-        word = word if isinstance(word, str) else word.decode('utf-8')
         predicate_str = word if predicate else '-'
         roles_str = '\t'.join(tok_role_labels)
         print("%s\t%s" % (predicate_str, roles_str), file=f)
@@ -177,7 +178,8 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
         # predicate = predicate if isinstance(predicate, str) else predicate.decode('utf-8')
         # word = word if isinstance(word, str) else word.decode('utf-8')
         predicate_str = "Y\t%s:%s" % (word, predicate) if predicate != "_" else '_\t_'
-        roles_str = '\t'.join([r if isinstance(r, str) else r.decode('utf-8') for r in tok_role_labels])
+        # roles_str = '\t'.join([r if isinstance(r, str) else r.decode('utf-8') for r in tok_role_labels])
+        roles_str = '\t'.join(tok_role_labels)
         # parse_label = parse_label if isinstance(parse_label, str) else parse_label.decode('utf-8')
         # pos_tag = pos_tag if isinstance(pos_tag, str) else pos_tag.decode('utf-8')
 
@@ -193,6 +195,11 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
 # 4       temperature     _       NN      _       _       7       nsubjpass
 # 5       will            _       MD      _       _       7       aux
 def write_parse_eval(filename, words, parse_heads, sent_lens, parse_labels, pos_tags):
+
+  words = util.batch_str_decode(words)
+  pos_tags = util.batch_str_decode(pos_tags)
+  parse_labels = util.batch_str_decode(parse_labels)
+
   with open(filename, 'w') as f:
 
     # for each sentence in the batch
@@ -204,12 +211,7 @@ def write_parse_eval(filename, words, parse_heads, sent_lens, parse_labels, pos_
                                                                        sent_parse_labels[:sent_len],
                                                                        sent_pos_tags[:sent_len])):
         parse_head = 0 if j == parse_head else parse_head + 1
-        token_outputs = (j,
-                         word if isinstance(word, str) else word.decode('utf-8'),
-                         pos_tag if isinstance(pos_tag, str) else pos_tag.decode('utf-8'),
-                         int(parse_head),
-                         parse_label if isinstance(parse_label, str) else parse_label.decode('utf-8'))
-        print("%d\t%s\t_\t%s\t_\t_\t%d\t%s" % token_outputs, file=f)
+        print("%d\t%s\t_\t%s\t_\t_\t%d\t%s" % (j, word, pos_tag, int(parse_head), parse_label), file=f)
       print(file=f)
 
 

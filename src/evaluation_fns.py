@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import evaluation_fns_np
 import nn_utils
 
@@ -25,12 +24,6 @@ def conll_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, 
     missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int64)
 
     # first, use reverse maps to convert ints to strings
-    #
-    # str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
-    # str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-    # str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
-    # str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
-    # str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
     str_predictions = nn_utils.int_to_str_lookup_table(predictions, reverse_maps['srl'])
     str_words = nn_utils.int_to_str_lookup_table(words, reverse_maps['word'])
     str_targets = nn_utils.int_to_str_lookup_table(targets, reverse_maps['srl'])
@@ -71,16 +64,6 @@ def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask
     missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int64)
 
     # first, use reverse maps to convert ints to strings
-    # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-    # str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
-    # str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-    # str_srl_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
-    # str_parse_label_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_targets)
-    # str_parse_label_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_predictions)
-    # str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
-    # str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
-    # str_predicate_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_predictions)
-    # str_predicate_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_targets)
     str_predictions = nn_utils.int_to_str_lookup_table(predictions, reverse_maps['srl'])
     str_words = nn_utils.int_to_str_lookup_table(words, reverse_maps['word'])
     str_srl_targets = nn_utils.int_to_str_lookup_table(targets, reverse_maps['srl'])
@@ -93,7 +76,6 @@ def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
-    #todo pass these thru
     py_eval_inputs = [str_predictions, str_predicate_predictions, str_words, mask, str_srl_targets, str_predicate_targets,
                       str_parse_label_predictions, parse_head_predictions, str_parse_label_targets, parse_head_targets,
                       str_pos_targets, str_pos_predictions, pred_srl_eval_file, gold_srl_eval_file]
@@ -125,11 +107,6 @@ def conll_parse_eval_tf(predictions, targets, parse_head_predictions, words, mas
     total_count = create_metric_variable("total_count", shape=[], dtype=tf.int64)
     correct_count = create_metric_variable("correct_count", shape=[3], dtype=tf.int64)
 
-    # first, use reverse maps to convert ints to strings
-    # str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-    # str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), predictions)
-    # str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), targets)
-    # str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
     str_words = nn_utils.int_to_str_lookup_table(words, reverse_maps['word'])
     str_predictions = nn_utils.int_to_str_lookup_table(predictions, reverse_maps['parse_label'])
     str_targets = nn_utils.int_to_str_lookup_table(targets, reverse_maps['parse_label'])
