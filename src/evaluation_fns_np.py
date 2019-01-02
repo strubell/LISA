@@ -139,8 +139,6 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
     # print(predicates)
     np.set_printoptions(threshold=np.nan)
 
-    # predicates_shape = predicates.shape
-    # todo put this in a func with str lookup (earlier)
     # predicates = np.reshape(np.array(list(map(lambda p: p if isinstance(p, str) else p.decode('utf-8'),
     #                                           np.reshape(predicates, [-1])))), predicates.shape)
     predicates = util.batch_str_decode(predicates)
@@ -149,6 +147,7 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
     pos_tags = util.batch_str_decode(pos_tags)
     role_labels = util.batch_str_decode(role_labels)
 
+    # todo pretty sure this assumes that 0 == '_'
     num_predicates_per_sent = np.sum(predicates != '_', -1)
     # print(predicates != '_')
 
