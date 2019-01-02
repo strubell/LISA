@@ -134,7 +134,8 @@ def write_srl_eval(filename, words, predicates, sent_lens, role_labels):
 def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse_heads, parse_labels, pos_tags):
   with open(filename, 'w') as f:
     role_labels_start_idx = 0
-    num_predicates_per_sent = np.sum(predicates != '_', -1)
+    print(predicates)
+    num_predicates_per_sent = np.sum((predicates != '_') & (predicates != ""), -1)
 
     # for each sentence in the batch
     for sent_words, sent_predicates, sent_len, sent_num_predicates, \
