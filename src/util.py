@@ -15,6 +15,11 @@ def init_logging(verbosity):
   tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
 
 
+def batch_str_decode(string_array, codec='utf-8'):
+  np.reshape(np.array(list(map(lambda p: p if isinstance(p, str) else p.decode(codec),
+                               np.reshape(string_array, [-1])))), string_array.shape)
+
+
 def sequence_mask_np(lengths, maxlen=None):
   if not maxlen:
     maxlen = np.max(lengths)

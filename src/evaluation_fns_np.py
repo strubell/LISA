@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import util
 import os
 import re
 from subprocess import check_output, CalledProcessError
@@ -136,8 +137,20 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
   with open(filename, 'w') as f:
     role_labels_start_idx = 0
     # print(predicates)
-    num_predicates_per_sent = np.sum(predicates != '_', -1)
+    np.set_printoptions(threshold=np.nan)
 
+    # predicates_shape = predicates.shape
+    # todo put this in a func with str lookup (earlier)
+    # predicates = np.reshape(np.array(list(map(lambda p: p if isinstance(p, str) else p.decode('utf-8'),
+    #                                           np.reshape(predicates, [-1])))), predicates.shape)
+    predicates = util.batch_str_decode(predicates)
+    words = util.batch_str_decode(words)
+    parse_labels = util.batch_str_decode(parse_labels)
+    pos_tags = util.batch_str_decode(pos_tags)
+    role_labels = util.batch_str_decode(role_labels)
+
+    num_predicates_per_sent = np.sum(predicates != '_', -1)
+    # print(predicates != '_')
 
     # for each sentence in the batch
     for sent_words, sent_predicates, sent_len, sent_num_predicates, \
@@ -145,9 +158,10 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
                                                                   parse_heads, parse_labels, pos_tags):
       # grab predicates and convert to conll format from bio
       # this is a sent_num_predicates x batch_seq_len array
-      sent_role_labels = role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates]
-      print(len(sent_role_labels), len(sent_role_labels[0]), len(sent_words))
-      print(sent_num_predicates, predicates)
+      sent_role_labels = np.transpose(role_labels[role_labels_start_idx: role_labels_start_idx + sent_num_predicates])
+      # print(len(sent_role_labels), len(sent_role_labels[0]), len(sent_words), sent_len)
+      # print(sent_num_predicates, sent_predicates)
+      # print(sent_words)
       # sent_role_labels = [r if isinstance(r, str) else r.decode('utf-8') for r in sent_role_labels]
 
       # this is a list of sent_num_predicates lists of srl role labels
@@ -161,12 +175,12 @@ def write_srl_eval_09(filename, words, predicates, sent_lens, role_labels, parse
                                                                                   sent_parse_labels[:sent_len],
                                                                                   sent_pos_tags[:sent_len])):
         tok_role_labels = sent_role_labels[j] if len(sent_role_labels) > 0 else []
-        predicate = predicate if isinstance(predicate, str) else predicate.decode('utf-8')
-        word = word if isinstance(word, str) else word.decode('utf-8')
+        # predicate = predicate if isinstance(predicate, str) else predicate.decode('utf-8')
+        # word = word if isinstance(word, str) else word.decode('utf-8')
         predicate_str = "Y\t%s:%s" % (word, predicate) if predicate != "_" else '_\t_'
         roles_str = '\t'.join([r if isinstance(r, str) else r.decode('utf-8') for r in tok_role_labels])
-        parse_label = parse_label if isinstance(parse_label, str) else parse_label.decode('utf-8')
-        pos_tag = pos_tag if isinstance(pos_tag, str) else pos_tag.decode('utf-8')
+        # parse_label = parse_label if isinstance(parse_label, str) else parse_label.decode('utf-8')
+        # pos_tag = pos_tag if isinstance(pos_tag, str) else pos_tag.decode('utf-8')
 
         print("%s\t%s\t_\t_\t%s\t%s\t_\t_\t%s\t%s\t%s\t%s\t%s\t%s" % (
           j, word, pos_tag, pos_tag, parse_head, parse_head, parse_label, parse_label, predicate_str, roles_str), file=f)
@@ -293,12 +307,12 @@ def conll09_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_ta
                     parse_head_predictions, parse_label_predictions, pos_predictions)
 
   # run eval script
-  labeled_correct, labeled_excess, labeled_missed, prop_correct, prop_excess, prop_missed = 0., 0., 0., 0., 0., 0.
+  labeled_correct, labeled_excess, labeled_missed, prop_correct, prop_excess, prop_missed = 0, 0, 0, 0, 0, 0
   with open(os.devnull, 'w') as devnull:
     try:
-      srl_eval = check_output(["perl", "bin/eval09.pl", "-g", gold_srl_eval_file, "-s", pred_srl_eval_file], stderr=devnull)
+      srl_eval = check_output(["perl", "bin/eval09.pl", "-g", gold_srl_eval_file, "-s", pred_srl_eval_file],
+                              stderr=devnull)
       srl_eval = srl_eval.decode('utf-8')
-      # print(srl_eval)
       # Looks like this:
       #   SYNTACTIC SCORES:
       #   Labeled   attachment score: 2793 / 3125 * 100 = 89.38 %
@@ -335,14 +349,14 @@ def conll09_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_ta
       #   Unlabeled micro recall:     (2894 + 51 + 544) / (3125 + 220 + 621) * 100 = 87.97 %
       #   Unlabeled micro F1:         88.35
       eval_lines = srl_eval.split('\n')
-      labeled_precision_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[7]).split())
-      labeled_recall_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[8]).split())
-      prop_precision_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[13]).split())
-      prop_recall_ints = map(float, re.sub('[^0-9 ]', '', eval_lines[14]).split())
+      labeled_precision_ints = list(map(int, re.sub('[^0-9 ]', '', eval_lines[7]).split()))
+      labeled_recall_ints = list(map(int, re.sub('[^0-9 ]', '', eval_lines[8]).split()))
+      prop_precision_ints = list(map(int, re.sub('[^0-9 ]', '', eval_lines[13]).split()))
+      prop_recall_ints = list(map(int, re.sub('[^0-9 ]', '', eval_lines[14]).split()))
 
       labeled_correct = labeled_precision_ints[0] + labeled_precision_ints[1]
-      labeled_excess = labeled_correct - labeled_precision_ints[2] - labeled_precision_ints[3]
-      labeled_missed = labeled_correct - labeled_recall_ints[2] - labeled_recall_ints[3]
+      labeled_excess = labeled_precision_ints[2] + labeled_precision_ints[3] - labeled_correct
+      labeled_missed = labeled_recall_ints[2] + labeled_recall_ints[3] - labeled_correct
 
       prop_correct = prop_precision_ints[0]
       prop_excess = prop_precision_ints[1] - prop_correct

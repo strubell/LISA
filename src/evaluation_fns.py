@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import evaluation_fns_np
+import nn_utils
 
 
 def create_metric_variable(name, shape, dtype):
@@ -24,13 +25,17 @@ def conll_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, 
     missed_count = create_metric_variable("missed_count", shape=[], dtype=tf.int64)
 
     # first, use reverse maps to convert ints to strings
-    # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-    str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
-    str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-    str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
-
-    str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
-    str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+    #
+    # str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
+    # str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
+    # str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
+    # str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
+    # str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+    str_predictions = nn_utils.int_to_str_lookup_table(predictions, reverse_maps['srl'])
+    str_words = nn_utils.int_to_str_lookup_table(words, reverse_maps['word'])
+    str_targets = nn_utils.int_to_str_lookup_table(targets, reverse_maps['srl'])
+    str_pos_predictions = nn_utils.int_to_str_lookup_table(pos_predictions, reverse_maps['gold_pos'])
+    str_pos_targets = nn_utils.int_to_str_lookup_table(pos_targets, reverse_maps['gold_pos'])
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
@@ -53,6 +58,7 @@ def conll_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, 
 
     return f1, f1_update_op
 
+
 def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask, predicate_targets, reverse_maps,
                       gold_srl_eval_file, pred_srl_eval_file, pos_predictions, pos_targets, parse_head_targets,
                         parse_head_predictions, parse_label_targets, parse_label_predictions):
@@ -66,15 +72,24 @@ def conll09_srl_eval_tf(predictions, targets, predicate_predictions, words, mask
 
     # first, use reverse maps to convert ints to strings
     # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-    str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
-    str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-    str_srl_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
-    str_parse_label_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_targets)
-    str_parse_label_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_predictions)
-    str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
-    str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
-    str_predicate_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_predictions)
-    str_predicate_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_targets)
+    # str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), predictions)
+    # str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
+    # str_srl_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['srl'].values())), targets)
+    # str_parse_label_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_targets)
+    # str_parse_label_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), parse_label_predictions)
+    # str_pos_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_predictions)
+    # str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+    # str_predicate_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_predictions)
+    # str_predicate_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['predicate'].values())), predicate_targets)
+    str_predictions = nn_utils.int_to_str_lookup_table(predictions, reverse_maps['srl'])
+    str_words = nn_utils.int_to_str_lookup_table(words, reverse_maps['word'])
+    str_srl_targets = nn_utils.int_to_str_lookup_table(targets, reverse_maps['srl'])
+    str_parse_label_targets = nn_utils.int_to_str_lookup_table(parse_label_targets, reverse_maps['parse_label'])
+    str_parse_label_predictions = nn_utils.int_to_str_lookup_table(parse_label_predictions, reverse_maps['parse_label'])
+    str_pos_predictions = nn_utils.int_to_str_lookup_table(pos_predictions, reverse_maps['gold_pos'])
+    str_pos_targets = nn_utils.int_to_str_lookup_table(pos_targets, reverse_maps['gold_pos'])
+    str_predicate_predictions = nn_utils.int_to_str_lookup_table(predicate_predictions, reverse_maps['predicate'])
+    str_predicate_targets = nn_utils.int_to_str_lookup_table(predicate_targets, reverse_maps['predicate'])
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
@@ -111,11 +126,14 @@ def conll_parse_eval_tf(predictions, targets, parse_head_predictions, words, mas
     correct_count = create_metric_variable("correct_count", shape=[3], dtype=tf.int64)
 
     # first, use reverse maps to convert ints to strings
-    # todo order of map.values() is probably not guaranteed; should prob sort by keys first
-    str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
-    str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), predictions)
-    str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), targets)
-    str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+    # str_words = tf.nn.embedding_lookup(np.array(list(reverse_maps['word'].values())), words)
+    # str_predictions = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), predictions)
+    # str_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['parse_label'].values())), targets)
+    # str_pos_targets = tf.nn.embedding_lookup(np.array(list(reverse_maps['gold_pos'].values())), pos_targets)
+    str_words = nn_utils.int_to_str_lookup_table(words, reverse_maps['word'])
+    str_predictions = nn_utils.int_to_str_lookup_table(predictions, reverse_maps['parse_label'])
+    str_targets = nn_utils.int_to_str_lookup_table(targets, reverse_maps['parse_label'])
+    str_pos_targets = nn_utils.int_to_str_lookup_table(pos_targets, reverse_maps['gold_pos'])
 
     # need to pass through the stuff for pyfunc
     # pyfunc is necessary here since we need to write to disk
