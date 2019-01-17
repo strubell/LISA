@@ -30,8 +30,12 @@ arg_parser.add_argument('--layer_configs', required=True,
                         help='Comma-separated list of paths to layer configuration json.')
 arg_parser.add_argument('--attention_configs',
                         help='Comma-separated list of paths to attention configuration json.')
+arg_parser.add_argument('--combine_test_files', action='store_true',
+                        help='Whether to combine list of test files into a single score.')
 
 arg_parser.set_defaults(debug=False)
+arg_parser.set_defaults(combine_test_files=False)
+
 
 args, leftovers = arg_parser.parse_known_args()
 
@@ -107,12 +111,21 @@ def dev_input_fn():
 tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
 estimator.evaluate(input_fn=dev_input_fn)
 
-for test_file in test_filenames:
+if args.combine_test_files:
   def test_input_fn():
-    return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
+    return train_utils.get_input_fn(vocab, data_config, test_filenames, hparams.batch_size, num_epochs=1, shuffle=False,
                                     embedding_files=embedding_files)
 
-
-  tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
+  tf.logging.log(tf.logging.INFO, "Evaluating on test files: %s" % str(test_filenames))
   estimator.evaluate(input_fn=test_input_fn)
+
+else:
+  for test_file in test_filenames:
+    def test_input_fn():
+      return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
+                                      embedding_files=embedding_files)
+
+
+    tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
+    estimator.evaluate(input_fn=test_input_fn)
 
