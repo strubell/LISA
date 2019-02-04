@@ -1,0 +1,29 @@
+{
+  "id": {
+    "conll_idx": 0
+  },
+  "word": {
+    "conll_idx": 1,
+    "feature": true,
+    "vocab": "word",
+    "oov": false,
+    "updatable": true
+  },
+  "gold_pos": {
+    "conll_idx": 3,
+    "label": true,
+    "vocab": "gold_pos"
+  },
+  "parse_head": {
+    "conll_idx": [6, 0],
+    "label": true,
+    "converter":  {
+      "name": "parse_roots_self_loop"
+    }
+  },
+  "parse_label": {
+    "conll_idx": 7,
+    "label": true,
+    "vocab": "parse_label"
+  }
+}
