@@ -6,6 +6,7 @@ import train_utils
 from vocab import Vocab
 from model import LISAModel
 import numpy as np
+import tf_utils
 import sys
 import util
 
@@ -46,6 +47,17 @@ args, leftovers = arg_parser.parse_known_args()
 
 util.init_logging(tf.logging.INFO)
 
+# conll09 multilingual todo:
+# load a data config for each data file
+# also want evaluations/ a *task* associated with each data file
+# would also ideally like to have multiple files associated with one task
+# in model, could just not do an evaluation if the field isn't there.
+# but also, want separate evals for different data.
+# want separate data inputs to have names, and we can key off those names in model
+# refer to those names in task_config?
+# todo:
+# new data path configuration, json with named (path, config) pairs, and train, dev, test assigned lists
+
 # Load all the various configurations
 # todo: validate json
 data_config = train_utils.load_json_configs(args.data_config)
@@ -81,12 +93,13 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
                    if 'pretrained_embeddings' in embeddings_map]
 
 
+# todo: here we want to input all the parse stuff
 def train_input_fn():
   return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
                                   num_epochs=hparams.num_train_epochs, shuffle=True, embedding_files=embedding_files,
                                   shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
-
+# todo: here we will input the srl stuff, ideally AND the parse stuff
 def dev_input_fn():
   return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False,
                                   embedding_files=embedding_files)
