@@ -16,7 +16,8 @@ def init_logging(verbosity):
 
 
 def batch_str_decode(string_array, codec='utf-8'):
-  return np.reshape(np.array(list(map(lambda p: p if isinstance(p, str) else p.decode(codec),
+  string_array = np.array(string_array)
+  return np.reshape(np.array(list(map(lambda p: p if not p or isinstance(p, str) else p.decode(codec),
                              np.reshape(string_array, [-1])))), string_array.shape)
 
 
