@@ -9,6 +9,7 @@ import output_fns
 import transformer
 import nn_utils
 import train_utils
+import tf_utils
 from lazy_adam_v2 import LazyAdamOptimizer
 
 
@@ -302,6 +303,9 @@ class LISAModel:
 
         export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
                           tf.estimator.export.PredictOutput(flat_predictions)}
+
+        tf.logging.log(tf.logging.INFO,
+                       "Created model with %d trainable parameters" % tf_utils.get_num_trainable_parameters())
 
         return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
                                           training_hooks=[logging_hook], export_outputs=export_outputs)

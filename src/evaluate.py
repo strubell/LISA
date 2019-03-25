@@ -1,6 +1,7 @@
 import tensorflow as tf
 import argparse
 import train_utils
+import tf_utils
 from vocab import Vocab
 from model import LISAModel
 import sys
@@ -95,6 +96,8 @@ for i, f in enumerate([d for d in data_config.keys() if
 # Initialize the model
 model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
                   vocab)
+tf.logging.log(tf.logging.INFO, "Created model with %d trainable parameters" % tf_utils.get_num_trainable_parameters())
+
 
 # Set up the Estimator
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir)
