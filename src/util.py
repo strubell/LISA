@@ -73,8 +73,6 @@ def load_transition_params(task_config, vocab):
     for task, task_map in task_maps.items():
       task_crf = 'crf' in task_map and task_map['crf']
       task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
-      tf.logging.log(tf.logging.INFO, "TASK: %s" % task)
-      tf.logging.log(tf.logging.INFO, str(task_map))
       if task_viterbi_decode:
         transition_params_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
         if not transition_params_file:
