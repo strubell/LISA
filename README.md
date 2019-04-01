@@ -46,7 +46,8 @@ bin/evaluate.sh config/conll05-lisa.conf --save_dir model
 ```
 
 
-# Configuration [WIP]
+
+# Custom configuration [WIP]
 
 LISA model configuration is defined through a combination of configuration files. A top-level config defines a specific model configuration and dataset by setting other configurations. Top-level configs are written in bash, and bottom-level configs are written in json. Here is an example top-level config, [`conll05-lisa.conf`](config/conll05-lisa.conf), which defines the basic LISA model and CoNLL-2005 data:
 ```
@@ -78,9 +79,9 @@ Note that `$DATA_DIR` is a bash global variable, but all the other variables are
 There are five types of bottom-level configurations, specifying different aspects of the model:
 - [**data configs**](#data-configs): Data configs define a mapping from columns in a one-word-per-line formatted file (e.g. the CoNLL-X format) to named features and labels that will be provided to the model as batches.
 - [**model configs**](#model-configs): Model configs define hyperparameters, both *model hyperparameters*, like various embedding dimensions, and *optimization hyperparameters*, like learning rate. Optimization hyperparameters can be reset at the command line using the `hparams` command line parameter, which takes a comma-separated list of `name=value` hyperparameter settings. Model hyperparameters cannot be redefined in this way, since this would invalidate a serialized model.
-- [**layer configs**](#data-configs): 
-- [**task configs**](#task-configs): 
-- [**attention configs**](#attention-configs) (optional): 
+- [**task configs**](#task-configs): Task configs define a task: label, evaluation, and how predictions are formed from the model. Each task (e.g. SRL, parse edges, parse labels) should have its own task config.
+- [**layer configs**](#layer-configs):  Layer configs attach tasks to layers, defining which layer representations should be trained to predict named labels (from the data config). The number of layers in the model is determined by the maximum depth listed in layer configs.
+- [**attention configs**](#attention-configs) (optional): Attention configs define special attention functions which replace attention heads, i.e. syntactically-informed self attention. Omitting any attention configs results in a model performing simple single- or multi-task learning.
 
 How these different configuration files work is specified in more detail below.
 
