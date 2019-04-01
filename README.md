@@ -65,7 +65,7 @@ attention_configs="config/attention_configs/parse_attention.json"
 # specify the layers  
 layer_configs="config/layer_configs/lisa_layers.json"
 ```
-And the top-level data config for the CoNLL-2005 dataset that it loads, [`conll05.conf`](config/conll05-.conf):
+And the top-level data config for the CoNLL-2005 dataset that it loads, [`conll05.conf`](config/conll05.conf):
 ```
 data_config=config/data_configs/conll05.json  
 data_dir=$DATA_DIR/conll05st-release-new  
