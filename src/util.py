@@ -37,6 +37,7 @@ def load_transitions(transition_statistics, num_classes, vocab_map):
     for line in f:
       tag1, tag2, prob = line.split("\t")
       transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
+  tf.logging.log(tf.logging.INFO, "Loaded pre-computed transition statistics: %s" % transition_statistics)
   return transition_statistics_np
 
 
