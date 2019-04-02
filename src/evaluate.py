@@ -42,6 +42,9 @@ args, leftovers = arg_parser.parse_known_args()
 
 util.init_logging(tf.logging.INFO)
 
+if not os.path.isdir(args.save_dir):
+  util.fatal_error("save_dir not found: %s" % args.save_dir)
+
 # Load all the various configurations
 # todo: validate json
 data_config = train_utils.load_json_configs(args.data_config)
