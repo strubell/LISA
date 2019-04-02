@@ -2,6 +2,7 @@ import tensorflow as tf
 import argparse
 import train_utils
 import tf_utils
+import os
 from vocab import Vocab
 from model import LISAModel
 import util
