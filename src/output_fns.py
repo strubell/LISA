@@ -34,7 +34,8 @@ def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels,
     output = {
       'loss': loss,
       'predictions': predictions,
-      'scores': logits
+      'scores': logits,
+      'probabilities': tf.nn.softmax(logits, -1)
     }
 
   return output
@@ -49,8 +50,8 @@ def get_separate_scores_preds_from_joint(joint_outputs, joint_maps, joint_num_la
   sep_outputs = {}
   for map_name, label_comp_map in joint_maps.items():
     short_map_name = map_name.split('_to_')[-1]
-    label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
-    sep_outputs["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
+    # label_comp_predictions = tf.nn.embedding_lookup(label_comp_map, predictions)
+    # sep_outputs["%s_predictions" % short_map_name] = tf.squeeze(label_comp_predictions, -1)
 
     # marginalize out probabilities for this task
     task_num_labels = tf.shape(tf.unique(tf.reshape(label_comp_map, [-1]))[0])[0]
@@ -60,6 +61,9 @@ def get_separate_scores_preds_from_joint(joint_outputs, joint_maps, joint_num_la
     segment_scores = tf.unsorted_segment_sum(tf.transpose(joint_probabilities_flat), segment_ids, task_num_labels)
     segment_scores = tf.reshape(tf.transpose(segment_scores), [batch_size, batch_seq_len, task_num_labels])
     sep_outputs["%s_probabilities" % short_map_name] = segment_scores
+
+    # use marginalized probabilities to get predictions
+    sep_outputs["%s_predictions" % short_map_name] = tf.argmax(segment_scores, -1)
   return sep_outputs
 
 
@@ -91,7 +95,8 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
     output = {
       'loss': loss,
       'predictions': predictions,
-      'scores': logits
+      'scores': logits,
+      'probabilities': tf.nn.softmax(logits, -1)
     }
 
     # now get separate-task scores and predictions for each of the maps we've passed through
@@ -181,6 +186,9 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 
     with tf.name_scope('srl_bilinear'):
 
+      def bool_mask_where_predicates(predicates_tensor):
+        return tf.logical_and(tf.not_equal(predicates_tensor, predicate_outside_idx), tf.cast(tokens_to_keep, tf.bool))
+
       input_shape = tf.shape(inputs)
       batch_size = input_shape[0]
       batch_seq_len = input_shape[1]
@@ -188,7 +196,12 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       predicate_mlp_size = model_config['predicate_mlp_size']
       role_mlp_size = model_config['role_mlp_size']
 
+      # TODO this should really be passed in, not assumed...
+      predicate_outside_idx = 0
+
       predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
+      predicate_gather_indices = tf.where(bool_mask_where_predicates(predicate_preds))
+
 
       # (1) project into predicate, role representations
       with tf.variable_scope('MLP'):
@@ -203,7 +216,6 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
         # role mlp: batch x seq_len x role_mlp_size
         # gathered roles: need a (batch_seq_len x role_mlp_size) role representation for each predicate,
         # i.e. a (num_predicates_in_batch x batch_seq_len x role_mlp_size) tensor
-        predicate_gather_indices = tf.where(tf.equal(predicate_preds, 1))
         gathered_predicates = tf.expand_dims(tf.gather_nd(predicate_mlp, predicate_gather_indices), 1)
         tiled_roles = tf.reshape(tf.tile(role_mlp, [1, batch_seq_len, 1]),
                                  [batch_size, batch_seq_len, batch_seq_len, role_mlp_size])
@@ -218,7 +230,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
 
       # need to repeat each of these once for each target in the sentence
       mask_tiled = tf.reshape(tf.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
-      mask = tf.gather_nd(mask_tiled, tf.where(tf.equal(predicate_preds, 1)))
+      mask = tf.gather_nd(mask_tiled, predicate_gather_indices)
 
       # now we have k sets of targets for the k frames
       # (p1) f1 f2 f3
@@ -230,13 +242,13 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       # (p2) f3 f3 f3
       srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
 
-      gold_predicate_counts = tf.reduce_sum(predicate_targets, -1)
+      gold_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_targets), tf.int32), -1)
       srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
       # num_predicates_in_batch x seq_len
       srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
 
-      predicted_predicate_counts = tf.reduce_sum(predicate_preds, -1)
+      predicted_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_preds), tf.int32), -1)
       srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
       srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
@@ -267,6 +279,7 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
         'predictions': predictions,
         'scores': srl_logits_transposed,
         'targets': srl_targets_gold_predicates,
+        'probabilities': tf.nn.softmax(srl_logits_transposed, -1)
       }
 
       return output
@@ -295,7 +308,7 @@ def get_params(mode, model_config, task_map, train_outputs, features, labels, cu
   params = {'mode': mode, 'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
             'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels, 'transition_params': transition_params,
             'hparams': hparams}
-  params_map = task_map['params']
+  params_map = task_map['params'] if 'params' in task_map else {}
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
     if 'joint_maps' in param_values:

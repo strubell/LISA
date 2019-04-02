@@ -1,0 +1,75 @@
+{
+  "id": {
+    "conll_idx": 0
+  },
+  "word": {
+    "conll_idx": 1,
+    "feature": true,
+    "vocab": "word",
+    "oov": false,
+    "updatable": true
+  },
+  "word_type": {
+    "conll_idx": 1,
+    "feature": true,
+    "vocab": "embeddings/glove.6B.100d.txt",
+    "converter":  {
+      "name": "lowercase"
+    },
+    "oov": true
+  },
+  "gold_pos": {
+    "conll_idx": 3,
+    "label": true,
+    "vocab": "gold_pos"
+  },
+  "parse_head": {
+    "conll_idx": [6, 0],
+    "label": true,
+    "converter":  {
+      "name": "parse_roots_self_loop"
+    }
+  },
+  "parse_label": {
+    "conll_idx": 7,
+    "label": true,
+    "vocab": "parse_label"
+  },
+  "predicate": {
+    "conll_idx": 9,
+    "label": true,
+    "vocab": "predicate",
+    "converter": {
+      "name": "conll09_predicate_sense"
+    }
+  },
+  "verb_sense": {
+    "conll_idx": 9,
+    "label": true,
+    "vocab": "verb_sense"
+  },
+  "joint_pos_predicate": {
+    "conll_idx": [3, 9],
+    "label": true,
+    "vocab": "joint_pos_predicate",
+    "converter": {
+      "name": "joint_converter",
+      "params": {
+        "component_converters": ["default_converter", "conll09_predicate_sense"]
+      }
+    },
+    "label_components": [
+      "gold_pos",
+      "predicate"
+    ]
+  },
+  "srl": {
+    "conll_idx": [10, -1],
+    "type": "range",
+    "label": true,
+    "vocab": "srl",
+    "converter": {
+      "name": "idx_range_converter"
+    }
+  }
+}

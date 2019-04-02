@@ -1,0 +1,22 @@
+{
+  "gold_pos": {
+    "penalty": 1.0,
+    "output_fn": {
+      "name": "softmax_classifier"
+    },
+    "eval_fns": {
+      "pos_acc": {
+        "name": "accuracy",
+        "params": {
+          "predictions": {
+            "layer": "gold_pos",
+            "output": "predictions"
+          },
+          "targets": {
+            "label": "gold_pos"
+          }
+        }
+      }
+    }
+  }
+}

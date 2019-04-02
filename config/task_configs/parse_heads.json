@@ -1,5 +1,4 @@
 {
-  "best_eval_key": "head_accuracy",
   "parse_head": {
     "penalty": 1.0,
     "output_fn": {
