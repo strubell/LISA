@@ -46,6 +46,8 @@ args, leftovers = arg_parser.parse_known_args()
 
 util.init_logging(tf.logging.INFO)
 
+
+
 # Load all the various configurations
 # todo: validate json
 data_config = train_utils.load_json_configs(args.data_config)
@@ -57,6 +59,7 @@ attention_config = train_utils.load_json_configs(args.attention_configs)
 # attention_config = {}
 # if args.attention_configs and args.attention_configs != '':
 #   attention_config = train_utils.load_json_configs(args.attention_configs)
+layer_task_config, layer_attention_config = util.combine_attn_maps(layer_config, attention_config, task_config)
 
 hparams = train_utils.load_hparams(args, model_config)
 
@@ -88,7 +91,8 @@ feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
 #       label_idx_map[f] = (i, i+1)
 
 # create transition parameters if training or decoding with crf/viterbi
-transition_params = util.load_transition_params(task_config, vocab)
+# need to load these here for ensembling (they're also loaded by the model)
+transition_params = util.load_transition_params(layer_task_config, vocab)
 
 if args.ensemble:
   predict_fns = [predictor.from_saved_model("%s/%s" % (args.save_dir, subdir))
