@@ -47,12 +47,10 @@ bin/evaluate.sh config/conll05-lisa.conf --save_dir model
 
 Evaluate an exported model:
 ----
-To evaluate the best[^1] checkpoint so far, saved in the directory `model` (with id 1554216594):
+To evaluate the best<sup id="f1">[1](#f1)</sup> checkpoint so far, saved in the directory `model` (with id 1554216594):
 ```
 bin/evaluate-exported.sh config/conll05-lisa.conf --save_dir model/export/best_exporter/1554216594
 ```
-
-[^1]: "Best" is determined by `best_eval_key`, with default value for a given dataset in the top-level data config, e.g. [`config/conll05.conf`](config/conll05.conf). The value of `best_eval_key` must correspond to a named eval under the `eval_fns` entry in a [task config](#task-configs).
 
 # Custom configuration [WIP]
 
@@ -124,12 +122,10 @@ def idx_list_converter(split_line, idx):
 
 ### Vocabs
 
-When a vocab is specified for an entry in the data config, that vocab is used to map the string output of the converter to integer values suitable for features/labels in a TensorFlow model.[^2] This mapping occurs in the `map_strings_to_ints` function in [`src/dataset.py`](src/dataset.py). 
+When a vocab is specified for an entry in the data config, that vocab is used to map the string output of the converter to integer values suitable for features/labels in a TensorFlow model.<sup id="f2">[2](#f2)</sup> This mapping occurs in the `map_strings_to_ints` function in [`src/dataset.py`](src/dataset.py). 
 
 - TODO: vocab initialization
 - TODO: pre-trained word embeddings
-
-[^2]: If no vocab is specified, then it's assumed that the output of the converter can be interpreted as an integer.
 
 ## Model configs
 TODO
@@ -142,3 +138,8 @@ TODO
 
 ## Attention configs
 TODO
+
+# Footnotes
+<b id="f1">1</b>: "Best" is determined by `best_eval_key`, with default value for a given dataset in the top-level data config, e.g. [`config/conll05.conf`](config/conll05.conf). The value of `best_eval_key` must correspond to a named eval under the `eval_fns` entry in a [task config](#task-configs). [↩︎](#f1)
+
+<b id="f2">2</b>: If no vocab is specified, then it's assumed that the output of the converter can be interpreted as an integer. [↩︎](#f2)
