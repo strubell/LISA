@@ -1,8 +1,6 @@
 {
   "srl": {
     "penalty": 1.0,
-    "viterbi": true,
-    "transition_stats": "##transition_stats##",
     "token_take_mask": {
       "layer": "joint_pos_predicate",
       "output": "predicate_predictions"
@@ -24,7 +22,7 @@
     },
     "eval_fns": {
       "srl_f1": {
-        "name": "conll_srl_eval",
+        "name": "conll09_srl_eval",
         "params": {
           "gold_srl_eval_file": {
             "value": "##save_dir##/srl_gold.txt"
@@ -36,7 +34,9 @@
             "reverse_maps": [
               "word",
               "srl",
-              "gold_pos"
+              "gold_pos",
+              "parse_label",
+              "predicate"
             ]
           },
           "targets": {
@@ -59,6 +59,20 @@
           },
           "pos_targets": {
             "label": "gold_pos"
+          },
+          "parse_label_predictions": {
+            "layer": "parse_label",
+            "output": "predictions"
+          },
+          "parse_label_targets": {
+            "label": "parse_label"
+          },
+          "parse_head_predictions": {
+            "layer": "parse_head",
+            "output": "predictions"
+          },
+          "parse_head_targets": {
+            "label": "parse_head"
           }
         }
       }

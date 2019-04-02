@@ -7,6 +7,7 @@ from vocab import Vocab
 from model import LISAModel
 import numpy as np
 import sys
+import util
 
 arg_parser = argparse.ArgumentParser(description='')
 arg_parser.add_argument('--train_files', required=True,
@@ -32,10 +33,18 @@ arg_parser.add_argument('--layer_configs', required=True,
                         help='Comma-separated list of paths to layer configuration json.')
 arg_parser.add_argument('--attention_configs',
                         help='Comma-separated list of paths to attention configuration json.')
+arg_parser.add_argument('--num_gpus', type=int,
+                        help='Number of GPUs for distributed training.')
+arg_parser.add_argument('--keep_k_best_models', type=int,
+                        help='Number of best models to keep.')
+arg_parser.add_argument('--best_eval_key', required=True, type=str,
+                        help='Key corresponding to the evaluation to be used for determining early stopping.')
 
-arg_parser.set_defaults(debug=False)
+arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1)
 
 args, leftovers = arg_parser.parse_known_args()
+
+util.init_logging(tf.logging.INFO)
 
 # Load all the various configurations
 # todo: validate json
@@ -43,30 +52,15 @@ data_config = train_utils.load_json_configs(args.data_config)
 model_config = train_utils.load_json_configs(args.model_configs)
 task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
+attention_config = train_utils.load_json_configs(args.attention_configs)
 
-attention_config = {}
-if args.attention_configs and args.attention_configs != '':
-  attention_config = train_utils.load_json_configs(args.attention_configs)
+# attention_config = {}
+# if args.attention_configs and args.attention_configs != '':
+#   attention_config = train_utils.load_json_configs(args.attention_configs)
 
 # Combine layer, task and layer, attention maps
-layer_task_config = {}
-layer_attention_config = {}
-for task_or_attn_name, layer in layer_config.items():
-  if task_or_attn_name in attention_config:
-    layer_attention_config[layer] = attention_config[task_or_attn_name]
-  elif task_or_attn_name in task_config:
-    if layer not in layer_task_config:
-      layer_task_config[layer] = {}
-    layer_task_config[layer][task_or_attn_name] = task_config[task_or_attn_name]
-  else:
-    # todo make an error fn that does this
-    tf.logging.log(tf.logging.ERROR, 'No task or attention config "%s"' % task_or_attn_name)
-    sys.exit(1)
-
 # todo save these maps in save_dir
-
-tf.logging.set_verbosity(tf.logging.INFO)
-tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
+layer_task_config, layer_attention_config = util.combine_attn_maps(layer_config, attention_config, task_config)
 
 hparams = train_utils.load_hparams(args, model_config)
 
@@ -99,20 +93,21 @@ def dev_input_fn():
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
-feature_idx_map = {}
-label_idx_map = {}
-for i, f in enumerate([d for d in data_config.keys() if
-                       ('feature' in data_config[d] and data_config[d]['feature']) or
-                       ('label' in data_config[d] and data_config[d]['label'])]):
-  if 'feature' in data_config[f] and data_config[f]['feature']:
-    feature_idx_map[f] = i
-  if 'label' in data_config[f] and data_config[f]['label']:
-    if 'type' in data_config[f] and data_config[f]['type'] == 'range':
-      idx = data_config[f]['conll_idx']
-      j = i + idx[1] if idx[1] != -1 else -1
-      label_idx_map[f] = (i, j)
-    else:
-      label_idx_map[f] = (i, i+1)
+feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
+# feature_idx_map = {}
+# label_idx_map = {}
+# for i, f in enumerate([d for d in data_config.keys() if
+#                        ('feature' in data_config[d] and data_config[d]['feature']) or
+#                        ('label' in data_config[d] and data_config[d]['label'])]):
+#   if 'feature' in data_config[f] and data_config[f]['feature']:
+#     feature_idx_map[f] = i
+#   if 'label' in data_config[f] and data_config[f]['label']:
+#     if 'type' in data_config[f] and data_config[f]['type'] == 'range':
+#       idx = data_config[f]['conll_idx']
+#       j = i + idx[1] if idx[1] != -1 else -1
+#       label_idx_map[f] = (i, j)
+#     else:
+#       label_idx_map[f] = (i, i+1)
 
 
 # Initialize the model
@@ -122,15 +117,23 @@ model = LISAModel(hparams, model_config, layer_task_config, layer_attention_conf
 if args.debug:
   tf.logging.log(tf.logging.INFO, "Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
 
+# Distributed training
+distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if args.num_gpus > 1 else None
+
 # Set up the Estimator
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_steps, keep_checkpoint_max=1)
+checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_steps, keep_checkpoint_max=1,
+                                              train_distribute=distribution)
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
 
 # Set up early stopping -- always keep the model with the best F1
-# todo: don't keep 5
+export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_dir, vocab_name)
+                 for vocab_name in vocab.vocab_names_sizes.keys()}
+tf.logging.log(tf.logging.INFO, "Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
-                                                                  key=task_config['best_eval_key']),
-                                               serving_input_receiver_fn=train_utils.serving_input_receiver_fn)
+                                                                  key=args.best_eval_key),
+                                               serving_input_receiver_fn=train_utils.serving_input_receiver_fn,
+                                               assets_extra=export_assets,
+                                               exports_to_keep=args.keep_k_best_models)
 
 # Train forever until killed
 train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn)

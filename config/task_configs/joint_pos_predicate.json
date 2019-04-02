@@ -1,5 +1,4 @@
 {
-  "best_eval_key": "pos_acc",
   "joint_pos_predicate": {
     "penalty": 1.0,
     "output_fn": {

@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.estimator import ModeKeys
-import numpy as np
 import constants
 import evaluation_fns
 import attention_fns
@@ -10,6 +9,7 @@ import transformer
 import nn_utils
 import train_utils
 import tf_utils
+import util
 from lazy_adam_v2 import LazyAdamOptimizer
 
 
@@ -32,33 +32,20 @@ class LISAModel:
       return self.train_hparams
     return self.test_hparams
 
-  @staticmethod
-  def load_transitions(transition_statistics, num_classes, vocab_map):
-    transition_statistics_np = np.zeros((num_classes, num_classes))
-    with open(transition_statistics, 'r') as f:
-      for line in f:
-        tag1, tag2, prob = line.split("\t")
-        transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
-    return transition_statistics_np
-
   def get_embedding_table(self, name, embedding_dim, include_oov, pretrained_fname=None, num_embeddings=None):
 
     with tf.variable_scope("%s_embeddings" % name):
       initializer = tf.random_normal_initializer()
       if pretrained_fname:
-        pretrained_embeddings = self.load_pretrained_embeddings(pretrained_fname)
+        pretrained_embeddings = util.load_pretrained_embeddings(pretrained_fname)
         initializer = tf.constant_initializer(pretrained_embeddings)
         pretrained_num_embeddings, pretrained_embedding_dim = pretrained_embeddings.shape
         if pretrained_embedding_dim != embedding_dim:
-          tf.logging.log(tf.logging.ERROR, "Pre-trained %s embedding dim does not match"
-                                           " specified dim (%d vs %d)." % (name,
-                                                                           pretrained_embedding_dim,
-                                                                           embedding_dim))
+          util.fatal_error("Pre-trained %s embedding dim does not match specified dim (%d vs %d)." %
+                           (name, pretrained_embedding_dim, embedding_dim))
         if num_embeddings and num_embeddings != pretrained_num_embeddings:
-          tf.logging.log(tf.logging.ERROR, "Number of pre-trained %s embeddings does not match"
-                                           " specified number of embeddings (%d vs %d)." % (name,
-                                                                                            pretrained_num_embeddings,
-                                                                                            num_embeddings))
+          util.fatal_error("Number of pre-trained %s embeddings does not match specified "
+                           "number of embeddings (%d vs %d)." % (name, pretrained_num_embeddings, num_embeddings))
         num_embeddings = pretrained_num_embeddings
 
       embedding_table = tf.get_variable(name="embeddings", shape=[num_embeddings, embedding_dim],
@@ -71,22 +58,6 @@ class LISAModel:
                                     name="embeddings_table")
 
       return embedding_table
-
-  @staticmethod
-  def load_pretrained_embeddings(pretrained_fname):
-    tf.logging.log(tf.logging.INFO, "Loading pre-trained embedding file: %s" % pretrained_fname)
-
-    # TODO: np.loadtxt refuses to work for some reason
-    # pretrained_embeddings = np.loadtxt(self.args.word_embedding_file, usecols=range(1, word_embedding_size+1))
-    pretrained_embeddings = []
-    with open(pretrained_fname, 'r') as f:
-      for line in f:
-        split_line = line.split()
-        embedding = list(map(float, split_line[1:]))
-        pretrained_embeddings.append(embedding)
-    pretrained_embeddings = np.array(pretrained_embeddings)
-    pretrained_embeddings /= np.std(pretrained_embeddings)
-    return pretrained_embeddings
 
   def model_fn(self, features, mode):
 
@@ -129,6 +100,9 @@ class LISAModel:
         else:
           these_labels_masked = tf.squeeze(these_labels_masked, -1)
         labels[l] = these_labels_masked
+
+      # load transition parameters
+      transition_stats = util.load_transition_params(self.task_config, self.vocab)
 
       # Create embeddings tables, loading pre-trained if specified
       embeddings = {}
@@ -209,12 +183,8 @@ class LISAModel:
 
                 # Set up CRF / Viterbi transition params if specified
                 with tf.variable_scope("crf"):  # to share parameters, change scope here
-                  transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
-
-                  transition_stats = None
-                  if transition_stats_file:
-                    transition_stats = self.load_transitions(transition_stats_file, task_vocab_size,
-                                                             self.vocab.vocab_maps[task])
+                  # transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
+                  task_transition_stats = transition_stats[task] if task in transition_stats else None
 
                   # create transition parameters if training or decoding with crf/viterbi
                   task_crf = 'crf' in task_map and task_map['crf']
@@ -222,7 +192,7 @@ class LISAModel:
                   transition_params = None
                   if task_viterbi_decode or task_crf:
                     transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
-                                                        initializer=tf.constant_initializer(transition_stats),
+                                                        initializer=tf.constant_initializer(task_transition_stats),
                                                         trainable=task_crf)
                     train_or_decode_str = "training" if task_crf else "decoding"
                     tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
@@ -237,6 +207,7 @@ class LISAModel:
                 # - predictions
                 # - loss
                 # - scores
+                # - probabilities
                 predictions[task] = task_outputs
 
                 # do the evaluation
@@ -254,12 +225,6 @@ class LISAModel:
 
                 # add this loss to the overall loss being minimized
                 loss += this_task_loss
-
-                # todo add the predictions to export_outputs
-                # todo add un-joint predictions too?
-                # predict_output = tf.estimator.export.PredictOutput({'scores': task_outputs['scores'],
-                #                                                     'predictions': task_outputs['predictions']})
-                # export_outputs['%s_predict' % task] = predict_output
 
       # set up moving average variables
       assign_moving_averages_dep = tf.no_op()

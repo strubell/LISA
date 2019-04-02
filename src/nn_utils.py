@@ -1,7 +1,13 @@
 import tensorflow as tf
+import numpy as np
 
 
 def leaky_relu(x): return tf.maximum(0.1 * x, x)
+
+
+def int_to_str_lookup_table(inputs, lookup_map):
+  # todo order of map.values() is probably not guaranteed; should prob sort by keys first
+  return tf.nn.embedding_lookup(np.array(list(lookup_map.values())), inputs)
 
 
 def set_vars_to_moving_average(moving_averager):

@@ -1,5 +1,7 @@
 import tensorflow as tf
 import numpy as np
+import os
+import util
 import constants
 import data_converters
 
@@ -20,7 +22,21 @@ class Vocab:
     self.vocab_lookups = None
     self.oovs = {}
 
+    # make directory for vocabs
+    self.vocabs_dir = "%s/assets.extra" % save_dir
+    if not os.path.exists(self.vocabs_dir):
+      try:
+        os.mkdir(self.vocabs_dir)
+      except OSError as e:
+        util.fatal_error("Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
+      else:
+        tf.logging.log(tf.logging.INFO, "Successfully created vocabs directory: %s" % self.vocabs_dir)
+    else:
+      tf.logging.log(tf.logging.INFO, "Using vocabs directory: %s" % self.vocabs_dir)
+
     self.vocab_names_sizes = self.make_vocab_files(self.data_config, self.save_dir, data_filenames)
+
+
 
   '''
   Creates tf.contrib.lookup ops for all the vocabs defined in self.data_config.
@@ -39,7 +55,7 @@ class Vocab:
       for v in self.vocab_names_sizes.keys():
         if v in self.data_config:
           num_oov = 1 if 'oov' in self.data_config[v] and self.data_config[v]['oov'] else 0
-          this_lookup = tf.contrib.lookup.index_table_from_file("%s/%s.txt" % (self.save_dir, v),
+          this_lookup = tf.contrib.lookup.index_table_from_file("%s/%s.txt" % (self.vocabs_dir, v),
                                                                 num_oov_buckets=num_oov,
                                                                 key_column_index=0)
           vocab_lookup_ops[v] = this_lookup
@@ -123,7 +139,7 @@ class Vocab:
     else:
       for d in vocabs_index.keys():
         this_vocab_map = vocabs[vocabs_index[d]]
-        with open("%s/%s.txt" % (save_dir, d), 'r') as f:
+        with open("%s/%s.txt" % (self.vocabs_dir, d), 'r') as f:
           for line in f:
             datum, count = line.strip().split()
             this_vocab_map[datum] = int(count)
@@ -163,7 +179,7 @@ class Vocab:
 
     for d in vocabs_index.keys():
       this_vocab_map = vocabs[vocabs_index[d]]
-      with open("%s/%s.txt" % (save_dir, d), 'w') as f:
+      with open("%s/%s.txt" % (self.vocabs_dir, d), 'w') as f:
         for k, v in this_vocab_map.items():
           print("%s\t%d" % (k, v), file=f)
 
