@@ -15,7 +15,7 @@ can use the [original LISA code here](https://github.com/strubell/LISA-v1).**
 Requirements:
 ----
 - \>= Python 3.6
-- \>= TensorFlow 1.10
+- \>= TensorFlow 1.9 (tested up to 1.12)
 
 Quick start:
 ============
