@@ -52,6 +52,58 @@ To evaluate the best<sup id="f1">[1](#f1)</sup> checkpoint so far, saved in the 
 bin/evaluate-exported.sh config/conll05-lisa.conf --save_dir model/export/best_exporter/1554216594
 ```
 
+# Training
+The [`bin/train.sh`](bin/train.sh) script calls [`src/train.py`](src/train.py) with parameters specified in [top-level configs](#custom-configuration-wip) (i.e. [`conll05-lisa.conf`](config/conll05-lisa.conf)) which is the entry point for training. The following table describes the command line parameters that may be passed to `src/train.py` to configure training:
+
+|     Name      |Type          |Description       | Default value |       
+|----------------|----------|------------------------|---|
+| `train-files` | string | Comma-separated list of training data files. | None |
+| `dev-files` | string | Comma-separated list of development data files. | None |
+| `save-dir` | string | Directory to save models, outputs, etc. If the directory already exists and contains a trained model, training will restart where it left off. Vocabularies will be re-used. | None |
+| `transition_stats` | string | File containing pre-computed transition statistics between labels. Tab-separated file with one label-label-probability triple per line. | None |
+| `hparams` | string | Comma separated list of `name=value` [hyperparameter](#hyperparameters) settings. | None |
+| `debug` | string | Whether to run in debug mode: a little faster and smaller. | False |
+| `data_config` | string | Path to data configuration json. | None |
+| `model_configs` | string | Comma-separated list of paths to model configuration json. | None |
+| `task_configs` | string | Comma-separated list of paths to data configuration json. | None |
+| `layer_configs` | string | Comma-separated list of paths to data configuration json. | None |
+| `attention_configs` | string | Comma-separated list of paths to attention configuration json. | None |
+| `keep_k_best_models` | int | Number of best models to keep. | 1 |
+| `best_eval_key` | string | Key corresponding to the evaluation to be used for determining early stopping. The value must correspond to a named eval under the `eval_fns` entry in a [task config](#task-configs). | None |
+
+## Hyperparameters
+The following table lists optimization/training hyperparameters that can be set through the `hparams` command line flag. Hyperparameters are initialized to the default values are defined in [`src/constants.py`](src/constants.py). Then, these are overridden by hyperparameters set in the top-level config. Finally, these are overridden by hyperparameters specified at the command line. Hyperparameter loading is implemented in [`src/train_utils.py`](src/train_utils.py#10).
+
+|     Name      |Type          |Description       | Default value |       
+|---------------|----------|------------------------|---|
+| `learning_rate` | float | Initial learning rate.  | 0.04 |
+| `beta1` | float | Adam first moment decay rate. | 0.9 |
+| `beta2` | float | Adam second moment decay rate. | 0.98 |
+| `epsilon` | float | Adam epsilon. | 1e-12 |
+| `decay_rate` | float | Exponential rate of decay for learning rate. | 1.5 |
+| `use_nesterov` | boolean | Whether to use Nesterov momentum in Adam. | true |
+| `decay_steps` | int | If `warmup_steps` is not set, perform stepwise decay of learning rate every this many steps. | 5000 |
+| `warmup_steps` | int | Number of training steps to linearly increase learning rate before exponential decay. | 8000 |
+| `batch size` | int | Approximate number of sentences per batch. | 256 |
+| `shuffle_buffer_multiplier` | int | Value to multiply by batch size to determine buffer size for efficient shuffling of examples during training. Higher means better shuffles, lower means less initial time required to fill shuffle buffer. | 100 |
+| `eval_throttle_secs` | int | Do not run evaluation unless at least this many seconds have passed since the last evaluation. | 1000 |
+| `eval_every_steps` | int | Evaluate every this many steps. | 1000 |
+| `num_train_epochs` | int | Iterate through the full training data this many times. | 10000 |
+| `gradient_clip_norm` | float | Clip gradients to this maximum value. | 5.0 |
+| `label_smoothing` | float |Amount of label corruption for smoothing. Smoothing not performed if this value is 0. | 0.1 |
+| `moving_average_decay` | float | Rate of decay for moving average of model parameters. Averaging not performed if this value is 0. | 0.999 |
+| `average_norms` | boolean | Whether to average variables representing norms in parameter averaging. | false |
+| `input_dropout` | float | Dropout rate on [input layer](src/model.py#L132) (embeddings). | 1.0 |
+| `bilinear_dropout` | float | Dropout rate used in [bilinear classifier](src/nn_utils.py#L219). | 1.0 |
+| `mlp_dropout` | float | Dropout used in [MLP layers](src/nn_utils.py#L130) | 1.0 |
+| `attn_dropout` | float | Dropout rate on [attention](src/transformer.py#L162) in transformer. | 1.0 |
+| `ff_dropout` | float | Dropout rate in [feed-forward layer](src/transformer.py#L127) in transformer. | 1.0 |
+| `prepost_dropout` | float | Dropout rate applied [before](src/transformer.py#L255) and [after](src/transformer.py#L260) the feed-forward part of transformer layer. | 1.0 |
+| `random_seed` | int | Random seed to use for training. | time.time() |
+
+# Evaluation
+TODO
+
 # Custom configuration [WIP]
 
 LISA model configuration is defined through a combination of configuration files. A top-level config defines a specific model configuration and dataset by setting other configurations. Top-level configs are written in bash, and bottom-level configs are written in json. Here is an example top-level config, [`conll05-lisa.conf`](config/conll05-lisa.conf), which defines the basic LISA model and CoNLL-2005 data:

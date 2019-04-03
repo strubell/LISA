@@ -240,7 +240,7 @@ def multihead_attention(antecedent,
     return x, attn_weights
 
 
-def transformer(inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dropout, prepost_dropout,
+def transformer(inputs, seq_lengths, head_size, num_heads, attn_dropout, ff_dropout, prepost_dropout,
                 relu_hidden_size, special_attention, special_values):
 
   # todo deal with special_attention, special_values
@@ -256,7 +256,7 @@ def transformer(inputs, seq_lengths, head_size, num_heads, attn_dropout, relu_dr
 
     with tf.variable_scope("ffnn"):
       x = nn_utils.layer_norm(x)
-      y = conv_hidden_relu(x, relu_hidden_size, num_heads * head_size, relu_dropout)
+      y = conv_hidden_relu(x, relu_hidden_size, num_heads * head_size, ff_dropout)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     return x
