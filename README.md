@@ -72,7 +72,10 @@ The [`bin/train.sh`](bin/train.sh) script calls [`src/train.py`](src/train.py) w
 | `best_eval_key` | string | Key corresponding to the evaluation to be used for determining early stopping. The value must correspond to a named eval under the `eval_fns` entry in a [task config](#task-configs). | None |
 
 ## Hyperparameters
-The following table lists optimization/training hyperparameters that can be set through the `hparams` command line flag. Hyperparameters are initialized to the default values are defined in [`src/constants.py`](src/constants.py). Then, these are overridden by hyperparameters set in the top-level config. Finally, these are overridden by hyperparameters specified at the command line. Hyperparameter loading is implemented in [`src/train_utils.py`](src/train_utils.py#10).
+The following table lists optimization/training hyperparameters that can be set through the `hparams` command line flag. 
+Hyperparameters are initialized to the default values are defined in [`src/constants.py`](src/constants.py). 
+Then, these are overridden by hyperparameters set in the model config (e.g., [`glove_basic.json`](config/model_configs/glove_basic.json)). Finally, these are overridden by hyperparameters specified at the command line. 
+Hyperparameter loading is implemented in [`src/train_utils.py`](src/train_utils.py#10).
 
 |     Name      |Type          |Description       | Default value |       
 |---------------|----------|------------------------|---|
