@@ -101,7 +101,7 @@ The following table lists optimization/training hyperparameters that can be set 
 | `prepost_dropout` | float | Dropout rate applied [before](src/transformer.py#L255) and [after](src/transformer.py#L260) the feed-forward part of transformer layer. | 1.0 |
 | `random_seed` | int | Random seed to use for training. | time.time() |
 
-Model hyperparameters are set in the [model config](#model-configs) json.
+Model hyperparameters (e.g. layer size, number of self-attention heads) are set in the [model config](#model-configs) json.
 
 # Evaluation
 TODO
