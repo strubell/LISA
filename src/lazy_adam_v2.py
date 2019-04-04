@@ -33,7 +33,7 @@ class LazyAdamOptimizer(optimizer_v2.OptimizerV2):
   """
 
   def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, use_nesterov=True,
-               use_locking=False, name="Nadam"):
+               use_locking=False, name="LazyAdam"):
     """Construct a new Adam optimizer.
 
     Initialization:
