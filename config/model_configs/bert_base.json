@@ -30,8 +30,8 @@
    "ff_hidden_size": 800
  },
  "embeddings": {
-   "embedding_dim": 768,
-   "word": {
+   "word_bpe": {
+     "embedding_dim": 768,
      "bert_embeddings": "cased_L-12_H-768_A-12"
    }
  },
