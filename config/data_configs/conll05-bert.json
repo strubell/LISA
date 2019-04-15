@@ -29,7 +29,7 @@
   "word_type": {
     "conll_idx": 3,
     "feature": true,
-    "vocab": "embeddings/glove.6B.100d.txt",
+    "vocab": "word_type",
     "converter":  {
       "name": "lowercase"
     },
