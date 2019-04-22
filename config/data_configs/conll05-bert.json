@@ -22,6 +22,16 @@
     },
     "oov": true
   },
+  "word_bpe_lens": {
+    "conll_idx": 3,
+    "feature": true,
+    "converter":  {
+      "name": "bert_wordpiece_lens_converter",
+      "params": {
+        "wordpiece_vocab": "cased_L-12_H-768_A-12/vocab.txt"
+      }
+    }
+  },
   "gold_pos": {
     "conll_idx": 4,
     "label": true,
