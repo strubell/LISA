@@ -11,6 +11,7 @@ import train_utils
 import tf_utils
 import util
 from lazy_adam_v2 import LazyAdamOptimizer
+import bert.modeling
 
 
 class LISAModel:
@@ -74,14 +75,14 @@ class LISAModel:
       layer_config = self.model_config['layers']
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
-      named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
-               for f, idx in self.feature_idx_map.items()}
-
       print("feature idx map", self.feature_idx_map)
       print("label idx map", self.label_idx_map)
       print("intmapped_feats", intmapped_feats)
       print("sentences", sentences)
       print("labels", labels)
+
+      named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
+               for f, idx in self.feature_idx_map.items()}
 
       # todo this assumes that word_type is always passed in
       words = named_features['word_type']
@@ -122,43 +123,100 @@ class LISAModel:
           include_oov = True
           embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
                                                      pretrained_fname=input_pretrained_embeddings)
+          embeddings[embedding_name] = embedding_table
         elif 'bert_embeddings' in embedding_map:
           # tokenize into word pieces
           bert_dir = embedding_map['bert_embeddings']
           embedding_vocab_name = bert_dir + "/vocab.txt"
+          bert_config = bert_dir + "/bert_config.json"
+          # bert_checkpoint = bert_dir + ""
           # bert_vocab = bert_dir + "/vocab.txt"
           # bert_cased = 'cased' in bert_dir
           bpe_words = sentences
-          print("words bpe", bpe_words)
 
+          # d = tf.data.Dataset.from_tensor_slices({
+          #   "unique_ids":
+          #     tf.constant(all_unique_ids, shape=[num_examples], dtype=tf.int32),
+          #   "input_ids":
+          #     tf.constant(
+          #       all_input_ids, shape=[num_examples, seq_length],
+          #       dtype=tf.int32),
+          #   "input_mask":
+          #     tf.constant(
+          #       all_input_mask,
+          #       shape=[num_examples, seq_length],
+          #       dtype=tf.int32),
+          #   "input_type_ids":
+          #     tf.constant(
+          #       all_input_type_ids,
+          #       shape=[num_examples, seq_length],
+          #       dtype=tf.int32),
+          # })
+          bert_model = bert.modeling.BertModel(
+            config=bert_config,
+            is_training=False,
+            input_ids=bpe_words,
+            input_mask=tf.where(tf.not_equal(bpe_words, 0)),
+            token_type_ids=tf.zeros_like(bpe_words),
+            use_one_hot_embeddings=False)
+
+          tvars = tf.trainable_variables()
+          assignment_map, initialized_variable_names = bert.modeling.get_assignment_map_from_checkpoint(tvars, bert_dir)
+
+          tf.train.init_from_checkpoint(bert_dir, assignment_map)
+
+          tf.logging.info("**** BERT Trainable Variables ****")
+          for var in tvars:
+            init_string = ""
+            if var.name in initialized_variable_names:
+              init_string = ", *INIT_FROM_CKPT*"
+            tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
+                            init_string)
+
+          # list of [batch_size, seq_length, hidden_size]
+          bert_embeddings = bert_model.all_encoder_layers()
+          for bert_layer_idx, bert_layer_output in enumerate(bert_embeddings):
+            # todo this is wrong, pretty sure these should sum to 1
+            layer_weight = tf.get_variable("bert_layer_weight_%d" % bert_layer_idx)
+            bert_embeddings[bert_layer_idx] = bert_layer_output * layer_weight
+          bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
+          bert_embeddings_avg = tf.reduce_sum(bert_embeddings_concat, -1)
+
+          # use lens to combine bpe reps back into token reps
+          bpe_lens = named_features['word_bpe_lens']
+          max_bpe_len = tf.reduce_max(bpe_lens)
+          scatter_indices = tf.where(tf.sequence_mask(tf.reshape(bpe_lens, [-1])))
+          bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg, [batch_size*batch_seq_len, max_bpe_len])
+
+          bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=-1), [batch_size, batch_seq_len, -1])
+
+          # add 'bert_words' to named_features
+          named_features['bert_words'] = bert_tokens
 
           # dummy thing
-          num_embeddings = self.vocab.vocab_names_sizes[embedding_vocab_name]
-          print(num_embeddings, embedding_dim)
-          include_oov = False
-          embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
-                                                     num_embeddings=num_embeddings)
-
-          # get BERT hidden representations
-
-          # take weighted average
-
-          # average sub-words back into tokens
+          # num_embeddings = self.vocab.vocab_names_sizes[embedding_vocab_name]
+          # print(num_embeddings, embedding_dim)
+          # include_oov = False
+          # embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
+          #                                            num_embeddings=num_embeddings)
 
         else:
           num_embeddings = self.vocab.vocab_names_sizes[embedding_name]
           include_oov = self.vocab.oovs[embedding_name]
           embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
                                                      num_embeddings=num_embeddings)
-        embeddings[embedding_name] = embedding_table
+          embeddings[embedding_name] = embedding_table
         tf.logging.log(tf.logging.INFO, "Created embeddings for '%s'." % embedding_name)
 
       # Set up model inputs
       inputs_list = []
       for input_name in self.model_config['inputs']:
         input_values = named_features[input_name]
-        input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
-        inputs_list.append(input_embedding_lookup)
+        if 'bert' in input_name:
+          inputs_list.append(input_values)
+        else:  
+          input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
+          inputs_list.append(input_embedding_lookup)
         tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
       current_input = tf.concat(inputs_list, axis=2)
       current_input = tf.nn.dropout(current_input, hparams.input_dropout)

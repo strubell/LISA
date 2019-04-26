@@ -36,6 +36,6 @@
    }
  },
  "inputs": [
-   "word_bpe"
+   "bert_words"
  ]
 }

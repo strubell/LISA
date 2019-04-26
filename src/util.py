@@ -112,15 +112,13 @@ def load_feat_label_idx_maps(data_config):
   return feature_idx_map, label_idx_map
 
 
-def load_input_idx_maps(data_config, key):
+def load_input_idx_maps(data_config, ret_key, all_keys):
   idx_map = {}
-  for i, f in enumerate([d for d in data_config.keys() if
-                         ('feature' in data_config[d] and data_config[d]['feature']) or
-                         ('label' in data_config[d] and data_config[d]['label'])]):
-    if key in data_config[f] and data_config[f][key]:
-      # if 'feature' in data_config[f] and data_config[f]['feature']:
-      #   feature_idx_map[f] = i
-      # if 'label' in data_config[f] and data_config[f]['label']:
+
+  def matches_all_keys(d): return any([k in data_config[d] and data_config[d][k] for k in all_keys])
+
+  for i, f in enumerate([d for d in data_config.keys() if matches_all_keys(d)]):
+    if ret_key in data_config[f] and data_config[f][ret_key]:
       if 'type' in data_config[f] and data_config[f]['type'] == 'range':
         idx = data_config[f]['conll_idx']
         j = i + idx[1] if idx[1] != -1 else -1

@@ -62,8 +62,9 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     # feature_names = [d for d in data_config.keys() if 'feature' in data_config[d] and data_config[d]['feature']]
     # label_names = [d for d in data_config.keys() if 'label' in data_config[d] and data_config[d]['label']]
 
-    feature_idx_map = util.load_input_idx_maps(data_config, 'feature')
-    label_idx_map = util.load_input_idx_maps(data_config, 'label')
+    feature_idx_map = util.load_input_idx_maps(data_config, 'feature', ['feature', 'label'])
+    label_idx_map = util.load_input_idx_maps(data_config, 'label', ['feature', 'label'])
+    sent_idx_map = util.load_input_idx_maps(sentences_config, 'feature', ['feature', 'label'])
 
     # get the dataset
     dataset = tf.data.Dataset.from_generator(lambda: conll_data_generator(data_filenames, data_config),
@@ -78,7 +79,10 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     sentences = tf.data.Dataset.from_generator(lambda: bert_data_generator(data_filenames, sentences_config),
                                                output_shapes=[None], output_types=tf.string)
 
-    features = tf.data.Dataset.zip((features, sentences))
+    # todo: need to add [CLS] ... [SEP], then remove them
+    intmapped_sentences = sentences.map(map_strings_to_ints(vocab_lookup_ops, sentences_config, sent_idx_map), num_parallel_calls=8)
+
+    features = tf.data.Dataset.zip((features, intmapped_sentences))
     dataset = tf.data.Dataset.zip((features, labels))
 
     dataset = dataset.cache()
@@ -89,7 +93,9 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
                                                                       bucket_boundaries=bucket_boundaries,
                                                                       bucket_batch_sizes=bucket_batch_sizes,
                                                                       padded_shapes=dataset.output_shapes,
-                                                                      padding_values=((constants.PAD_VALUE, ''), constants.PAD_VALUE)))
+                                                                      # padding_values=((constants.PAD_VALUE, ''), constants.PAD_VALUE)))
+                                                                      padding_values=((constants.PAD_VALUE, constants.PAD_VALUE), constants.PAD_VALUE)))
+
     # dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=lambda s: tf.shape(s)[0],
     #                                                                   bucket_boundaries=bucket_boundaries,
     #                                                                   bucket_batch_sizes=bucket_batch_sizes,
