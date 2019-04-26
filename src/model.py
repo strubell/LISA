@@ -59,36 +59,45 @@ class LISAModel:
 
       return embedding_table
 
-  def model_fn(self, features, mode):
+  def model_fn(self, features, labels, mode):
 
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
+    intmapped_feats, sentences = features
+
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
-      batch_shape = tf.shape(features)
+      batch_shape = tf.shape(intmapped_feats)
       batch_size = batch_shape[0]
       batch_seq_len = batch_shape[1]
       layer_config = self.model_config['layers']
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
-      feats = {f: features[:, :, idx] for f, idx in self.feature_idx_map.items()}
+      named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
+               for f, idx in self.feature_idx_map.items()}
+
+      print("feature idx map", self.feature_idx_map)
+      print("label idx map", self.label_idx_map)
+      print("intmapped_feats", intmapped_feats)
+      print("sentences", sentences)
+      print("labels", labels)
 
       # todo this assumes that word_type is always passed in
-      words = feats['word_type']
+      words = named_features['word_type']
 
       # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
                                 tf.ones([batch_size, batch_seq_len]))
 
       # Extract named features from monolithic "features" input
-      feats = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in feats.items()}
+      named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in named_features.items()}
 
       # Extract named labels from monolithic "features" input, and mask them
       # todo fix masking -- is it even necessary?
-      labels = {}
+      named_labels = {}
       for l, idx in self.label_idx_map.items():
-        these_labels = features[:, :, idx[0]:idx[1]] if idx[1] != -1 else features[:, :, idx[0]:]
+        these_labels = labels[:, :, idx[0]:idx[1]] if idx[1] != -1 else labels[:, :, idx[0]:]
         these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
         # check if we need to mask another dimension
         if idx[1] == -1:
@@ -99,12 +108,12 @@ class LISAModel:
           these_labels_masked = tf.multiply(these_labels_masked, this_mask)
         else:
           these_labels_masked = tf.squeeze(these_labels_masked, -1)
-        labels[l] = these_labels_masked
+        named_labels[l] = these_labels_masked
 
       # load transition parameters
       transition_stats = util.load_transition_params(self.task_config, self.vocab)
 
-      # Create embeddings tables, loading pre-trained if specified
+      # Create embeddings tables, loading pre-trained or BERT if specified
       embeddings = {}
       for embedding_name, embedding_map in self.model_config['embeddings'].items():
         embedding_dim = embedding_map['embedding_dim']
@@ -113,6 +122,29 @@ class LISAModel:
           include_oov = True
           embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
                                                      pretrained_fname=input_pretrained_embeddings)
+        elif 'bert_embeddings' in embedding_map:
+          # tokenize into word pieces
+          bert_dir = embedding_map['bert_embeddings']
+          embedding_vocab_name = bert_dir + "/vocab.txt"
+          # bert_vocab = bert_dir + "/vocab.txt"
+          # bert_cased = 'cased' in bert_dir
+          bpe_words = sentences
+          print("words bpe", bpe_words)
+
+
+          # dummy thing
+          num_embeddings = self.vocab.vocab_names_sizes[embedding_vocab_name]
+          print(num_embeddings, embedding_dim)
+          include_oov = False
+          embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
+                                                     num_embeddings=num_embeddings)
+
+          # get BERT hidden representations
+
+          # take weighted average
+
+          # average sub-words back into tokens
+
         else:
           num_embeddings = self.vocab.vocab_names_sizes[embedding_name]
           include_oov = self.vocab.oovs[embedding_name]
@@ -124,7 +156,7 @@ class LISAModel:
       # Set up model inputs
       inputs_list = []
       for input_name in self.model_config['inputs']:
-        input_values = feats[input_name]
+        input_values = named_features[input_name]
         input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
         inputs_list.append(input_embedding_lookup)
         tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
@@ -155,13 +187,13 @@ class LISAModel:
 
               if 'attention_fns' in this_layer_attn_config:
                 for attn_fn, attn_fn_map in this_layer_attn_config['attention_fns'].items():
-                  attention_fn_params = attention_fns.get_params(mode, attn_fn_map, predictions, feats, labels)
+                  attention_fn_params = attention_fns.get_params(mode, attn_fn_map, predictions, named_features, named_labels)
                   this_special_attn = attention_fns.dispatch(attn_fn_map['name'])(**attention_fn_params)
                   special_attn.append(this_special_attn)
 
               if 'value_fns' in this_layer_attn_config:
                 for value_fn, value_fn_map in this_layer_attn_config['value_fns'].items():
-                  value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, feats, labels, embeddings)
+                  value_fn_params = value_fns.get_params(mode, value_fn_map, predictions, named_features, named_labels, embeddings)
                   this_special_values = value_fns.dispatch(value_fn_map['name'])(**value_fn_params)
                   special_values.append(this_special_values)
 
@@ -212,7 +244,7 @@ class LISAModel:
 
                 # do the evaluation
                 for eval_name, eval_map in task_map['eval_fns'].items():
-                  eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, feats, labels,
+                  eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, named_features, named_labels,
                                                              task_labels, self.vocab.reverse_maps, tokens_to_keep)
                   eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
                   eval_metric_ops[eval_name] = eval_result

@@ -78,7 +78,9 @@ vocab = Vocab(data_config, args.save_dir, train_filenames)
 vocab.update(dev_filenames)
 
 embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in model_config['embeddings'].values()
-                   if 'pretrained_embeddings' in embeddings_map]
+                   if 'pretrained_embeddings' in embeddings_map] + \
+                  ["%s/vocab.txt" % embeddings_map['bert_embeddings'] for embeddings_map in model_config['embeddings'].values()
+                   if 'bert_embeddings' in embeddings_map]
 
 
 def train_input_fn():
@@ -93,7 +95,9 @@ def dev_input_fn():
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
-feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
+# feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
+feature_idx_map = util.load_input_idx_maps(data_config, 'feature')
+label_idx_map = util.load_input_idx_maps(data_config, 'label')
 # feature_idx_map = {}
 # label_idx_map = {}
 # for i, f in enumerate([d for d in data_config.keys() if

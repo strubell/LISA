@@ -42,7 +42,8 @@ class Vocab:
   Creates tf.contrib.lookup ops for all the vocabs defined in self.data_config.
   
   Args: 
-    word_embedding_file: File containing word embedding vocab, with words in the first space-separated column
+    embedding_files: List of filenames containing pre-trained word embeddings, with words in the first space-separated 
+    column.
     
   Returns:
     Map from vocab names to tf.contrib.lookup ops, map from vocab names to vocab sizes
@@ -67,7 +68,9 @@ class Vocab:
                                                                                       num_oov_buckets=1,
                                                                                       key_column_index=0,
                                                                                       delimiter=' ')
-          self.vocab_names_sizes[embeddings_name] = vocab_lookup_ops[embeddings_name].size()
+          # annoying, but lookup.size() returns a tensor, so read the length of the file
+          # self.vocab_names_sizes[embeddings_name] = vocab_lookup_ops[embeddings_name].size()
+          self.vocab_names_sizes[embeddings_name] = util.lines_in_file(embedding_file)
 
     tf.logging.log(tf.logging.INFO, "Created %d vocab lookup ops: %s" %
                    (len(vocab_lookup_ops), str([k for k in vocab_lookup_ops.keys()])))

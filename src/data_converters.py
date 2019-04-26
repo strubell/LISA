@@ -1,4 +1,14 @@
 import constants
+import bert.tokenization
+
+tokenizers = {}
+
+
+def get_wordpiece_tokenizer(vocab):
+  if vocab not in tokenizers:
+    tokenizer = bert.tokenization.WordpieceTokenizer(bert.tokenization.load_vocab(vocab))
+    tokenizers[vocab] = tokenizer
+  return tokenizers[vocab]
 
 
 def lowercase_converter(split_line, idx):
@@ -45,7 +55,25 @@ def idx_list_converter(split_line, idx):
   return [split_line[i] for i in idx]
 
 
+def bert_wordpiece_converter(split_line, idx, wordpiece_vocab):
+  word = split_line[idx]
+  tokenizer = get_wordpiece_tokenizer(wordpiece_vocab)
+  wordpieces = tokenizer.tokenize(word)
+  # num_pieces = str(len(wordpieces))
+  return wordpieces
+
+
+def bert_wordpiece_lens_converter(split_line, idx, wordpiece_vocab):
+  word = split_line[idx]
+  tokenizer = get_wordpiece_tokenizer(wordpiece_vocab)
+  wordpieces = tokenizer.tokenize(word)
+  num_pieces = str(len(wordpieces))
+  return [num_pieces]
+
+
 dispatcher = {
+  'bert_wordpiece_converter': bert_wordpiece_converter,
+  'bert_wordpiece_lens_converter': bert_wordpiece_lens_converter,
   'parse_roots_self_loop': parse_roots_self_loop_converter,
   'strip_conll12_domain': strip_conll12_domain_converter,
   'conll12_binary_predicates': conll12_binary_predicates_converter,

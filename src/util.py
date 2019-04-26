@@ -2,6 +2,14 @@ import numpy as np
 import tensorflow as tf
 import os
 import sys
+from itertools import (takewhile, repeat)
+
+
+# from here: https://stackoverflow.com/a/27518377/4121413
+def lines_in_file(filename):
+    f = open(filename, 'rb')
+    bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
+    return sum(buf.count(b'\n') for buf in bufgen)
 
 
 def fatal_error(message):
@@ -101,6 +109,22 @@ def load_feat_label_idx_maps(data_config):
       else:
         label_idx_map[f] = (i, i+1)
   return feature_idx_map, label_idx_map
+
+
+def load_input_idx_maps(data_config, key):
+  idx_map = {}
+  for i, f in enumerate([d for d in data_config.keys() if key in data_config[d] and data_config[d][key]]):
+    # if 'feature' in data_config[f] and data_config[f]['feature']:
+    #   feature_idx_map[f] = i
+    # if 'label' in data_config[f] and data_config[f]['label']:
+    if 'type' in data_config[f] and data_config[f]['type'] == 'range':
+      idx = data_config[f]['conll_idx']
+      j = i + idx[1] if idx[1] != -1 else -1
+      idx_map[f] = (i, j)
+    else:
+      idx_map[f] = (i, i+1)
+  return idx_map
+
 
 def combine_attn_maps(layer_config, attention_config, task_config):
   layer_task_config = {}
