@@ -1,51 +1,41 @@
 import tensorflow as tf
 import constants
+import util
 from data_generator import conll_data_generator, bert_data_generator
 
 
-def map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names):
+def map_strings_to_ints(vocab_lookup_ops, data_config, idx_map):
   """
   An important glue function that maps the list of converted fields from the data to ints.
   Here we manage the fact that there may be fields which map to variable-length.
 
   :param vocab_lookup_ops: map of named tf lookup ops that map strings to ints
   :param data_config: data configuration map (loaded from data config json)
-  :param feature_label_names: names of all the features and labels we actually want from the data
+  :param idx_map: map from names of features/labels to (start, end) indices in the input, d
   :return: mapping function that takes a list of strings and returns a list of ints
   """
   def _mapper(d):
     intmapped = []
     # for each feature/label
-    i = 0
-    # d = tf.Print(d, [d], summarize=25)
-    for datum_name in feature_label_names:
+    for datum_name, datum_idx in idx_map.items():
+      # datum_idx = datum_idx[0]
       if 'vocab' in data_config[datum_name]:
         # todo this is a little clumsy -- is there a better way to pass this info through?
         if 'type' in data_config[datum_name]:
           if data_config[datum_name]['type'] == 'range':
-            idx = data_config[datum_name]['conll_idx']
-            if idx[1] == -1:
+            if datum_idx[1] == -1:
               # this means just take the rest of the fields
               # todo we need the variable-length feat to come last, gross
-              intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:]))
+              intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, datum_idx[0]:]))
             else:
               # this feature/label consists of idx[1]-idx[0] elements
-              last_idx = i + idx[1]
-              intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i:last_idx]))
-              i += idx[1]-idx[0]
-          # elif data_config[datum_name]['type'] == 'multi':
-          #   # first thing is going to be the number of elements this mapped to, then grab that many
-          #   num_elems = d[:, i]
-
+              intmapped.append(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, datum_idx[0]:datum_idx[1]]))
         else:
           # simplest case: single element
-          intmapped.append(tf.expand_dims(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, i]), -1))
-          i += 1
+          intmapped.append(tf.expand_dims(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d[:, datum_idx[0]]), -1))
       else:
         # simple case: single element that needs to be converted to an int
-        print("string_to_num", datum_name)
-        intmapped.append(tf.expand_dims(tf.string_to_number(d[:, i], out_type=tf.int64), -1))
-        i += 1
+        intmapped.append(tf.expand_dims(tf.string_to_number(d[:, datum_idx[0]], out_type=tf.int64), -1))
 
     # this is where the order of features/labels in input gets defined
     # todo: can i have these come out of the lookup as int32?
@@ -69,19 +59,21 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     # feature_label_names = [d for d in data_config.keys() if \
     #                        ('feature' in data_config[d] and data_config[d]['feature']) or
     #                        ('label' in data_config[d] and data_config[d]['label'])]
+    # feature_names = [d for d in data_config.keys() if 'feature' in data_config[d] and data_config[d]['feature']]
+    # label_names = [d for d in data_config.keys() if 'label' in data_config[d] and data_config[d]['label']]
 
-    feature_names = [d for d in data_config.keys() if 'feature' in data_config[d] and data_config[d]['feature']]
-    label_names = [d for d in data_config.keys() if 'label' in data_config[d] and data_config[d]['label']]
+    feature_idx_map = util.load_input_idx_maps(data_config, 'feature')
+    label_idx_map = util.load_input_idx_maps(data_config, 'label')
 
     # get the dataset
     dataset = tf.data.Dataset.from_generator(lambda: conll_data_generator(data_filenames, data_config),
                                              output_shapes=[None, None], output_types=tf.string)
 
     # intmap the dataset
-    features = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_names), num_parallel_calls=8)
+    features = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_idx_map), num_parallel_calls=8)
     # dataset = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, feature_label_names))
 
-    labels = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, label_names), num_parallel_calls=8)
+    labels = dataset.map(map_strings_to_ints(vocab_lookup_ops, data_config, label_idx_map), num_parallel_calls=8)
 
     sentences = tf.data.Dataset.from_generator(lambda: bert_data_generator(data_filenames, sentences_config),
                                                output_shapes=[None], output_types=tf.string)
@@ -92,6 +84,7 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     dataset = dataset.cache()
 
     # do batching
+    # todo automatically generate the padding
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=lambda d, s: tf.shape(d[0])[0],
                                                                       bucket_boundaries=bucket_boundaries,
                                                                       bucket_batch_sizes=bucket_batch_sizes,

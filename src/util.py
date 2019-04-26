@@ -93,6 +93,7 @@ def load_transition_params(task_config, vocab):
   return transition_params
 
 
+# todo: deprecated, remove
 def load_feat_label_idx_maps(data_config):
   feature_idx_map = {}
   label_idx_map = {}
@@ -113,16 +114,19 @@ def load_feat_label_idx_maps(data_config):
 
 def load_input_idx_maps(data_config, key):
   idx_map = {}
-  for i, f in enumerate([d for d in data_config.keys() if key in data_config[d] and data_config[d][key]]):
-    # if 'feature' in data_config[f] and data_config[f]['feature']:
-    #   feature_idx_map[f] = i
-    # if 'label' in data_config[f] and data_config[f]['label']:
-    if 'type' in data_config[f] and data_config[f]['type'] == 'range':
-      idx = data_config[f]['conll_idx']
-      j = i + idx[1] if idx[1] != -1 else -1
-      idx_map[f] = (i, j)
-    else:
-      idx_map[f] = (i, i+1)
+  for i, f in enumerate([d for d in data_config.keys() if
+                         ('feature' in data_config[d] and data_config[d]['feature']) or
+                         ('label' in data_config[d] and data_config[d]['label'])]):
+    if key in data_config[f] and data_config[f][key]:
+      # if 'feature' in data_config[f] and data_config[f]['feature']:
+      #   feature_idx_map[f] = i
+      # if 'label' in data_config[f] and data_config[f]['label']:
+      if 'type' in data_config[f] and data_config[f]['type'] == 'range':
+        idx = data_config[f]['conll_idx']
+        j = i + idx[1] if idx[1] != -1 else -1
+        idx_map[f] = (i, j)
+      else:
+        idx_map[f] = (i, i+1)
   return idx_map
 
 
