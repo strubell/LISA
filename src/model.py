@@ -128,11 +128,11 @@ class LISAModel:
           # tokenize into word pieces
           bert_dir = embedding_map['bert_embeddings']
           embedding_vocab_name = bert_dir + "/vocab.txt"
-          bert_config = bert_dir + "/bert_config.json"
           # bert_checkpoint = bert_dir + ""
           # bert_vocab = bert_dir + "/vocab.txt"
           # bert_cased = 'cased' in bert_dir
           bpe_words = sentences
+          bert_keep_mask = tf.where(tf.not_equal(bpe_words, 0))
 
           # d = tf.data.Dataset.from_tensor_slices({
           #   "unique_ids":
@@ -152,11 +152,14 @@ class LISAModel:
           #       shape=[num_examples, seq_length],
           #       dtype=tf.int32),
           # })
+
+          # todo: stick all this junk into a bert util function
+          bert_config = bert.modeling.BertConfig.from_json_file(bert_dir + "/bert_config.json")
           bert_model = bert.modeling.BertModel(
             config=bert_config,
             is_training=False,
             input_ids=bpe_words,
-            input_mask=tf.where(tf.not_equal(bpe_words, 0)),
+            input_mask=bert_keep_mask,
             token_type_ids=tf.zeros_like(bpe_words),
             use_one_hot_embeddings=False)
 
@@ -175,18 +178,20 @@ class LISAModel:
 
           # list of [batch_size, seq_length, hidden_size]
           bert_embeddings = bert_model.all_encoder_layers()
+          bert_keep_mask = tf.where(bert_embeddings)
           for bert_layer_idx, bert_layer_output in enumerate(bert_embeddings):
             # todo this is wrong, pretty sure these should sum to 1
             layer_weight = tf.get_variable("bert_layer_weight_%d" % bert_layer_idx)
             bert_embeddings[bert_layer_idx] = bert_layer_output * layer_weight
           bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
           bert_embeddings_avg = tf.reduce_sum(bert_embeddings_concat, -1)
+          bert_embeddings_avg_gather = tf.gather_nd(bert_embeddings_avg, tf.where(bert_keep_mask))
 
           # use lens to combine bpe reps back into token reps
           bpe_lens = named_features['word_bpe_lens']
           max_bpe_len = tf.reduce_max(bpe_lens)
           scatter_indices = tf.where(tf.sequence_mask(tf.reshape(bpe_lens, [-1])))
-          bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg, [batch_size*batch_seq_len, max_bpe_len])
+          bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather, [batch_size*batch_seq_len, max_bpe_len])
 
           bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=-1), [batch_size, batch_seq_len, -1])
 
