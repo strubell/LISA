@@ -214,7 +214,7 @@ class LISAModel:
         input_values = named_features[input_name]
         if 'bert' in input_name:
           inputs_list.append(input_values)
-        else:  
+        else:
           input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
           inputs_list.append(input_embedding_lookup)
         tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)

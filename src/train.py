@@ -82,16 +82,18 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
                   ["%s/vocab.txt" % embeddings_map['bert_embeddings'] for embeddings_map in model_config['embeddings'].values()
                    if 'bert_embeddings' in embeddings_map]
 
+# todo: don't hardcode!!
+sentences_config = train_utils.load_json_configs('config/data_configs/conll05-bert-sentences.json')
 
 def train_input_fn():
   return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
                                   num_epochs=hparams.num_train_epochs, shuffle=True, embedding_files=embedding_files,
-                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
+                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier, sentences_config=sentences_config)
 
 
 def dev_input_fn():
   return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False,
-                                  embedding_files=embedding_files)
+                                  embedding_files=embedding_files, sentences_config=sentences_config)
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
