@@ -132,7 +132,7 @@ distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if
 
 # Enable XLA JIT (via: https://medium.com/future-vision/bert-meets-gpus-403d3fbed848)
 session_config = tf.ConfigProto()
-use_xla = True
+use_xla = False
 if use_xla:
   optimizer_options = session_config.graph_options.optimizer_options
   optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
