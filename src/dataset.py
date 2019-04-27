@@ -43,6 +43,38 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, idx_map):
 
   return _mapper
 
+# todo: gross, fix
+def map_strings_to_ints_bert(vocab_lookup_ops, data_config, idx_map):
+  """
+  An important glue function that maps the list of converted fields from the data to ints.
+  Here we manage the fact that there may be fields which map to variable-length.
+
+  :param vocab_lookup_ops: map of named tf lookup ops that map strings to ints
+  :param data_config: data configuration map (loaded from data config json)
+  :param idx_map: map from names of features/labels to (start, end) indices in the input, d
+  :return: mapping function that takes a list of strings and returns a list of ints
+  """
+  def _mapper(d):
+    intmapped = []
+
+    # for each feature/label
+    for datum_name, datum_idx in idx_map.items():
+      # datum_idx = datum_idx[0]
+      if 'vocab' in data_config[datum_name]:
+        # todo this is a little clumsy -- is there a better way to pass this info through?
+
+        # simplest case: single element
+        intmapped.append(tf.expand_dims(vocab_lookup_ops[data_config[datum_name]['vocab']].lookup(d), -1))
+      else:
+        # simple case: single element that needs to be converted to an int
+        intmapped.append(tf.expand_dims(tf.string_to_number(d, out_type=tf.int64), -1))
+
+    # this is where the order of features/labels in input gets defined
+    # todo: can i have these come out of the lookup as int32?
+    return tf.cast(tf.concat(intmapped, axis=-1), tf.int32)
+
+  return _mapper
+
 
 def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
                       shuffle_buffer_multiplier, sentences_config=None):
@@ -80,7 +112,7 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
                                                output_shapes=[None], output_types=tf.string)
 
     # todo: need to add [CLS] ... [SEP], then remove them
-    intmapped_sentences = sentences.map(map_strings_to_ints(vocab_lookup_ops, sentences_config, sent_idx_map), num_parallel_calls=8)
+    intmapped_sentences = sentences.map(map_strings_to_ints_bert(vocab_lookup_ops, sentences_config, sent_idx_map), num_parallel_calls=8)
 
     features = tf.data.Dataset.zip((features, intmapped_sentences))
     dataset = tf.data.Dataset.zip((features, labels))

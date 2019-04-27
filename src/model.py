@@ -67,6 +67,9 @@ class LISAModel:
 
     intmapped_feats, sentences = features
 
+    # todo: do this earlier
+    sentences = tf.squeeze(sentences, -1)
+
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
       batch_shape = tf.shape(intmapped_feats)
@@ -127,31 +130,13 @@ class LISAModel:
         elif 'bert_embeddings' in embedding_map:
           # tokenize into word pieces
           bert_dir = embedding_map['bert_embeddings']
+          bert_checkpoint = bert_dir + "/bert_model.ckpt"
           embedding_vocab_name = bert_dir + "/vocab.txt"
           # bert_checkpoint = bert_dir + ""
           # bert_vocab = bert_dir + "/vocab.txt"
           # bert_cased = 'cased' in bert_dir
           bpe_words = sentences
-          bert_keep_mask = tf.where(tf.not_equal(bpe_words, 0))
-
-          # d = tf.data.Dataset.from_tensor_slices({
-          #   "unique_ids":
-          #     tf.constant(all_unique_ids, shape=[num_examples], dtype=tf.int32),
-          #   "input_ids":
-          #     tf.constant(
-          #       all_input_ids, shape=[num_examples, seq_length],
-          #       dtype=tf.int32),
-          #   "input_mask":
-          #     tf.constant(
-          #       all_input_mask,
-          #       shape=[num_examples, seq_length],
-          #       dtype=tf.int32),
-          #   "input_type_ids":
-          #     tf.constant(
-          #       all_input_type_ids,
-          #       shape=[num_examples, seq_length],
-          #       dtype=tf.int32),
-          # })
+          bert_keep_mask = tf.not_equal(bpe_words, 0)
 
           # todo: stick all this junk into a bert util function
           bert_config = bert.modeling.BertConfig.from_json_file(bert_dir + "/bert_config.json")
@@ -160,14 +145,17 @@ class LISAModel:
             is_training=False,
             input_ids=bpe_words,
             input_mask=bert_keep_mask,
-            token_type_ids=tf.zeros_like(bpe_words),
+            # token_type_ids=tf.zeros_like(bpe_words),
             use_one_hot_embeddings=False)
 
           tvars = tf.trainable_variables()
-          assignment_map, initialized_variable_names = bert.modeling.get_assignment_map_from_checkpoint(tvars, bert_dir)
+          assignment_map, initialized_variable_names = bert.modeling.get_assignment_map_from_checkpoint(tvars, bert_checkpoint)
 
-          tf.train.init_from_checkpoint(bert_dir, assignment_map)
+          print("assignment map", assignment_map)
 
+          tf.train.init_from_checkpoint(bert_checkpoint, assignment_map)
+
+          # todo: these aren't getting loaded (due to scope)
           tf.logging.info("**** BERT Trainable Variables ****")
           for var in tvars:
             init_string = ""
@@ -176,34 +164,43 @@ class LISAModel:
             tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
                             init_string)
 
-          # list of [batch_size, seq_length, hidden_size]
-          bert_embeddings = bert_model.all_encoder_layers()
-          bert_keep_mask = tf.where(bert_embeddings)
-          for bert_layer_idx, bert_layer_output in enumerate(bert_embeddings):
-            # todo this is wrong, pretty sure these should sum to 1
-            layer_weight = tf.get_variable("bert_layer_weight_%d" % bert_layer_idx)
-            bert_embeddings[bert_layer_idx] = bert_layer_output * layer_weight
+          # list of [batch_size, bpe_seq_length, hidden_size]
+          bert_embeddings = bert_model.get_all_encoder_layers()
+          num_bert_layers = len(bert_embeddings)
+          bert_layer_weights = tf.get_variable("bert_layer_weights", shape=[num_bert_layers],
+                                               initializer=tf.zeros_initializer)
+          bert_layer_weights_normed = tf.split(tf.nn.softmax(bert_layer_weights + 1.0 / num_bert_layers),
+                                               num_bert_layers)
+          for bert_layer_idx, (bert_layer_weight, bert_layer_output) in enumerate(zip(bert_layer_weights_normed, bert_embeddings)):
+            bert_embeddings[bert_layer_idx] = tf.expand_dims(bert_layer_output * bert_layer_weight, -1)
+
+          ##### this concat is probably wrong? #####
           bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
           bert_embeddings_avg = tf.reduce_sum(bert_embeddings_concat, -1)
+
+          # [bpe_toks_in_batch x bert_dim]
           bert_embeddings_avg_gather = tf.gather_nd(bert_embeddings_avg, tf.where(bert_keep_mask))
 
-          # use lens to combine bpe reps back into token reps
+          # use bpe lens to combine bpe reps back into token reps
+          bert_dim = bert_embeddings_avg.get_shape().as_list()[-1]
           bpe_lens = named_features['word_bpe_lens']
-          max_bpe_len = tf.reduce_max(bpe_lens)
-          scatter_indices = tf.where(tf.sequence_mask(tf.reshape(bpe_lens, [-1])))
-          bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather, [batch_size*batch_seq_len, max_bpe_len])
 
-          bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=-1), [batch_size, batch_seq_len, -1])
+          # [batch_size*batch_seq_len]
+          bpe_lens_flat = tf.reshape(bpe_lens, [-1])
+
+          max_bpe_len = tf.reduce_max(bpe_lens)
+
+          # [batch_size*batch_seq_len x max_bpe_len]
+          scatter_mask = tf.sequence_mask(bpe_lens_flat)
+          scatter_indices = tf.where(scatter_mask)
+
+          bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather, [batch_size*batch_seq_len, max_bpe_len, bert_dim])
+
+          # average over bpes to get tokens
+          bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=1), [batch_size, batch_seq_len, bert_dim])
 
           # add 'bert_words' to named_features
           named_features['bert_words'] = bert_tokens
-
-          # dummy thing
-          # num_embeddings = self.vocab.vocab_names_sizes[embedding_vocab_name]
-          # print(num_embeddings, embedding_dim)
-          # include_oov = False
-          # embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
-          #                                            num_embeddings=num_embeddings)
 
         else:
           num_embeddings = self.vocab.vocab_names_sizes[embedding_name]
@@ -273,7 +270,7 @@ class LISAModel:
 
               # todo test a list of tasks for each layer
               for task, task_map in self.task_config[i].items():
-                task_labels = labels[task]
+                task_labels = named_labels[task]
                 task_vocab_size = self.vocab.vocab_names_sizes[task] if task in self.vocab.vocab_names_sizes else -1
 
                 # Set up CRF / Viterbi transition params if specified
@@ -293,9 +290,9 @@ class LISAModel:
                     tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
 
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
-                                                         feats, labels, current_input, task_labels, task_vocab_size,
-                                                         self.vocab.joint_label_lookup_maps, tokens_to_keep,
-                                                         transition_params, hparams)
+                                                         named_features, named_labels, current_input, task_labels,
+                                                         task_vocab_size, self.vocab.joint_label_lookup_maps,
+                                                         tokens_to_keep, transition_params, hparams)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
                 # want task_outputs to have:
@@ -307,8 +304,9 @@ class LISAModel:
 
                 # do the evaluation
                 for eval_name, eval_map in task_map['eval_fns'].items():
-                  eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, named_features, named_labels,
-                                                             task_labels, self.vocab.reverse_maps, tokens_to_keep)
+                  eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, named_features,
+                                                             named_labels, task_labels, self.vocab.reverse_maps,
+                                                             tokens_to_keep)
                   eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
                   eval_metric_ops[eval_name] = eval_result
 
