@@ -46,6 +46,10 @@ args, leftovers = arg_parser.parse_known_args()
 
 util.init_logging(tf.logging.INFO)
 
+# mixed precision training, via: https://medium.com/future-vision/bert-meets-gpus-403d3fbed848
+# https://docs.nvidia.com/deeplearning/dgx/tensorflow-user-guide/index.html#tfamp
+os.environ['TF_ENABLE_AUTO_MIXED_PRECISION'] = '1'
+
 # Load all the various configurations
 # todo: validate json
 data_config = train_utils.load_json_configs(args.data_config)
@@ -126,10 +130,20 @@ if args.debug:
 # Distributed training
 distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if args.num_gpus > 1 else None
 
+# Enable XLA JIT (via: https://medium.com/future-vision/bert-meets-gpus-403d3fbed848)
+session_config = tf.ConfigProto()
+use_xla = True
+if use_xla:
+  optimizer_options = session_config.graph_options.optimizer_options
+  optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
+
 # Set up the Estimator
-checkpointing_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_steps, keep_checkpoint_max=1,
-                                              train_distribute=distribution)
-estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=checkpointing_config)
+
+# Checkpointing and XLA configuration
+run_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_steps, keep_checkpoint_max=1,
+                                    train_distribute=distribution, session_config=session_config)
+
+estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=run_config)
 
 # Set up early stopping -- always keep the model with the best F1
 export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_dir, vocab_name)

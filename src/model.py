@@ -27,6 +27,7 @@ class LISAModel:
     self.feature_idx_map = feature_idx_map
     self.label_idx_map = label_idx_map
     self.vocab = vocab
+    self.frozen_variables = set()
 
   def hparams(self, mode):
     if mode == ModeKeys.TRAIN:
@@ -136,7 +137,7 @@ class LISAModel:
           # bert_vocab = bert_dir + "/vocab.txt"
           # bert_cased = 'cased' in bert_dir
           bpe_words = sentences
-          bert_keep_mask = tf.not_equal(bpe_words, 0)
+          bert_keep_mask = tf.greater(bpe_words, 0)
 
           # todo: stick all this junk into a bert util function
           bert_config = bert.modeling.BertConfig.from_json_file(bert_dir + "/bert_config.json")
@@ -149,11 +150,13 @@ class LISAModel:
             use_one_hot_embeddings=False)
 
           tvars = tf.trainable_variables()
-          assignment_map, initialized_variable_names = bert.modeling.get_assignment_map_from_checkpoint(tvars, bert_checkpoint)
+          bert_vars = tf.trainable_variables(scope='LISA/bert')
+          # don't update bert parameters
+          # todo don't hardcode to not update bert
+          self.frozen_variables.update(bert_vars)
+          assignment_map, initialized_variable_names = tf_utils.get_assignment_map_from_checkpoint(tvars, bert_checkpoint)
 
-          print("assignment map", assignment_map)
-
-          tf.train.init_from_checkpoint(bert_checkpoint, assignment_map)
+          tf.train.init_from_checkpoint(bert_checkpoint, {'bert/': '%s/bert/' % tf.get_variable_scope().name})
 
           # todo: these aren't getting loaded (due to scope)
           tf.logging.info("**** BERT Trainable Variables ****")
@@ -173,6 +176,8 @@ class LISAModel:
                                                num_bert_layers)
           for bert_layer_idx, (bert_layer_weight, bert_layer_output) in enumerate(zip(bert_layer_weights_normed, bert_embeddings)):
             bert_embeddings[bert_layer_idx] = tf.expand_dims(bert_layer_output * bert_layer_weight, -1)
+            # bert_embeddings[bert_layer_idx] = bert_layer_output * bert_layer_weight
+
 
           ##### this concat is probably wrong? #####
           bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
@@ -191,8 +196,15 @@ class LISAModel:
           max_bpe_len = tf.reduce_max(bpe_lens)
 
           # [batch_size*batch_seq_len x max_bpe_len]
+          # the number of 1s in scatter_mask (and therefore number of scatter indices) should equal the number of bpe
+          # tokens in the batch (and therefore the number of elements in bert_embeddings_avg_gather)
           scatter_mask = tf.sequence_mask(bpe_lens_flat)
           scatter_indices = tf.where(scatter_mask)
+
+          # scatter_indices = tf.Print(scatter_indices, [batch_size, batch_seq_len, tf.shape(bert_embeddings_avg), tf.reduce_sum(tf.cast(scatter_mask, tf.int32)),
+          #                                              tf.shape(bert_embeddings_avg_gather), tf.shape(scatter_indices), tf.shape(bpe_lens_flat),
+          #                                              tf.reduce_sum(bpe_lens)])
+
 
           bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather, [batch_size*batch_seq_len, max_bpe_len, bert_dim])
 
@@ -348,7 +360,8 @@ class LISAModel:
         optimizer = LazyAdamOptimizer(learning_rate=this_step_lr, beta1=hparams.beta1,
                                       beta2=hparams.beta2, epsilon=hparams.epsilon,
                                       use_nesterov=hparams.use_nesterov)
-        gradients, variables = zip(*optimizer.compute_gradients(loss))
+        vars_to_train = [v for v in tf.trainable_variables() if v not in self.frozen_variables]
+        gradients, variables = zip(*optimizer.compute_gradients(loss, var_list=vars_to_train))
         gradients, _ = tf.clip_by_global_norm(gradients, hparams.gradient_clip_norm)
         train_op = optimizer.apply_gradients(zip(gradients, variables), global_step=tf.train.get_global_step())
 
