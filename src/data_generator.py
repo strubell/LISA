@@ -67,7 +67,8 @@ def bert_data_generator(filenames, data_config):
           buf.extend(data_vals)
         else:
           if buf:
-            # todo: add [CLS] and [SEP] here
+            # todo do this automatically
+            buf = ['[CLS]'] + buf + ['[SEP]']
             sents += 1
             yield buf
             buf = []

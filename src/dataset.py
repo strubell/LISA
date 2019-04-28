@@ -76,13 +76,16 @@ def map_strings_to_ints_bert(vocab_lookup_ops, data_config, idx_map):
   return _mapper
 
 
-def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
-                      shuffle_buffer_multiplier, sentences_config=None):
+def get_data_iterator(data_filenames, data_configs, vocab_lookup_ops, batch_size, num_epochs, shuffle,
+                      shuffle_buffer_multiplier):
 
   bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
   bucket_batch_sizes = [batch_size] * (len(bucket_boundaries) + 1)
 
   # todo do something smarter with multiple files + parallel?
+
+  data_config = data_configs[0]
+  sentences_config = data_configs[1]
 
   with tf.device('/cpu:0'):
 
@@ -149,4 +152,6 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     iterator = dataset.make_initializable_iterator()
     tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
 
-    return iterator.get_next()
+    feats, labels = iterator.get_next()
+
+    return {'features': feats[0], 'sentences': feats[1]}, labels

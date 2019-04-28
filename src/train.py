@@ -23,8 +23,8 @@ arg_parser.add_argument('--hparams', type=str,
                         help='Comma separated list of "name=value" hyperparameter settings.')
 arg_parser.add_argument('--debug', dest='debug', action='store_true',
                         help='Whether to run in debug mode: a little faster and smaller')
-arg_parser.add_argument('--data_config', required=True,
-                        help='Path to data configuration json')
+arg_parser.add_argument('--data_configs', required=True,
+                        help='Comma-separated list of paths to data configuration json')
 arg_parser.add_argument('--model_configs', required=True,
                         help='Comma-separated list of paths to model configuration json.')
 arg_parser.add_argument('--task_configs', required=True,
@@ -39,8 +39,10 @@ arg_parser.add_argument('--keep_k_best_models', type=int,
                         help='Number of best models to keep.')
 arg_parser.add_argument('--best_eval_key', required=True, type=str,
                         help='Key corresponding to the evaluation to be used for determining early stopping.')
+arg_parser.add_argument('--use_xla', dest='use_xla', action='store_true',
+                        help="Whether to use TensorFlow's XLA JIT.")
 
-arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1)
+arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1, use_xla=False)
 
 args, leftovers = arg_parser.parse_known_args()
 
@@ -52,7 +54,7 @@ os.environ['TF_ENABLE_AUTO_MIXED_PRECISION'] = '1'
 
 # Load all the various configurations
 # todo: validate json
-data_config = train_utils.load_json_configs(args.data_config)
+data_configs = [train_utils.load_json_configs(c) for c in args.data_configs.split(',')]
 model_config = train_utils.load_json_configs(args.model_configs)
 task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
@@ -78,9 +80,6 @@ if not os.path.exists(args.save_dir):
 train_filenames = args.train_files.split(',')
 dev_filenames = args.dev_files.split(',')
 
-vocab = Vocab(data_config, args.save_dir, train_filenames)
-vocab.update(dev_filenames)
-
 embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in model_config['embeddings'].values()
                    if 'pretrained_embeddings' in embeddings_map] + \
                   ["%s/vocab.txt" % embeddings_map['bert_embeddings'] for embeddings_map in model_config['embeddings'].values()
@@ -89,21 +88,27 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
 # todo: don't hardcode!!
 sentences_config = train_utils.load_json_configs('config/data_configs/conll05-bert-sentences.json')
 
+# data_configs = [data_config, sentences_config]
+
+vocab = Vocab(data_configs, args.save_dir, train_filenames, embedding_files)
+vocab.update(filenames=dev_filenames)
+
+
 def train_input_fn():
-  return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
-                                  num_epochs=hparams.num_train_epochs, shuffle=True, embedding_files=embedding_files,
-                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier, sentences_config=sentences_config)
+  return train_utils.get_input_fn(vocab, data_configs, train_filenames, hparams.batch_size,
+                                  num_epochs=hparams.num_train_epochs, shuffle=True,
+                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
 
 def dev_input_fn():
-  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False,
-                                  embedding_files=embedding_files, sentences_config=sentences_config)
+  return train_utils.get_input_fn(vocab, data_configs, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
 # feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
-feature_idx_map = util.load_input_idx_maps(data_config, 'feature', ['feature'])
-label_idx_map = util.load_input_idx_maps(data_config, 'label', ['label'])
+# todo: don't hardcode!!
+feature_idx_map = util.load_input_idx_maps(data_configs[0], 'feature', ['feature'])
+label_idx_map = util.load_input_idx_maps(data_configs[0], 'label', ['label'])
 # feature_idx_map = {}
 # label_idx_map = {}
 # for i, f in enumerate([d for d in data_config.keys() if
@@ -132,8 +137,7 @@ distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if
 
 # Enable XLA JIT (via: https://medium.com/future-vision/bert-meets-gpus-403d3fbed848)
 session_config = tf.ConfigProto()
-use_xla = False
-if use_xla:
+if args.use_xla:
   optimizer_options = session_config.graph_options.optimizer_options
   optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
 

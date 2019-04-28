@@ -12,6 +12,14 @@ def lines_in_file(filename):
     return sum(buf.count(b'\n') for buf in bufgen)
 
 
+# replace / with _ and remove extension
+def clean_filename(str):
+  str = str.replace('/', '_')
+  split_str = str.split('.')
+  if len(split_str) > 1:
+    str = '.'.join(str.split('.')[:-1])
+  return str
+
 def fatal_error(message):
   tf.logging.log(tf.logging.ERROR, message)
   sys.exit(1)

@@ -66,7 +66,9 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
-    intmapped_feats, sentences = features
+    # intmapped_feats, sentences = features
+    intmapped_feats = features['features']
+    sentences = features['sentences']
 
     # todo: do this earlier
     sentences = tf.squeeze(sentences, -1)
@@ -132,12 +134,17 @@ class LISAModel:
           # tokenize into word pieces
           bert_dir = embedding_map['bert_embeddings']
           bert_checkpoint = bert_dir + "/bert_model.ckpt"
-          embedding_vocab_name = bert_dir + "/vocab.txt"
-          # bert_checkpoint = bert_dir + ""
-          # bert_vocab = bert_dir + "/vocab.txt"
-          # bert_cased = 'cased' in bert_dir
           bpe_words = sentences
-          bert_keep_mask = tf.greater(bpe_words, 0)
+
+          print(self.vocab.reverse_maps.keys())
+          # print(self.vocab.vocab_lookups.keys())
+          print(self.vocab.vocab_maps.keys())
+          bert_mask_indices = [self.vocab.vocab_maps['cased_L-12_H-768_A-12/vocab.txt'][s] for s in constants.BERT_MASK_STRS]
+          print("bert mask indices: ", bert_mask_indices)
+          bert_no_pad_mask = tf.greater(bpe_words, 0)
+          bert_keep_mask = tf.cast(bert_no_pad_mask, tf.int32)
+          for idx_to_mask in bert_mask_indices:
+            bert_keep_mask *= tf.cast(tf.not_equal(bpe_words, idx_to_mask), tf.int32)
 
           # todo: stick all this junk into a bert util function
           bert_config = bert.modeling.BertConfig.from_json_file(bert_dir + "/bert_config.json")
@@ -145,20 +152,18 @@ class LISAModel:
             config=bert_config,
             is_training=False,
             input_ids=bpe_words,
-            input_mask=bert_keep_mask,
-            # token_type_ids=tf.zeros_like(bpe_words),
-            use_one_hot_embeddings=False)
+            input_mask=bert_no_pad_mask)
 
           tvars = tf.trainable_variables()
-          bert_vars = tf.trainable_variables(scope='LISA/bert')
+          current_variable_scope = tf.get_variable_scope().name
+          bert_vars = tf.trainable_variables(scope='%s/bert' % current_variable_scope)
           # don't update bert parameters
           # todo don't hardcode to not update bert
           self.frozen_variables.update(bert_vars)
           assignment_map, initialized_variable_names = tf_utils.get_assignment_map_from_checkpoint(tvars, bert_checkpoint)
 
-          tf.train.init_from_checkpoint(bert_checkpoint, {'bert/': '%s/bert/' % tf.get_variable_scope().name})
+          tf.train.init_from_checkpoint(bert_checkpoint, {'bert/': '%s/bert/' % current_variable_scope})
 
-          # todo: these aren't getting loaded (due to scope)
           tf.logging.info("**** BERT Trainable Variables ****")
           for var in tvars:
             init_string = ""
@@ -176,10 +181,7 @@ class LISAModel:
                                                num_bert_layers)
           for bert_layer_idx, (bert_layer_weight, bert_layer_output) in enumerate(zip(bert_layer_weights_normed, bert_embeddings)):
             bert_embeddings[bert_layer_idx] = tf.expand_dims(bert_layer_output * bert_layer_weight, -1)
-            # bert_embeddings[bert_layer_idx] = bert_layer_output * bert_layer_weight
 
-
-          ##### this concat is probably wrong? #####
           bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
           bert_embeddings_avg = tf.reduce_sum(bert_embeddings_concat, -1)
 
