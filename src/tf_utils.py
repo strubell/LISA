@@ -8,13 +8,12 @@ def is_trainable(variable):
   return variable in tf.trainable_variables()
 
 
-def get_num_trainable_parameters():
-  return np.sum([np.prod(v.shape) for v in tf.trainable_variables()])
+def get_num_parameters(variables):
+  return np.sum([np.prod(v.shape) for v in variables])
 
 
 def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
   """Compute the union of the current variables and checkpoint variables."""
-  assignment_map = {}
   initialized_variable_names = {}
 
   name_to_variable = collections.OrderedDict()

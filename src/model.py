@@ -378,7 +378,7 @@ class LISAModel:
                           tf.estimator.export.PredictOutput(flat_predictions)}
 
         tf.logging.log(tf.logging.INFO,
-                       "Created model with %d trainable parameters" % tf_utils.get_num_trainable_parameters())
+                       "Created model with %d trainable parameters" % tf_utils.get_num_parameters(vars_to_train))
 
         return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
                                           training_hooks=[logging_hook], export_outputs=export_outputs)

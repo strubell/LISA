@@ -139,7 +139,14 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
   return best_eval_result[key] < current_eval_result[key]
 
 
+# def serving_input_receiver_fn():
+#   inputs = tf.placeholder(tf.int32, [None, None, None])
+#   return tf.estimator.export.TensorServingInputReceiver(inputs, inputs)
+
 def serving_input_receiver_fn():
-  inputs = tf.placeholder(tf.int32, [None, None, None])
-  return tf.estimator.export.TensorServingInputReceiver(inputs, inputs)
+  inputs = {
+    "features": tf.placeholder(tf.int32, [None, None, None]),
+    "sentences": tf.placeholder(tf.int32, [None, None])
+  }
+  return tf.estimator.export.ServingInputReceiver(inputs, inputs)
 
