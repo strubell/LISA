@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.estimator import ModeKeys
 import nn_utils
 import tf_utils
-
+import util
 
 def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, transition_params):
 
@@ -18,8 +18,7 @@ def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels,
 
     # todo implement this
     if transition_params is not None:
-      print('Transition params not yet supported in softmax_classifier')
-      exit(1)
+      util.fatal_error('Transition params not yet supported in softmax_classifier')
 
     # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
     targets_onehot = tf.one_hot(indices=targets, depth=num_labels, axis=-1)
@@ -82,8 +81,7 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
 
     # todo implement this
     if transition_params is not None:
-      print('Transition params not yet supported in joint_softmax_classifier')
-      exit(1)
+      util.fatal_error('Transition params not yet supported in joint_softmax_classifier')
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
@@ -111,8 +109,7 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
   attn_mlp_size = model_config['attn_mlp_size']
 
   if transition_params is not None:
-    print('Transition params not supported in parse_bilinear')
-    exit(1)
+    util.fatal_error('Transition params not supported in parse_bilinear')
 
   with tf.variable_scope('parse_bilinear'):
     with tf.variable_scope('MLP'):
@@ -303,8 +300,8 @@ def dispatch(fn_name):
 
 
 # need to decide shape/form of train_outputs!
-def get_params(mode, model_config, task_map, train_outputs, features, labels, current_outputs, task_labels, num_labels,
-               joint_lookup_maps, tokens_to_keep, transition_params, hparams):
+def get_params(mode, model_config, task_map, train_outputs, features, current_outputs, num_labels,
+               joint_lookup_maps, tokens_to_keep, transition_params, hparams, labels=None, task_labels=None):
   params = {'mode': mode, 'model_config': model_config, 'inputs': current_outputs, 'targets': task_labels,
             'tokens_to_keep': tokens_to_keep, 'num_labels': num_labels, 'transition_params': transition_params,
             'hparams': hparams}
@@ -314,6 +311,8 @@ def get_params(mode, model_config, task_map, train_outputs, features, labels, cu
     if 'joint_maps' in param_values:
       params[param_name] = {map_name: joint_lookup_maps[map_name] for map_name in param_values['joint_maps']}
     elif 'label' in param_values:
+      if mode == ModeKeys.PREDICT:
+        util.fatal_error("Labels can't be used during prediction")
       params[param_name] = labels[param_values['label']]
     elif 'feature' in param_values:
       params[param_name] = features[param_values['feature']]

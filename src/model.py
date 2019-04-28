@@ -81,12 +81,6 @@ class LISAModel:
       layer_config = self.model_config['layers']
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
-      print("feature idx map", self.feature_idx_map)
-      print("label idx map", self.label_idx_map)
-      print("intmapped_feats", intmapped_feats)
-      print("sentences", sentences)
-      print("labels", labels)
-
       named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
                for f, idx in self.feature_idx_map.items()}
 
@@ -100,22 +94,24 @@ class LISAModel:
       # Extract named features from monolithic "features" input
       named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in named_features.items()}
 
-      # Extract named labels from monolithic "features" input, and mask them
+      # Extract named labels from monolithic "labels" input, and mask them
       # todo fix masking -- is it even necessary?
-      named_labels = {}
-      for l, idx in self.label_idx_map.items():
-        these_labels = labels[:, :, idx[0]:idx[1]] if idx[1] != -1 else labels[:, :, idx[0]:]
-        these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
-        # check if we need to mask another dimension
-        if idx[1] == -1:
-          last_dim = tf.shape(these_labels)[2]
-          this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
-                               tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
-                               tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
-          these_labels_masked = tf.multiply(these_labels_masked, this_mask)
-        else:
-          these_labels_masked = tf.squeeze(these_labels_masked, -1)
-        named_labels[l] = these_labels_masked
+      named_labels = None
+      if mode != ModeKeys.PREDICT:
+        named_labels = {}
+        for l, idx in self.label_idx_map.items():
+          these_labels = labels[:, :, idx[0]:idx[1]] if idx[1] != -1 else labels[:, :, idx[0]:]
+          these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
+          # check if we need to mask another dimension
+          if idx[1] == -1:
+            last_dim = tf.shape(these_labels)[2]
+            this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
+                                 tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
+                                 tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
+            these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+          else:
+            these_labels_masked = tf.squeeze(these_labels_masked, -1)
+          named_labels[l] = these_labels_masked
 
       # load transition parameters
       transition_stats = util.load_transition_params(self.task_config, self.vocab)
@@ -135,12 +131,7 @@ class LISAModel:
           bert_dir = embedding_map['bert_embeddings']
           bert_checkpoint = bert_dir + "/bert_model.ckpt"
           bpe_words = sentences
-
-          print(self.vocab.reverse_maps.keys())
-          # print(self.vocab.vocab_lookups.keys())
-          print(self.vocab.vocab_maps.keys())
           bert_mask_indices = [self.vocab.vocab_maps['cased_L-12_H-768_A-12/vocab.txt'][s] for s in constants.BERT_MASK_STRS]
-          print("bert mask indices: ", bert_mask_indices)
           bert_no_pad_mask = tf.greater(bpe_words, 0)
           bert_keep_mask = tf.cast(bert_no_pad_mask, tf.int32)
           for idx_to_mask in bert_mask_indices:
@@ -284,7 +275,7 @@ class LISAModel:
 
               # todo test a list of tasks for each layer
               for task, task_map in self.task_config[i].items():
-                task_labels = named_labels[task]
+                # task_labels = named_labels[task]
                 task_vocab_size = self.vocab.vocab_names_sizes[task] if task in self.vocab.vocab_names_sizes else -1
 
                 # Set up CRF / Viterbi transition params if specified
@@ -303,10 +294,11 @@ class LISAModel:
                     train_or_decode_str = "training" if task_crf else "decoding"
                     tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
 
+                task_labels = named_labels[task] if mode != ModeKeys.PREDICT else None
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
-                                                         named_features, named_labels, current_input, task_labels,
-                                                         task_vocab_size, self.vocab.joint_label_lookup_maps,
-                                                         tokens_to_keep, transition_params, hparams)
+                                                         named_features, current_input, task_vocab_size,
+                                                         self.vocab.joint_label_lookup_maps, tokens_to_keep,
+                                                         transition_params, hparams, named_labels, task_labels)
                 task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
                 # want task_outputs to have:
@@ -318,7 +310,7 @@ class LISAModel:
 
                 # do the evaluation
                 for eval_name, eval_map in task_map['eval_fns'].items():
-                  eval_fn_params = evaluation_fns.get_params(task_outputs, eval_map, predictions, named_features,
+                  eval_fn_params = evaluation_fns.get_params(mode, task_outputs, eval_map, predictions, named_features,
                                                              named_labels, task_labels, self.vocab.reverse_maps,
                                                              tokens_to_keep)
                   eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)

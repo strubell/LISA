@@ -1,6 +1,8 @@
 import tensorflow as tf
 import evaluation_fns_np
+from tensorflow.estimator import ModeKeys
 import nn_utils
+import util
 
 
 def create_metric_variable(name, shape, dtype):
@@ -145,7 +147,7 @@ def dispatch(fn_name):
     exit(1)
 
 
-def get_params(task_outputs, task_map, train_outputs, features, labels, task_labels, reverse_maps, tokens_to_keep):
+def get_params(mode, task_outputs, task_map, train_outputs, features, labels, task_labels, reverse_maps, tokens_to_keep):
 
   # always pass through predictions, targets and mask
   params = {'predictions': task_outputs['predictions'], 'targets': task_labels, 'mask': tokens_to_keep}
@@ -155,6 +157,8 @@ def get_params(task_outputs, task_map, train_outputs, features, labels, task_lab
       if 'reverse_maps' in param_values:
         params[param_name] = {map_name: reverse_maps[map_name] for map_name in param_values['reverse_maps']}
       elif 'label' in param_values:
+        if mode == ModeKeys.PREDICT:
+          util.fatal_error("Labels can't be used during prediction")
         params[param_name] = labels[param_values['label']]
       elif 'feature' in param_values:
         params[param_name] = features[param_values['feature']]
