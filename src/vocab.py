@@ -31,9 +31,9 @@ class Vocab:
       except OSError as e:
         util.fatal_error("Failed to create vocabs directory: %s; %s" % (self.vocabs_dir, e.strerror))
       else:
-        tf.logging.log(tf.logging.INFO, "Successfully created vocabs directory: %s" % self.vocabs_dir)
+        tf.logging.info("Successfully created vocabs directory: %s" % self.vocabs_dir)
     else:
-      tf.logging.log(tf.logging.INFO, "Using vocabs directory: %s" % self.vocabs_dir)
+      tf.logging.info("Using vocabs directory: %s" % self.vocabs_dir)
 
     self.vocab_names_sizes, self.combined_data_config = self.make_vocab_files(self.data_configs, data_filenames, embedding_files)
 
@@ -70,8 +70,8 @@ class Vocab:
       #     # self.vocab_names_sizes[embeddings_name] = vocab_lookup_ops[embeddings_name].size()
       #     self.vocab_names_sizes[embeddings_name] = util.lines_in_file(embedding_file)
 
-    tf.logging.log(tf.logging.INFO, "Created %d vocab lookup ops: %s" %
-                   (len(vocab_lookup_ops), str([k for k in vocab_lookup_ops.keys()])))
+    tf.logging.info("Created %d vocab lookup ops: %s" %
+                    (len(vocab_lookup_ops), str([k for k in vocab_lookup_ops.keys()])))
     return vocab_lookup_ops
 
   '''
@@ -116,7 +116,6 @@ class Vocab:
           if this_vocab_name == d:
             vocabs_from_file.add(this_vocab_name)
           combined_data_config[this_vocab_name] = data_config[d]
-          print("adding vocab: %s" % this_vocab_name)
           this_vocab = collections.OrderedDict()
           if update_only and updatable and this_vocab_name in self.vocab_maps:
             this_vocab = self.vocab_maps[this_vocab_name]

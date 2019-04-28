@@ -35,13 +35,12 @@ arg_parser.add_argument('--attention_configs',
 arg_parser.add_argument('--combine_test_files', action='store_true',
                         help='Whether to combine list of test files into a single score.')
 
-arg_parser.set_defaults(debug=False)
-arg_parser.set_defaults(combine_test_files=False)
+arg_parser.set_defaults(debug=False, combine_test_files=False)
 
 
 args, leftovers = arg_parser.parse_known_args()
 
-util.init_logging(tf.logging.INFO)
+util.init_logging(tf.logging.debug if args.debug else tf.logging.INFO)
 
 if not os.path.isdir(args.save_dir):
   util.fatal_error("save_dir not found: %s" % args.save_dir)
@@ -54,22 +53,6 @@ task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
 attention_config = train_utils.load_json_configs(args.attention_configs)
 
-# attention_config = {}
-# if args.attention_configs and args.attention_configs != '':
-#   attention_config =
-
-# Combine layer, task and layer, attention maps
-# layer_task_config = {}
-# layer_attention_config = {}
-# for task_or_attn_name, layer in layer_config.items():
-#   if task_or_attn_name in attention_config:
-#     layer_attention_config[layer] = attention_config[task_or_attn_name]
-#   elif task_or_attn_name in task_config:
-#     if layer not in layer_task_config:
-#       layer_task_config[layer] = {}
-#     layer_task_config[layer][task_or_attn_name] = task_config[task_or_attn_name]
-#   else:
-#     util.fatal_error('No task or attention config "%s"' % task_or_attn_name)
 layer_task_config, layer_attention_config = util.combine_attn_maps(layer_config, attention_config, task_config)
 
 hparams = train_utils.load_hparams(args, model_config)
@@ -77,6 +60,7 @@ hparams = train_utils.load_hparams(args, model_config)
 dev_filenames = args.dev_files.split(',')
 test_filenames = args.test_files.split(',') if args.test_files else []
 
+# todo: fix data configs, embeddings
 vocab = Vocab(data_config, args.save_dir)
 vocab.update(test_filenames)
 
@@ -84,26 +68,12 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
                    if 'pretrained_embeddings' in embeddings_map]
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
-# feature_idx_map = {}
-# label_idx_map = {}
-# for i, f in enumerate([d for d in data_config.keys() if
-#                        ('feature' in data_config[d] and data_config[d]['feature']) or
-#                        ('label' in data_config[d] and data_config[d]['label'])]):
-#   if 'feature' in data_config[f] and data_config[f]['feature']:
-#     feature_idx_map[f] = i
-#   if 'label' in data_config[f] and data_config[f]['label']:
-#     if 'type' in data_config[f] and data_config[f]['type'] == 'range':
-#       idx = data_config[f]['conll_idx']
-#       j = i + idx[1] if idx[1] != -1 else -1
-#       label_idx_map[f] = (i, j)
-#     else:
-#       label_idx_map[f] = (i, i+1)
 feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
 
 # Initialize the model
 model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
                   vocab)
-tf.logging.log(tf.logging.INFO, "Created model with %d trainable parameters" % tf_utils.get_num_trainable_parameters())
+tf.logging.info("Created model with %d parameters" % tf_utils.get_num_parameters(tf.trainable_variables()))
 
 
 # Set up the Estimator
@@ -111,28 +81,25 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 
 
 def dev_input_fn():
-  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False,
-                                  embedding_files=embedding_files)
+  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
 
-tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
+tf.logging.info("Evaluating on dev files: %s" % str(dev_filenames))
 estimator.evaluate(input_fn=dev_input_fn)
 
 if args.combine_test_files:
   def test_input_fn():
-    return train_utils.get_input_fn(vocab, data_config, test_filenames, hparams.batch_size, num_epochs=1, shuffle=False,
-                                    embedding_files=embedding_files)
+    return train_utils.get_input_fn(vocab, data_config, test_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
-  tf.logging.log(tf.logging.INFO, "Evaluating on test files: %s" % str(test_filenames))
+  tf.logging.info("Evaluating on test files: %s" % str(test_filenames))
   estimator.evaluate(input_fn=test_input_fn)
 
 else:
   for test_file in test_filenames:
     def test_input_fn():
-      return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
-                                      embedding_files=embedding_files)
+      return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False)
 
 
-    tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
+    tf.logging.info("Evaluating on test file: %s" % str(test_file))
     estimator.evaluate(input_fn=test_input_fn)
 

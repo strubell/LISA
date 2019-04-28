@@ -24,7 +24,7 @@ def load_hparams(args, model_config):
   if args.hparams:
     hparams.parse(args.hparams)
 
-  tf.logging.log(tf.logging.INFO, "Using hyperparameters: %s" % str(hparams.values()))
+  tf.logging.info("Using hyperparameters: %s" % str(hparams.values()))
 
   return hparams
 
@@ -64,22 +64,22 @@ def load_json_configs(config_file_list, args=None):
             value = getattr(args, match)
             json_str = json_str.replace('##%s##' % match, value)
           except AttributeError:
-            tf.logging.log(tf.logging.ERROR, 'Could not find "%s" attribute in command line args when parsing: %s' %
+            tf.logging.error('Could not find "%s" attribute in command line args when parsing: %s' %
                            (match, config_file))
             sys.exit(1)
         try:
           config = json.loads(json_str)
         except json.decoder.JSONDecodeError as e:
-          tf.logging.log(tf.logging.ERROR, 'Error reading json: "%s"' % config_file)
-          tf.logging.log(tf.logging.ERROR, e.msg)
+          tf.logging.error('Error reading json: "%s"' % config_file)
+          tf.logging.error(e.msg)
           sys.exit(1)
       else:
         with open(config_file) as f:
           try:
             config = json.load(f)
           except json.decoder.JSONDecodeError as e:
-            tf.logging.log(tf.logging.ERROR, 'Error reading json: "%s"' % config_file)
-            tf.logging.log(tf.logging.ERROR, e.msg)
+            tf.logging.error('Error reading json: "%s"' % config_file)
+            tf.logging.error(e.msg)
             sys.exit(1)
       combined_config = {**combined_config, **config}
   return combined_config
@@ -94,7 +94,7 @@ def get_vars_for_moving_average(average_norms):
   vars_to_average = tf.trainable_variables()
   if not average_norms:
     vars_to_average = [v for v in tf.trainable_variables() if 'norm' not in v.name]
-  tf.logging.log(tf.logging.INFO, "Creating moving averages for %d variables." % len(vars_to_average))
+  tf.logging.info("Creating moving averages for %d variables." % len(vars_to_average))
   return vars_to_average
 
 

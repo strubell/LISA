@@ -20,15 +20,16 @@ def clean_filename(str):
     str = '.'.join(str.split('.')[:-1])
   return str
 
+
 def fatal_error(message):
-  tf.logging.log(tf.logging.ERROR, message)
+  tf.logging.fatal(message)
   sys.exit(1)
 
 
 def init_logging(verbosity):
   tf.logging.set_verbosity(verbosity)
-  tf.logging.log(tf.logging.INFO, "Using Python version %s" % sys.version)
-  tf.logging.log(tf.logging.INFO, "Using TensorFlow version %s" % tf.__version__)
+  tf.logging.info("Using Python version %s" % sys.version)
+  tf.logging.info("Using TensorFlow version %s" % tf.__version__)
 
 
 def batch_str_decode(string_array, codec='utf-8'):
@@ -53,12 +54,12 @@ def load_transitions(transition_statistics, num_classes, vocab_map):
     for line in f:
       tag1, tag2, prob = line.split("\t")
       transition_statistics_np[vocab_map[tag1], vocab_map[tag2]] = float(prob)
-  tf.logging.log(tf.logging.INFO, "Loaded pre-computed transition statistics: %s" % transition_statistics)
+  tf.logging.info("Loaded pre-computed transition statistics: %s" % transition_statistics)
   return transition_statistics_np
 
 
 def load_pretrained_embeddings(pretrained_fname):
-  tf.logging.log(tf.logging.INFO, "Loading pre-trained embedding file: %s" % pretrained_fname)
+  tf.logging.info("Loading pre-trained embedding file: %s" % pretrained_fname)
 
   # TODO: np.loadtxt refuses to work for some reason
   # pretrained_embeddings = np.loadtxt(self.args.word_embedding_file, usecols=range(1, word_embedding_size+1))

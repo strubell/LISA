@@ -3,7 +3,6 @@ import numpy as np
 import argparse
 import train_utils
 from vocab import Vocab
-import sys
 from tensorflow.contrib import predictor
 import evaluation_fns_np as eval_fns
 import constants
@@ -44,7 +43,7 @@ arg_parser.set_defaults(debug=False, ensemble=False)
 
 args, leftovers = arg_parser.parse_known_args()
 
-util.init_logging(tf.logging.INFO)
+util.init_logging(tf.logging.debug if args.debug else tf.logging.INFO)
 
 if not os.path.isdir(args.save_dir):
   util.fatal_error("save_dir not found: %s" % args.save_dir)
@@ -57,9 +56,6 @@ task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
 attention_config = train_utils.load_json_configs(args.attention_configs)
 
-# attention_config = {}
-# if args.attention_configs and args.attention_configs != '':
-#   attention_config = train_utils.load_json_configs(args.attention_configs)
 layer_task_config, layer_attention_config = util.combine_attn_maps(layer_config, attention_config, task_config)
 
 hparams = train_utils.load_hparams(args, model_config)
@@ -67,6 +63,7 @@ hparams = train_utils.load_hparams(args, model_config)
 dev_filenames = args.dev_files.split(',')
 test_filenames = args.test_files.split(',') if args.test_files else []
 
+# todo: fix data configs, embeddings
 vocab = Vocab(data_config, args.save_dir)
 vocab.update(test_filenames)
 
@@ -74,22 +71,7 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
                    if 'pretrained_embeddings' in embeddings_map]
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
-# feature_idx_map = {}
-# label_idx_map = {}
 feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
-# # todo put this in a function
-# for i, f in enumerate([d for d in data_config.keys() if
-#                        ('feature' in data_config[d] and data_config[d]['feature']) or
-#                        ('label' in data_config[d] and data_config[d]['label'])]):
-#   if 'feature' in data_config[f] and data_config[f]['feature']:
-#     feature_idx_map[f] = i
-#   if 'label' in data_config[f] and data_config[f]['label']:
-#     if 'type' in data_config[f] and data_config[f]['type'] == 'range':
-#       idx = data_config[f]['conll_idx']
-#       j = i + idx[1] if idx[1] != -1 else -1
-#       label_idx_map[f] = (i, j)
-#     else:
-#       label_idx_map[f] = (i, i+1)
 
 # create transition parameters if training or decoding with crf/viterbi
 # need to load these here for ensembling (they're also loaded by the model)
@@ -103,8 +85,7 @@ else:
 
 
 def dev_input_fn():
-  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False,
-                                  embedding_files=embedding_files)
+  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
 
 def eval_fn(input_op, sess):
@@ -186,7 +167,7 @@ def eval_fn(input_op, sess):
     except tf.errors.OutOfRangeError:
       break
 
-  tf.logging.log(tf.logging.INFO, eval_results)
+  tf.logging.info(eval_results)
 
 
 with tf.Session() as sess:
@@ -196,16 +177,15 @@ with tf.Session() as sess:
   test_input_ops = {}
   for test_file in test_filenames:
     def test_input_fn():
-      return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False,
-                                      embedding_files=embedding_files)
+      return train_utils.get_input_fn(vocab, data_config, [test_file], hparams.batch_size, num_epochs=1, shuffle=False)
     test_input_ops[test_file] = test_input_fn()
 
   sess.run(tf.tables_initializer())
 
-  tf.logging.log(tf.logging.INFO, "Evaluating on dev files: %s" % str(dev_filenames))
+  tf.logging.info("Evaluating on dev files: %s" % str(dev_filenames))
   eval_fn(dev_input_op, sess)
 
   for test_file, test_input_op in test_input_ops.items():
-    tf.logging.log(tf.logging.INFO, "Evaluating on test file: %s" % str(test_file))
+    tf.logging.info("Evaluating on test file: %s" % str(test_file))
     eval_fn(test_input_op, sess)
 

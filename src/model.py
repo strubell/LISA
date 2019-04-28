@@ -155,12 +155,12 @@ class LISAModel:
 
           tf.train.init_from_checkpoint(bert_checkpoint, {'bert/': '%s/bert/' % current_variable_scope})
 
-          tf.logging.info("**** BERT Trainable Variables ****")
+          tf.logging.debug("**** BERT Variables ****")
           for var in tvars:
             init_string = ""
             if var.name in initialized_variable_names:
               init_string = ", *INIT_FROM_CKPT*"
-            tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
+            tf.logging.debug("  name = %s, shape = %s%s", var.name, var.shape,
                             init_string)
 
           # list of [batch_size, bpe_seq_length, hidden_size]
@@ -213,7 +213,7 @@ class LISAModel:
           embedding_table = self.get_embedding_table(embedding_name, embedding_dim, include_oov,
                                                      num_embeddings=num_embeddings)
           embeddings[embedding_name] = embedding_table
-        tf.logging.log(tf.logging.INFO, "Created embeddings for '%s'." % embedding_name)
+        tf.logging.info("Created embeddings for '%s'." % embedding_name)
 
       # Set up model inputs
       inputs_list = []
@@ -224,7 +224,7 @@ class LISAModel:
         else:
           input_embedding_lookup = tf.nn.embedding_lookup(embeddings[input_name], input_values)
           inputs_list.append(input_embedding_lookup)
-        tf.logging.log(tf.logging.INFO, "Added %s to inputs list." % input_name)
+        tf.logging.info("Added %s to inputs list." % input_name)
       current_input = tf.concat(inputs_list, axis=2)
       current_input = tf.nn.dropout(current_input, hparams.input_dropout)
 
@@ -238,7 +238,7 @@ class LISAModel:
       items_to_log = {}
 
       num_layers = max(self.task_config.keys()) + 1
-      tf.logging.log(tf.logging.INFO, "Creating transformer model with %d layers" % num_layers)
+      tf.logging.info("Creating transformer model with %d layers" % num_layers)
       with tf.variable_scope('transformer'):
         current_input = transformer.add_timing_signal_1d(current_input)
         for i in range(num_layers):
@@ -292,7 +292,7 @@ class LISAModel:
                                                         initializer=tf.constant_initializer(task_transition_stats),
                                                         trainable=task_crf)
                     train_or_decode_str = "training" if task_crf else "decoding"
-                    tf.logging.log(tf.logging.INFO, "Created transition params for %s %s" % (train_or_decode_str, task))
+                    tf.logging.info("Created transition params for %s %s" % (train_or_decode_str, task))
 
                 task_labels = named_labels[task] if mode != ModeKeys.PREDICT else None
                 output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
@@ -331,8 +331,7 @@ class LISAModel:
         moving_averager = tf.train.ExponentialMovingAverage(hparams.moving_average_decay, zero_debias=True,
                                                             num_updates=tf.train.get_global_step())
         moving_average_op = moving_averager.apply(train_utils.get_vars_for_moving_average(hparams.average_norms))
-        # tf.logging.log(tf.logging.INFO,
-        #                "Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()])
+        # tf.logging.info("Using moving average for variables: %s" % str([v.name for v in tf.trainable_variables()])
 
         tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, moving_average_op)
 
@@ -369,8 +368,7 @@ class LISAModel:
         export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
                           tf.estimator.export.PredictOutput(flat_predictions)}
 
-        tf.logging.log(tf.logging.INFO,
-                       "Created model with %d trainable parameters" % tf_utils.get_num_parameters(vars_to_train))
+        tf.logging.info("Created model with %d trainable parameters" % tf_utils.get_num_parameters(vars_to_train))
 
         return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
                                           training_hooks=[logging_hook], export_outputs=export_outputs)

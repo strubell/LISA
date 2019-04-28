@@ -263,7 +263,7 @@ def conll_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_targ
       # print(srl_eval)
       correct, excess, missed = map(int, srl_eval.split('\n')[6].split()[1:4])
     except CalledProcessError as e:
-      tf.logging.log(tf.logging.ERROR, "Call to srl-eval.pl (conll srl eval) failed.")
+      tf.logging.error("Call to srl-eval.pl (conll srl eval) failed.")
 
   return correct, excess, missed
 
@@ -348,7 +348,7 @@ def conll09_srl_eval(srl_predictions, predicate_predictions, words, mask, srl_ta
       prop_missed = prop_recall_ints[1] - prop_correct
 
     except CalledProcessError as e:
-      tf.logging.log(tf.logging.ERROR, "Call to eval09.pl (conll09 srl eval) failed.")
+      tf.logging.error("Call to eval09.pl (conll09 srl eval) failed.")
 
   return labeled_correct, labeled_excess, labeled_missed
 
@@ -379,7 +379,7 @@ def conll_parse_eval(parse_label_predictions, parse_head_predictions, words, mas
       total = int(first_three_lines[0].split()[5])
       labeled_correct, unlabeled_correct, label_correct = map(lambda l: int(l.split()[3]), first_three_lines)
     except CalledProcessError as e:
-      tf.logging.log(tf.logging.ERROR, "Call to eval.pl (conll parse eval) failed.")
+      tf.logging.error("Call to eval.pl (conll parse eval) failed.")
 
   return total, np.array([labeled_correct, unlabeled_correct, label_correct])
 

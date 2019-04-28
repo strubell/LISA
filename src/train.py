@@ -6,7 +6,6 @@ import train_utils
 from vocab import Vocab
 from model import LISAModel
 import numpy as np
-import sys
 import util
 
 arg_parser = argparse.ArgumentParser(description='')
@@ -46,7 +45,7 @@ arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1, use_xla=F
 
 args, leftovers = arg_parser.parse_known_args()
 
-util.init_logging(tf.logging.INFO)
+util.init_logging(tf.logging.debug if args.debug else tf.logging.INFO)
 
 # mixed precision training, via: https://medium.com/future-vision/bert-meets-gpus-403d3fbed848
 # https://docs.nvidia.com/deeplearning/dgx/tensorflow-user-guide/index.html#tfamp
@@ -130,7 +129,7 @@ model = LISAModel(hparams, model_config, layer_task_config, layer_attention_conf
                   vocab)
 
 if args.debug:
-  tf.logging.log(tf.logging.INFO, "Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
+  tf.logging.info("Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
 
 # Distributed training
 distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if args.num_gpus > 1 else None
@@ -152,7 +151,7 @@ estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_
 # Set up early stopping -- always keep the model with the best F1
 export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_dir, vocab_name)
                  for vocab_name in vocab.vocab_names_sizes.keys()}
-tf.logging.log(tf.logging.INFO, "Exporting assets: %s" % str(export_assets))
+tf.logging.info("Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=args.best_eval_key),
                                                serving_input_receiver_fn=train_utils.serving_input_receiver_fn,
