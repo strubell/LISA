@@ -33,10 +33,6 @@
    "word_bpe": {
      "embedding_dim": 768,
      "bert_embeddings": "cased_L-12_H-768_A-12"
-   },
-   "word_type": {
-     "embedding_dim": 100,
-     "pretrained_embeddings": "embeddings/glove.6B.100d.txt"
    }
  },
  "inputs": [
