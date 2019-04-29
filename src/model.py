@@ -11,7 +11,7 @@ import train_utils
 import tf_utils
 import util
 from lazy_adam_v2 import LazyAdamOptimizer
-import bert.modeling
+import bert_util
 
 
 class LISAModel:
@@ -66,17 +66,7 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
-    # intmapped_feats, sentences = features
     intmapped_feats = features['features']
-    sentences = features['sentences']
-
-    print("feats", intmapped_feats)
-    print("sentences", sentences)
-
-    # todo: do this earlier
-    # sentences = tf.cond(tf.equal(tf.rank(sentences), 3), lambda: tf.squeeze(sentences, -1), lambda: sentences)
-
-    print("sentences", sentences)
 
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
@@ -132,85 +122,19 @@ class LISAModel:
                                                      pretrained_fname=input_pretrained_embeddings)
           embeddings[embedding_name] = embedding_table
         elif 'bert_embeddings' in embedding_map:
-          # tokenize into word pieces
+
+          bpe_sentences = features['bpe_sentences']
           bert_dir = embedding_map['bert_embeddings']
-          bert_checkpoint = bert_dir + "/bert_model.ckpt"
-          bpe_words = sentences
-          bert_mask_indices = [self.vocab.vocab_maps['cased_L-12_H-768_A-12/vocab.txt'][s] for s in constants.BERT_MASK_STRS]
-          bert_no_pad_mask = tf.greater(bpe_words, 0)
-          bert_keep_mask = tf.cast(bert_no_pad_mask, tf.int32)
-          for idx_to_mask in bert_mask_indices:
-            bert_keep_mask *= tf.cast(tf.not_equal(bpe_words, idx_to_mask), tf.int32)
+          bpe_lens = named_features['word_bpe_lens']
 
-          # todo: stick all this junk into a bert util function
-          bert_config = bert.modeling.BertConfig.from_json_file(bert_dir + "/bert_config.json")
-          bert_model = bert.modeling.BertModel(
-            config=bert_config,
-            is_training=False,
-            input_ids=bpe_words,
-            input_mask=bert_no_pad_mask)
+          bert_embedded_tokens, bert_vars = bert_util.get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens)
 
-          tvars = tf.trainable_variables()
-          current_variable_scope = tf.get_variable_scope().name
-          bert_vars = tf.trainable_variables(scope='%s/bert' % current_variable_scope)
           # don't update bert parameters
           # todo don't hardcode to not update bert
           self.frozen_variables.update(bert_vars)
-          assignment_map, initialized_variable_names = tf_utils.get_assignment_map_from_checkpoint(tvars, bert_checkpoint)
-
-          tf.train.init_from_checkpoint(bert_checkpoint, {'bert/': '%s/bert/' % current_variable_scope})
-
-          tf.logging.debug("**** BERT Variables ****")
-          for var in tvars:
-            init_string = ""
-            if var.name in initialized_variable_names:
-              init_string = ", *INIT_FROM_CKPT*"
-            tf.logging.debug("  name = %s, shape = %s%s", var.name, var.shape,
-                            init_string)
-
-          # list of [batch_size, bpe_seq_length, hidden_size]
-          bert_embeddings = bert_model.get_all_encoder_layers()
-          num_bert_layers = len(bert_embeddings)
-          bert_layer_weights = tf.get_variable("bert_layer_weights", shape=[num_bert_layers],
-                                               initializer=tf.zeros_initializer)
-          bert_layer_weights_normed = tf.split(tf.nn.softmax(bert_layer_weights + 1.0 / num_bert_layers),
-                                               num_bert_layers)
-          for bert_layer_idx, (bert_layer_weight, bert_layer_output) in enumerate(zip(bert_layer_weights_normed, bert_embeddings)):
-            bert_embeddings[bert_layer_idx] = tf.expand_dims(bert_layer_output * bert_layer_weight, -1)
-
-          bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
-          bert_embeddings_avg = tf.reduce_sum(bert_embeddings_concat, -1)
-
-          # [bpe_toks_in_batch x bert_dim]
-          bert_embeddings_avg_gather = tf.gather_nd(bert_embeddings_avg, tf.where(bert_keep_mask))
-
-          # use bpe lens to combine bpe reps back into token reps
-          bert_dim = bert_embeddings_avg.get_shape().as_list()[-1]
-          bpe_lens = named_features['word_bpe_lens']
-
-          # [batch_size*batch_seq_len]
-          bpe_lens_flat = tf.reshape(bpe_lens, [-1])
-
-          max_bpe_len = tf.reduce_max(bpe_lens)
-
-          # [batch_size*batch_seq_len x max_bpe_len]
-          # the number of 1s in scatter_mask (and therefore number of scatter indices) should equal the number of bpe
-          # tokens in the batch (and therefore the number of elements in bert_embeddings_avg_gather)
-          scatter_mask = tf.sequence_mask(bpe_lens_flat)
-          scatter_indices = tf.where(scatter_mask)
-
-          # scatter_indices = tf.Print(scatter_indices, [batch_size, batch_seq_len, tf.shape(bert_embeddings_avg), tf.reduce_sum(tf.cast(scatter_mask, tf.int32)),
-          #                                              tf.shape(bert_embeddings_avg_gather), tf.shape(scatter_indices), tf.shape(bpe_lens_flat),
-          #                                              tf.reduce_sum(bpe_lens)])
-
-
-          bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather, [batch_size*batch_seq_len, max_bpe_len, bert_dim])
-
-          # average over bpes to get tokens
-          bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=1), [batch_size, batch_seq_len, bert_dim])
 
           # add 'bert_words' to named_features
-          named_features['bert_words'] = bert_tokens
+          named_features['bert_words'] = bert_embedded_tokens
 
         else:
           num_embeddings = self.vocab.vocab_names_sizes[embedding_name]
