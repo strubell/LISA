@@ -80,7 +80,7 @@ class LISAModel:
                for f, idx in self.feature_idx_map.items()}
 
       # todo this assumes that word_type is always passed in
-      words = named_features['word_type']
+      words = named_features['word']
 
       # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
