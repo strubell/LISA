@@ -107,12 +107,14 @@ class Vocab:
     vocabs_index = {}
     combined_data_config = {}
     vocabs_from_file = set()
+    idx = 0
     for data_config in data_configs:
       for d in data_config:
         updatable = 'updatable' in data_config[d] and data_config[d]['updatable']
         # if 'vocab' in data_config[d] and data_config[d]['vocab'] == d and (updatable or not update_only):
         if 'vocab' in data_config[d] and (updatable or not update_only):
           this_vocab_name = data_config[d]['vocab']
+          # if the vocab name is the same as the name of this entry, then we create our own vocab from the data
           if this_vocab_name == d:
             vocabs_from_file.add(this_vocab_name)
           combined_data_config[this_vocab_name] = data_config[d]
@@ -120,9 +122,11 @@ class Vocab:
           if update_only and updatable and this_vocab_name in self.vocab_maps:
             this_vocab = self.vocab_maps[this_vocab_name]
           vocabs.append(this_vocab)
-          vocabs_index[this_vocab_name] = len(vocabs_index)
+          vocabs_index[this_vocab_name] = idx
+          idx += 1
 
     # Create vocabs from data files
+    # TODO: somewhere in here, vocab loading is fucked (pos/deps)
     if filenames:
       for filename in filenames:
         with open(filename, 'r') as f:
@@ -130,28 +134,27 @@ class Vocab:
             line = line.strip()
             if line:
               split_line = line.split()
-              for d in vocabs_index.keys():
-                # only want to do this for vocabs that we're generating
-                if d in vocabs_from_file:
-                  datum_idx = combined_data_config[d]['conll_idx']
-                  this_vocab_map = vocabs[vocabs_index[d]]
-                  converter_name = combined_data_config[d]['converter']['name'] if 'converter' in combined_data_config[d] else 'default_converter'
-                  converter_params = data_converters.get_params(combined_data_config[d], split_line, datum_idx)
-                  this_data = data_converters.dispatch(converter_name)(**converter_params)
-                  for this_datum in this_data:
-                    if this_datum not in this_vocab_map:
-                      this_vocab_map[this_datum] = 0
-                    this_vocab_map[this_datum] += 1
+              # only want to do this for vocabs that we're generating
+              for d in vocabs_from_file:
+                datum_idx = combined_data_config[d]['conll_idx']
+                this_vocab_map = vocabs[vocabs_index[d]]
+                converter_name = combined_data_config[d]['converter']['name'] if 'converter' in combined_data_config[d] else 'default_converter'
+                converter_params = data_converters.get_params(combined_data_config[d], split_line, datum_idx)
+                this_data = data_converters.dispatch(converter_name)(**converter_params)
+                for this_datum in this_data:
+                  if this_datum not in this_vocab_map:
+                    this_vocab_map[this_datum] = 0
+                  this_vocab_map[this_datum] += 1
 
     # Assume we have the vocabs saved to disk; load them
     else:
       for d in vocabs_index.keys():
-        if d in combined_data_config: # todo i dont think this line is necessary
-          this_vocab_map = vocabs[vocabs_index[d]]
-          with open("%s/%s.txt" % (self.vocabs_dir, d), 'r') as f:
-            for line in f:
-              datum, count = line.strip().split()
-              this_vocab_map[datum] = int(count)
+        # if d in combined_data_config: # todo i dont think this line is necessary
+        this_vocab_map = vocabs[vocabs_index[d]]
+        with open("%s/%s.txt" % (self.vocabs_dir, d), 'r') as f:
+          for line in f:
+            datum, count = line.strip().split()
+            this_vocab_map[datum] = int(count)
 
     if embedding_files:
       for embedding_file in embedding_files:
@@ -171,7 +174,7 @@ class Vocab:
       # build reverse_lookup map, from int -> string
       this_counts_map = vocabs[vocabs_index[v]]
       this_map = dict(zip(this_counts_map.keys(), range(len(this_counts_map.keys()))))
-      print(v, list(this_map.items())[:10])
+      tf.logging.debug("vocab %s: %s" % (v, str(list(this_map.items())[:10])))
       reverse_map = dict(zip(range(len(this_counts_map.keys())), this_counts_map.keys()))
       self.oovs[v] = False
       if 'oov' in combined_data_config[v] and combined_data_config[v]['oov']:

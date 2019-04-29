@@ -70,8 +70,13 @@ class LISAModel:
     intmapped_feats = features['features']
     sentences = features['sentences']
 
+    print("feats", intmapped_feats)
+    print("sentences", sentences)
+
     # todo: do this earlier
-    sentences = tf.squeeze(sentences, -1)
+    # sentences = tf.cond(tf.equal(tf.rank(sentences), 3), lambda: tf.squeeze(sentences, -1), lambda: sentences)
+
+    print("sentences", sentences)
 
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
@@ -308,22 +313,32 @@ class LISAModel:
                 # - probabilities
                 predictions[task] = task_outputs
 
-                # do the evaluation
-                for eval_name, eval_map in task_map['eval_fns'].items():
-                  eval_fn_params = evaluation_fns.get_params(mode, task_outputs, eval_map, predictions, named_features,
-                                                             named_labels, task_labels, self.vocab.reverse_maps,
-                                                             tokens_to_keep)
-                  eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-                  eval_metric_ops[eval_name] = eval_result
+                if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
 
-                # get the individual task loss and apply penalty
-                this_task_loss = task_outputs['loss'] * task_map['penalty']
+                  # get the individual task loss and apply penalty
+                  this_task_loss = task_outputs['loss'] * task_map['penalty']
 
-                # log this task's loss
-                items_to_log['%s_loss' % task] = this_task_loss
+                  # log this task's loss
+                  items_to_log['%s_loss' % task] = this_task_loss
 
-                # add this loss to the overall loss being minimized
-                loss += this_task_loss
+                  # add this loss to the overall loss being minimized
+                  loss += this_task_loss
+
+                  if mode == ModeKeys.EVAL:
+                    # do the evaluation
+                    for eval_name, eval_map in task_map['eval_fns'].items():
+                      eval_fn_params = evaluation_fns.get_params(mode, task_outputs, eval_map, predictions,
+                                                                 named_features,
+                                                                 named_labels, task_labels, self.vocab.reverse_maps,
+                                                                 tokens_to_keep)
+                      eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
+                      eval_metric_ops[eval_name] = eval_result
+
+      # need to flatten the dict of predictions to make Estimator happy
+      flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
+
+      if mode == ModeKeys.PREDICT:
+        return tf.estimator.EstimatorSpec(mode, predictions=flat_predictions)
 
       # set up moving average variables
       assign_moving_averages_dep = tf.no_op()
@@ -362,13 +377,14 @@ class LISAModel:
 
         logging_hook = tf.train.LoggingTensorHook(items_to_log, every_n_iter=20)
 
-        # need to flatten the dict of predictions to make Estimator happy
-        flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
-
         export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
                           tf.estimator.export.PredictOutput(flat_predictions)}
 
         tf.logging.info("Created model with %d trainable parameters" % tf_utils.get_num_parameters(vars_to_train))
 
-        return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op, eval_metric_ops,
-                                          training_hooks=[logging_hook], export_outputs=export_outputs)
+        if mode == ModeKeys.EVAL:
+          return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, eval_metric_ops=eval_metric_ops,
+                                            export_outputs=export_outputs)
+
+        return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op=train_op, training_hooks=[logging_hook],
+                                          export_outputs=export_outputs)

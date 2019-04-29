@@ -71,7 +71,7 @@ def map_strings_to_ints_bert(vocab_lookup_ops, data_config, idx_map):
 
     # this is where the order of features/labels in input gets defined
     # todo: can i have these come out of the lookup as int32?
-    return tf.cast(tf.concat(intmapped, axis=-1), tf.int32)
+    return tf.cast(tf.squeeze(tf.concat(intmapped, axis=-1), -1), tf.int32)
 
   return _mapper
 

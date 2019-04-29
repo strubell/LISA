@@ -4,6 +4,7 @@ import nn_utils
 import tf_utils
 import util
 
+
 def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels, tokens_to_keep, transition_params):
 
   with tf.name_scope('softmax_classifier'):
@@ -20,23 +21,22 @@ def softmax_classifier(mode, hparams, model_config, inputs, targets, num_labels,
     if transition_params is not None:
       util.fatal_error('Transition params not yet supported in softmax_classifier')
 
-    # cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
-    targets_onehot = tf.one_hot(indices=targets, depth=num_labels, axis=-1)
-    loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(logits, [-1, num_labels]),
-                                           onehot_labels=tf.reshape(targets_onehot, [-1, num_labels]),
-                                           weights=tf.reshape(tokens_to_keep, [-1]),
-                                           label_smoothing=hparams.label_smoothing,
-                                           reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
-
     predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
 
     output = {
-      'loss': loss,
       'predictions': predictions,
       'scores': logits,
       'probabilities': tf.nn.softmax(logits, -1)
     }
 
+    if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+      targets_onehot = tf.one_hot(indices=targets, depth=num_labels, axis=-1)
+      loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(logits, [-1, num_labels]),
+                                             onehot_labels=tf.reshape(targets_onehot, [-1, num_labels]),
+                                             weights=tf.reshape(tokens_to_keep, [-1]),
+                                             label_smoothing=hparams.label_smoothing,
+                                             reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+      output['loss'] = loss
   return output
 
 
@@ -83,19 +83,19 @@ def joint_softmax_classifier(mode, hparams, model_config, inputs, targets, num_l
     if transition_params is not None:
       util.fatal_error('Transition params not yet supported in joint_softmax_classifier')
 
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
-
-    cross_entropy *= tokens_to_keep
-    loss = tf.reduce_sum(cross_entropy) / tf.reduce_sum(tokens_to_keep)
-
     predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
 
     output = {
-      'loss': loss,
       'predictions': predictions,
       'scores': logits,
       'probabilities': tf.nn.softmax(logits, -1)
     }
+
+    if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+      cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
+      cross_entropy *= tokens_to_keep
+      loss = tf.reduce_sum(cross_entropy) / tf.reduce_sum(tokens_to_keep)
+      output['loss'] = loss
 
     # now get separate-task scores and predictions for each of the maps we've passed through
     separate_output = get_separate_scores_preds_from_joint(output, joint_maps, num_labels)
@@ -127,17 +127,18 @@ def parse_bilinear(mode, hparams, model_config, inputs, targets, num_labels, tok
     predictions = tf.argmax(arc_logits, -1)
     probabilities = tf.nn.softmax(arc_logits)
 
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
-    loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
-
     output = {
-      'loss': loss,
       'predictions': predictions,
       'probabilities': probabilities,
       'scores': arc_logits,
       'dep_rel_mlp': dep_rel_mlp,
       'head_rel_mlp': head_rel_mlp
     }
+
+    if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+      cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=arc_logits, labels=targets)
+      loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / num_tokens
+      output['loss'] = loss
 
   return output
 
@@ -153,17 +154,17 @@ def conditional_bilinear(mode, hparams, model_config, inputs, targets, num_label
   predictions = tf.argmax(logits, -1)
   probabilities = tf.nn.softmax(logits)
 
-  cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
-
-  n_tokens = tf.reduce_sum(tokens_to_keep)
-  loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / n_tokens
-
   output = {
-    'loss': loss,
     'scores': logits,
     'predictions': predictions,
     'probabilities': probabilities
   }
+
+  if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
+    n_tokens = tf.reduce_sum(tokens_to_keep)
+    loss = tf.reduce_sum(cross_entropy * tokens_to_keep) / n_tokens
+    output['loss'] = loss
 
   return output
 
@@ -199,7 +200,6 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       predicate_preds = predicate_preds_train if mode == tf.estimator.ModeKeys.TRAIN else predicate_preds_eval
       predicate_gather_indices = tf.where(bool_mask_where_predicates(predicate_preds))
 
-
       # (1) project into predicate, role representations
       with tf.variable_scope('MLP'):
         predicate_role_mlp = nn_utils.MLP(inputs, predicate_mlp_size + role_mlp_size, keep_prob=hparams.mlp_dropout)
@@ -223,11 +223,20 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
                                                        hparams.bilinear_dropout)
         srl_logits_transposed = tf.transpose(srl_logits, [0, 2, 1])
 
-      # (3) compute loss
+      # num_predicates_in_batch x seq_len
+      predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
+
+      output = {
+        'predictions': predictions,
+        'scores': srl_logits_transposed,
+        'probabilities': tf.nn.softmax(srl_logits_transposed, -1)
+      }
 
       # need to repeat each of these once for each target in the sentence
       mask_tiled = tf.reshape(tf.tile(tokens_to_keep, [1, batch_seq_len]), [batch_size, batch_seq_len, batch_seq_len])
       mask = tf.gather_nd(mask_tiled, predicate_gather_indices)
+
+      seq_lens = tf.cast(tf.reduce_sum(mask, 1), tf.int32)
 
       # now we have k sets of targets for the k frames
       # (p1) f1 f2 f3
@@ -239,45 +248,37 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       # (p2) f3 f3 f3
       srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
 
-      gold_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_targets), tf.int32), -1)
-      srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
+      if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+        gold_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_targets), tf.int32), -1)
+        srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
-      # num_predicates_in_batch x seq_len
-      srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
+        # num_predicates_in_batch x seq_len
+        srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
+        output['targets'] = srl_targets_gold_predicates
 
-      predicted_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_preds), tf.int32), -1)
-      srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
-      srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
+      if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+        predicted_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_preds), tf.int32), -1)
+        srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
+        srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
 
-      # num_predicates_in_batch x seq_len
-      predictions = tf.cast(tf.argmax(srl_logits_transposed, axis=-1), tf.int32)
-
-      seq_lens = tf.cast(tf.reduce_sum(mask, 1), tf.int32)
-
-      if transition_params is not None and (mode == ModeKeys.PREDICT or mode == ModeKeys.EVAL):
+        if transition_params is not None and tf_utils.is_trainable(transition_params):
+          # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
+          log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
+                                                                                srl_targets_predicted_predicates,
+                                                                                seq_lens, transition_params)
+          loss = tf.reduce_mean(-log_likelihood)
+          output['loss'] = loss
+        else:
+          srl_targets_onehot = tf.one_hot(indices=srl_targets_predicted_predicates, depth=num_labels, axis=-1)
+          loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(srl_logits_transposed, [-1, num_labels]),
+                                                 onehot_labels=tf.reshape(srl_targets_onehot, [-1, num_labels]),
+                                                 weights=tf.reshape(mask, [-1]),
+                                                 label_smoothing=hparams.label_smoothing,
+                                                 reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+          output['loss'] = loss
+      elif transition_params is not None:
         predictions, score = tf.contrib.crf.crf_decode(srl_logits_transposed, transition_params, seq_lens)
-
-      if transition_params is not None and mode == ModeKeys.TRAIN and tf_utils.is_trainable(transition_params):
-        # flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size * bucket_size]))
-        log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(srl_logits_transposed,
-                                                                              srl_targets_predicted_predicates,
-                                                                              seq_lens, transition_params)
-        loss = tf.reduce_mean(-log_likelihood)
-      else:
-        srl_targets_onehot = tf.one_hot(indices=srl_targets_predicted_predicates, depth=num_labels, axis=-1)
-        loss = tf.losses.softmax_cross_entropy(logits=tf.reshape(srl_logits_transposed, [-1, num_labels]),
-                                               onehot_labels=tf.reshape(srl_targets_onehot, [-1, num_labels]),
-                                               weights=tf.reshape(mask, [-1]),
-                                               label_smoothing=hparams.label_smoothing,
-                                               reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
-
-      output = {
-        'loss': loss,
-        'predictions': predictions,
-        'scores': srl_logits_transposed,
-        'targets': srl_targets_gold_predicates,
-        'probabilities': tf.nn.softmax(srl_logits_transposed, -1)
-      }
+        output['predictions'] = predictions
 
       return output
 
