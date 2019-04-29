@@ -98,7 +98,7 @@
     }
   },
 
-  "sentences": {
+  "bpe_sentences": {
     "word_bpe": {
       "conll_idx": 3,
       "feature": true,
