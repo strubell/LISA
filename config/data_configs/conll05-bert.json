@@ -1,6 +1,6 @@
 {
   "features": {
-    "values": {
+    "mappings": {
       "id": {
         "conll_idx": 2
       },
@@ -99,7 +99,6 @@
       }
     }
   },
-
 
   "bpe_sentences": {
     "example_converter": "bert_sent_converter",
