@@ -127,8 +127,8 @@ class LISAModel:
           bert_dir = embedding_map['bert_embeddings']
           bpe_lens = named_features['word_bpe_lens']
 
-          bert_embedded_tokens, bert_vars = bert_util.get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens)
-
+          bert_embedded_tokens, bert_vars = bert_util.get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens,
+                                                                          self.vocab.vocab_maps)
           # don't update bert parameters
           # todo don't hardcode to not update bert
           self.frozen_variables.update(bert_vars)
