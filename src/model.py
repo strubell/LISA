@@ -123,7 +123,7 @@ class LISAModel:
           embeddings[embedding_name] = embedding_table
         elif 'bert_embeddings' in embedding_map:
 
-          bpe_sentences = features['bpe_sentences']
+          bpe_sentences = features['sentences']
           bert_dir = embedding_map['bert_embeddings']
           bpe_lens = named_features['word_bpe_lens']
 
