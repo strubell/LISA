@@ -94,7 +94,7 @@ data_config = data_configs[0]
 
 def train_input_fn():
   return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
-                                  num_epochs=hparams.num_train_epochs, shuffle=True,
+                                  num_epochs=hparams.num_train_epochs, shuffle=False,
                                   shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
 

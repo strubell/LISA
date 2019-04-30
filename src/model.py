@@ -66,7 +66,6 @@ class LISAModel:
     hparams = self.hparams(mode)
 
     named_features = features['features']
-    # labels = labels['features']
 
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
@@ -76,9 +75,6 @@ class LISAModel:
       layer_config = self.model_config['layers']
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
-      # named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
-      #          for f, idx in self.feature_idx_map.items()}
-
       # todo this assumes that word_type is always passed in
       words = named_features['word']
 
@@ -87,26 +83,24 @@ class LISAModel:
                                 tf.ones([batch_size, batch_seq_len]))
 
       # Extract named features from monolithic "features" input
-      # named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in named_features.items()}
+      named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int64), v) for f, v in named_features.items()}
 
       # Extract named labels from monolithic "labels" input, and mask them
       # todo fix masking -- is it even necessary?
       named_labels = None
       if mode != ModeKeys.PREDICT:
         named_labels = labels['features']
-        # for l, idx in self.label_idx_map.items():
-        #   these_labels = labels[:, :, idx[0]:idx[1]] if idx[1] != -1 else labels[:, :, idx[0]:]
-        #   these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
-        #   # check if we need to mask another dimension
-        #   if idx[1] == -1:
-        #     last_dim = tf.shape(these_labels)[2]
-        #     this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
-        #                          tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
-        #                          tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
-        #     these_labels_masked = tf.multiply(these_labels_masked, this_mask)
-        #   else:
-        #     these_labels_masked = tf.squeeze(these_labels_masked, -1)
-        #   named_labels[l] = these_labels_masked
+        for l, these_labels in named_labels.items():
+          these_labels_masked = tf.multiply(these_labels, tf.cast(tokens_to_keep, tf.int64))
+          # check if we need to mask another dimension
+          this_shape = these_labels.get_shape().as_list()
+          if len(this_shape) > 2:
+            last_dim = tf.shape(these_labels)[2]
+            this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
+                                 tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int64),
+                                 tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int64))
+            these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+          named_labels[l] = these_labels_masked
 
       # load transition parameters
       transition_stats = util.load_transition_params(self.task_config, self.vocab)
@@ -130,6 +124,7 @@ class LISAModel:
 
           bert_embedded_tokens, bert_vars = bert_util.get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens,
                                                                           self.vocab.vocab_maps)
+
           # don't update bert parameters
           # todo don't hardcode to not update bert
           self.frozen_variables.update(bert_vars)
@@ -233,9 +228,9 @@ class LISAModel:
 
                 # want task_outputs to have:
                 # - predictions
-                # - loss
                 # - scores
                 # - probabilities
+                # - loss (if training)
                 predictions[task] = task_outputs
 
                 if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
