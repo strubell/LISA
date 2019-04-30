@@ -86,20 +86,21 @@ class LISAModel:
       named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int64), v) for f, v in named_features.items()}
 
       # Extract named labels from monolithic "labels" input, and mask them
-      # todo fix masking -- is it even necessary?
+      # todo: why is this even necessary?
       named_labels = None
       if mode != ModeKeys.PREDICT:
         named_labels = labels['features']
         for l, these_labels in named_labels.items():
-          these_labels_masked = tf.multiply(these_labels, tf.cast(tokens_to_keep, tf.int64))
-          # check if we need to mask another dimension
           this_shape = these_labels.get_shape().as_list()
-          if len(this_shape) > 2:
+          if len(this_shape) == 2:
+            these_labels_masked = tf.multiply(these_labels, tf.cast(tokens_to_keep, tf.int64))
+          # check if we need to mask another dimension
+          elif len(this_shape) == 3:
             last_dim = tf.shape(these_labels)[2]
-            this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
+            this_mask = tf.where(tf.equal(these_labels, constants.PAD_VALUE),
                                  tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int64),
                                  tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int64))
-            these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+            these_labels_masked = tf.multiply(these_labels, this_mask)
           named_labels[l] = these_labels_masked
 
       # load transition parameters
