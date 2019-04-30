@@ -1,10 +1,10 @@
 import time
 import tensorflow as tf
 
-PAD_VALUE = tf.constant(-1, dtype=tf.int64)
+PAD_VALUE = -1
 JOINT_LABEL_SEP = '/'
 
-OOV_STRING = "<OOV>"
+OOV_STRING = "[OOV]"
 
 DEFAULT_BUCKET_BOUNDARIES = [20, 30, 50, 80]
 

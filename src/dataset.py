@@ -57,6 +57,7 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     all_labels = {}
 
     padding_values = ({}, {})
+    pad_constant_tf = tf.constant(constants.PAD_VALUE, dtype=tf.int64)
 
     # for each chunk of data (set of mappings defined in mapping config, and optional example converter
     for d, this_config in data_config.items():
@@ -75,12 +76,12 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
 
       # intmap the dataset
       if feature_idx_map:
-        padding_values[0][d] = {k: constants.PAD_VALUE for k in feature_idx_map}
+        padding_values[0][d] = {k: pad_constant_tf for k in feature_idx_map}
         features = dataset.map(map_strings_to_ints(vocab_lookup_ops, mapping_config, feature_idx_map), num_parallel_calls=8)
         all_features[d] = features
 
       if label_idx_map:
-        padding_values[1][d] = {k: constants.PAD_VALUE for k in label_idx_map}
+        padding_values[1][d] = {k: pad_constant_tf for k in label_idx_map}
         labels = dataset.map(map_strings_to_ints(vocab_lookup_ops, mapping_config, label_idx_map), num_parallel_calls=8)
         all_labels[d] = labels
 
