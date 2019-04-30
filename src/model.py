@@ -16,15 +16,15 @@ import bert_util
 
 class LISAModel:
 
-  def __init__(self, hparams, model_config, task_config, attention_config, feature_idx_map, label_idx_map, vocab):
+  def __init__(self, hparams, model_config, task_config, attention_config, vocab):
     self.train_hparams = hparams
     self.test_hparams = train_utils.copy_without_dropout(hparams)
 
     self.model_config = model_config
     self.task_config = task_config
     self.attention_config = attention_config
-    self.feature_idx_map = feature_idx_map
-    self.label_idx_map = label_idx_map
+    # self.feature_idx_map = feature_idx_map
+    # self.label_idx_map = label_idx_map
     self.vocab = vocab
     self.frozen_variables = set()
 
@@ -65,19 +65,19 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
-    intmapped_feats = features['features']
-    labels = labels['features']
+    named_features = features['features']
+    # labels = labels['features']
 
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
-      batch_shape = tf.shape(intmapped_feats)
+      batch_shape = tf.shape(next(iter(named_features.values())))
       batch_size = batch_shape[0]
       batch_seq_len = batch_shape[1]
       layer_config = self.model_config['layers']
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
-      named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
-               for f, idx in self.feature_idx_map.items()}
+      # named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
+      #          for f, idx in self.feature_idx_map.items()}
 
       # todo this assumes that word_type is always passed in
       words = named_features['word']
@@ -87,26 +87,26 @@ class LISAModel:
                                 tf.ones([batch_size, batch_seq_len]))
 
       # Extract named features from monolithic "features" input
-      named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in named_features.items()}
+      # named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in named_features.items()}
 
       # Extract named labels from monolithic "labels" input, and mask them
       # todo fix masking -- is it even necessary?
       named_labels = None
       if mode != ModeKeys.PREDICT:
-        named_labels = {}
-        for l, idx in self.label_idx_map.items():
-          these_labels = labels[:, :, idx[0]:idx[1]] if idx[1] != -1 else labels[:, :, idx[0]:]
-          these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
-          # check if we need to mask another dimension
-          if idx[1] == -1:
-            last_dim = tf.shape(these_labels)[2]
-            this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
-                                 tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
-                                 tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
-            these_labels_masked = tf.multiply(these_labels_masked, this_mask)
-          else:
-            these_labels_masked = tf.squeeze(these_labels_masked, -1)
-          named_labels[l] = these_labels_masked
+        named_labels = labels['features']
+        # for l, idx in self.label_idx_map.items():
+        #   these_labels = labels[:, :, idx[0]:idx[1]] if idx[1] != -1 else labels[:, :, idx[0]:]
+        #   these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
+        #   # check if we need to mask another dimension
+        #   if idx[1] == -1:
+        #     last_dim = tf.shape(these_labels)[2]
+        #     this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
+        #                          tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
+        #                          tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
+        #     these_labels_masked = tf.multiply(these_labels_masked, this_mask)
+        #   else:
+        #     these_labels_masked = tf.squeeze(these_labels_masked, -1)
+        #   named_labels[l] = these_labels_masked
 
       # load transition parameters
       transition_stats = util.load_transition_params(self.task_config, self.vocab)
@@ -123,7 +123,8 @@ class LISAModel:
           embeddings[embedding_name] = embedding_table
         elif 'bert_embeddings' in embedding_map:
 
-          bpe_sentences = features['bpe_sentences']
+          # todo don't hardcode this lookup, specify it in the config
+          bpe_sentences = features['bpe_sentences']['word_bpe']
           bert_dir = embedding_map['bert_embeddings']
           bpe_lens = named_features['word_bpe_lens']
 

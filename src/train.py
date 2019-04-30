@@ -102,22 +102,15 @@ def dev_input_fn():
   return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
 
-{
-  'label1': {
-    ''
-  }
-}
-
 # Generate mappings from feature/label names to indices in the model_fn inputs
 # feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
 # todo: don't hardcode!!
-feature_idx_map = util.load_input_idx_maps(data_config['mappings'], 'feature', ['feature'])
-label_idx_map = util.load_input_idx_maps(data_config['mappings'], 'label', ['label'])
+# feature_idx_map = util.load_input_idx_maps(data_config['mappings'], 'feature', ['feature'])
+# label_idx_map = util.load_input_idx_maps(data_config['mappings'], 'label', ['label'])
 
 
 # Initialize the model
-model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
-                  vocab)
+model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, vocab)
 
 if args.debug:
   tf.logging.info("Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
