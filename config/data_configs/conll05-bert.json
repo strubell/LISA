@@ -15,15 +15,6 @@
         "oov": false,
         "updatable": true
       },
-      "word_form": {
-        "conll_idx": 3,
-        "feature": true,
-        "vocab": "word_form",
-        "oov": true,
-        "converter": {
-          "name": "lowercase"
-        }
-      },
       "word_bpe_lens": {
         "conll_idx": 3,
         "feature": true,
