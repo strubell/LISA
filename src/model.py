@@ -16,8 +16,7 @@ import bert_util
 
 class LISAModel:
 
-  def __init__(self, hparams, model_config, task_config, attention_config, feature_idx_map, label_idx_map,
-               vocab):
+  def __init__(self, hparams, model_config, task_config, attention_config, feature_idx_map, label_idx_map, vocab):
     self.train_hparams = hparams
     self.test_hparams = train_utils.copy_without_dropout(hparams)
 
@@ -67,6 +66,7 @@ class LISAModel:
     hparams = self.hparams(mode)
 
     intmapped_feats = features['features']
+    labels = labels['features']
 
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 

@@ -59,6 +59,16 @@ class Vocab:
                                                               key_column_index=0)
         vocab_lookup_ops[v] = this_lookup
 
+        # add OOV as last element to in-memory dicts if we need to. this happens here rather than when creating
+        # the maps so that we don't load redundant OOVs into lookup table above, and when updating vocabs.
+        if num_oov:
+          this_vocab_map = self.vocab_maps[v]
+          this_reverse_map = self.reverse_maps[v]
+          oov_idx = len(this_vocab_map)
+          this_vocab_map[constants.OOV_STRING] = oov_idx
+          this_reverse_map[oov_idx] = constants.OOV_STRING
+          self.vocab_names_sizes[v] += 1
+
       # if embedding_files:
       #   for embedding_file in embedding_files:
       #     embeddings_name = embedding_file
@@ -109,21 +119,23 @@ class Vocab:
     vocabs_from_file = set()
     idx = 0
     for data_config in data_configs:
-      for d in data_config:
-        updatable = 'updatable' in data_config[d] and data_config[d]['updatable']
-        # if 'vocab' in data_config[d] and data_config[d]['vocab'] == d and (updatable or not update_only):
-        if 'vocab' in data_config[d] and (updatable or not update_only):
-          this_vocab_name = data_config[d]['vocab']
-          # if the vocab name is the same as the name of this entry, then we create our own vocab from the data
-          if this_vocab_name == d:
-            vocabs_from_file.add(this_vocab_name)
-          combined_data_config[this_vocab_name] = data_config[d]
-          this_vocab = collections.OrderedDict()
-          if update_only and updatable and this_vocab_name in self.vocab_maps:
-            this_vocab = self.vocab_maps[this_vocab_name]
-          vocabs.append(this_vocab)
-          vocabs_index[this_vocab_name] = idx
-          idx += 1
+      for c in data_config:
+        mapping_config = data_config[c]['mappings']
+        for d, config_map in mapping_config.items():
+          updatable = 'updatable' in config_map and config_map['updatable']
+          # if 'vocab' in data_config[d] and data_config[d]['vocab'] == d and (updatable or not update_only):
+          if 'vocab' in config_map and (updatable or not update_only):
+            this_vocab_name = config_map['vocab']
+            # if the vocab name is the same as the name of this entry, then we create our own vocab from the data
+            if this_vocab_name == d:
+              vocabs_from_file.add(this_vocab_name)
+            combined_data_config[this_vocab_name] = config_map
+            this_vocab = collections.OrderedDict()
+            if update_only and updatable and this_vocab_name in self.vocab_maps:
+              this_vocab = self.vocab_maps[this_vocab_name]
+            vocabs.append(this_vocab)
+            vocabs_index[this_vocab_name] = idx
+            idx += 1
 
     # Create vocabs from data files
     # TODO: somewhere in here, vocab loading is fucked (pos/deps)
@@ -171,8 +183,9 @@ class Vocab:
     # build reverse_maps, joint_label_lookup_maps
     for v in vocabs_index.keys():
 
-      # build reverse_lookup map, from int -> string
       this_counts_map = vocabs[vocabs_index[v]]
+
+      # build reverse_lookup map, from int -> string
       this_map = dict(zip(this_counts_map.keys(), range(len(this_counts_map.keys()))))
       tf.logging.debug("vocab %s: %s" % (v, str(list(this_map.items())[:10])))
       reverse_map = dict(zip(range(len(this_counts_map.keys())), this_counts_map.keys()))

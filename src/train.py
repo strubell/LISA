@@ -84,30 +84,35 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
                   ["%s/vocab.txt" % embeddings_map['bert_embeddings'] for embeddings_map in model_config['embeddings'].values()
                    if 'bert_embeddings' in embeddings_map]
 
-# todo: don't hardcode!!
-# sentences_config = train_utils.load_json_configs('config/data_configs/conll05-bert-sentences.json')
-
-# data_configs = [data_config, sentences_config]
-
 vocab = Vocab(data_configs, args.save_dir, train_filenames, embedding_files)
 vocab.update(filenames=dev_filenames)
 
+# todo: actually implement for multiple data configs!
+# todo: each data config needs an associated data file
+data_config = data_configs[0]
+
 
 def train_input_fn():
-  return train_utils.get_input_fn(vocab, data_configs, train_filenames, hparams.batch_size,
+  return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
                                   num_epochs=hparams.num_train_epochs, shuffle=True,
                                   shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
 
 def dev_input_fn():
-  return train_utils.get_input_fn(vocab, data_configs, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
+  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
+
+{
+  'label1': {
+    ''
+  }
+}
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
 # feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
 # todo: don't hardcode!!
-feature_idx_map = util.load_input_idx_maps(data_configs[0], 'feature', ['feature'])
-label_idx_map = util.load_input_idx_maps(data_configs[0], 'label', ['label'])
+feature_idx_map = util.load_input_idx_maps(data_config['mappings'], 'feature', ['feature'])
+label_idx_map = util.load_input_idx_maps(data_config['mappings'], 'label', ['label'])
 
 
 # Initialize the model
@@ -122,6 +127,7 @@ distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if
 
 # Enable XLA JIT (via: https://medium.com/future-vision/bert-meets-gpus-403d3fbed848)
 session_config = tf.ConfigProto()
+# todo this doesn't currently work (on blake)
 if args.use_xla:
   optimizer_options = session_config.graph_options.optimizer_options
   optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1

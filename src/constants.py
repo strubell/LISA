@@ -1,6 +1,7 @@
 import time
+import tensorflow as tf
 
-PAD_VALUE = -1
+PAD_VALUE = tf.constant(-1, dtype=tf.int64)
 JOINT_LABEL_SEP = '/'
 
 OOV_STRING = "<OOV>"
