@@ -43,7 +43,7 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, idx_map):
   return _mapper
 
 
-def get_dataset(data_filenames, data_config, vocab, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier):
+def get_dataset(data_filenames, data_config, vocab, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier=1):
 
   # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops()
@@ -78,23 +78,44 @@ def get_dataset(data_filenames, data_config, vocab, batch_size, num_epochs, shuf
 
       # intmap the dataset
       if feature_idx_map:
-        padding_values[0][d] = {k: pad_constant_tf for k in feature_idx_map}
+        padding_values[0].update({k: pad_constant_tf for k in feature_idx_map})
         features = dataset.map(map_strings_to_ints(vocab_lookup_ops, mapping_config, feature_idx_map),
                                num_parallel_calls=8)
         all_features[d] = features
 
       if label_idx_map:
-        padding_values[1][d] = {k: pad_constant_tf for k in label_idx_map}
+        padding_values[1].update({k: pad_constant_tf for k in label_idx_map})
         labels = dataset.map(map_strings_to_ints(vocab_lookup_ops, mapping_config, label_idx_map), num_parallel_calls=8)
         all_labels[d] = labels
 
+    # need to flatten nested maps for PREDICT mode / model exporting
+    # right now all_features is a map containing datasets
+    # all_features_list = list(all_features.values())
+    # feats_concat = all_features_list.pop()
+    # for d in all_features_list:
+    #   feats_concat.concatenate(d)
+
+    def flatten_dataset(f, l):
+      d0_flat = {}
+      d1_flat = {}
+      for v in f.values():
+        d0_flat.update(v)
+      for v in l.values():
+        d1_flat.update(v)
+      return d0_flat, d1_flat
+
+    # f = tf.data.Dataset.concatenate(tuple())
+
     dataset = tf.data.Dataset.zip((all_features, all_labels))
+
+    dataset = dataset.map(flatten_dataset)
 
     dataset = dataset.cache()
 
     # grab the length of the first dim of the first thing in the first map in features
     def length_func(f, _):
-      return tf.shape(next(iter(next(iter(f.values())).values())))[0]
+      # return tf.shape(next(iter(next(iter(f.values())).values())))[0]
+      return tf.shape((next(iter(f.values()))))[0]
 
     # do batching
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=length_func,

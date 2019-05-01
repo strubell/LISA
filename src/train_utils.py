@@ -138,12 +138,29 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
   return best_eval_result[key] < current_eval_result[key]
 
 
-def get_serving_input_receiver_fn(dataset):
+def get_input_shapes(data_config, key):
+  shapes = {}
+  for _, config in data_config.items():
+    for d, datum_config in config['mappings'].items():
+      if key in datum_config and datum_config[key]:
+        last_dims_shape = []
+        if 'shape' in datum_config:
+          last_dims_shape = [s if s else None for s in datum_config['shape']]
+        # batch x sequence length x last_dims_shape...
+        shapes[d] = [None, None] + last_dims_shape
 
-  print(dataset.shape)
+  return shapes
+
+
+def get_serving_input_receiver_fn(data_config):
+
+  input_shapes = get_input_shapes(data_config, 'feature')
+  print("input shapes", input_shapes)
+
+  inputs = {k: tf.placeholder(tf.int64, shape) for k, shape in input_shapes.items()}
 
   def serving_input_receiver_fn():
-    return tf.estimator.export.ServingInputReceiver(dataset.shape, dataset.shape)
+    return tf.estimator.export.ServingInputReceiver(inputs, inputs)
 
   return serving_input_receiver_fn
 
@@ -151,11 +168,11 @@ def get_serving_input_receiver_fn(dataset):
 # def serving_input_receiver_fn():
 #   inputs = tf.placeholder(tf.int32, [None, None, None])
 #   return tf.estimator.export.TensorServingInputReceiver(inputs, inputs)
-
-def serving_input_receiver_fn():
-  inputs = {
-    "features": tf.placeholder(tf.int32, [None, None, None]),
-    "sentences": tf.placeholder(tf.int32, [None, None])
-  }
-  return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+#
+# def serving_input_receiver_fn():
+#   inputs = {
+#     "features": tf.placeholder(tf.int32, [None, None, None]),
+#     "sentences": tf.placeholder(tf.int32, [None, None])
+#   }
+#   return tf.estimator.export.ServingInputReceiver(inputs, inputs)
 
