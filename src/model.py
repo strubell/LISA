@@ -79,7 +79,8 @@ class LISAModel:
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
       # for masking out padding tokens
-      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros_like(words), tf.ones_like(words))
+      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros_like(words, dtype=tf.float32),
+                                tf.ones_like(words, dtype=tf.float32))
 
       def get_mask(t):
         return tf.where(tf.equal(t, constants.PAD_VALUE), tf.zeros_like(t), tf.ones_like(t))
