@@ -95,7 +95,8 @@
         "vocab": "srl",
         "converter": {
           "name": "idx_range_converter"
-        }
+        },
+        "shape": [null]
       }
     }
   },
