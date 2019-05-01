@@ -67,6 +67,9 @@ class LISAModel:
 
     named_features = features['features']
 
+    print("MODE(%s) features" % str(mode), features)
+    print("MODE(%s) named features" % str(mode), named_features)
+
     with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
 
       batch_shape = tf.shape(next(iter(named_features.values())))

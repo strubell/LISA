@@ -43,8 +43,10 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, idx_map):
   return _mapper
 
 
-def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
-                      shuffle_buffer_multiplier):
+def get_dataset(data_filenames, data_config, vocab, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier):
+
+  # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
+  vocab_lookup_ops = vocab.create_vocab_lookup_ops()
 
   bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
   bucket_batch_sizes = [batch_size] * (len(bucket_boundaries) + 1)
@@ -77,7 +79,8 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
       # intmap the dataset
       if feature_idx_map:
         padding_values[0][d] = {k: pad_constant_tf for k in feature_idx_map}
-        features = dataset.map(map_strings_to_ints(vocab_lookup_ops, mapping_config, feature_idx_map), num_parallel_calls=8)
+        features = dataset.map(map_strings_to_ints(vocab_lookup_ops, mapping_config, feature_idx_map),
+                               num_parallel_calls=8)
         all_features[d] = features
 
       if label_idx_map:
@@ -90,7 +93,8 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
     dataset = dataset.cache()
 
     # grab the length of the first dim of the first thing in the first map in features
-    def length_func(f, _): return tf.shape(next(iter(next(iter(f.values())).values())))[0]
+    def length_func(f, _):
+      return tf.shape(next(iter(next(iter(f.values())).values())))[0]
 
     # do batching
     dataset = dataset.apply(tf.contrib.data.bucket_by_sequence_length(element_length_func=length_func,
@@ -101,12 +105,16 @@ def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size,
 
     # shuffle and expand out epochs if training
     if shuffle:
-      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size*shuffle_buffer_multiplier,
+      dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size * shuffle_buffer_multiplier,
                                                                  count=num_epochs))
 
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
 
+    return dataset
+
+
+def get_data_iterator(dataset):
     # create the iterator
     # it has to be initializable due to the lookup tables
     iterator = dataset.make_initializable_iterator()

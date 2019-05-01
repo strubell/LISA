@@ -3,6 +3,7 @@ import argparse
 import os
 from functools import partial
 import train_utils
+import dataset
 from vocab import Vocab
 from model import LISAModel
 import numpy as np
@@ -91,16 +92,20 @@ vocab.update(filenames=dev_filenames)
 # todo: each data config needs an associated data file
 data_config = data_configs[0]
 
+train_dataset = dataset.get_dataset(train_filenames, data_config, vocab, hparams.batch_size,
+                                    num_epochs=hparams.num_train_epochs, shuffle=False,
+                                    shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
+
+dev_dataset = dataset.get_dataset(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
+
 
 def train_input_fn():
-  return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
-                                  num_epochs=hparams.num_train_epochs, shuffle=True,
-                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
+  return dataset.get_data_iterator(train_dataset)
 
 
 def dev_input_fn():
-  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
-
+  # return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
+  return dataset.get_data_iterator(dev_dataset)
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
 # feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
@@ -139,7 +144,7 @@ export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_di
 tf.logging.info("Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=args.best_eval_key),
-                                               serving_input_receiver_fn=train_utils.serving_input_receiver_fn,
+                                               serving_input_receiver_fn=train_utils.get_serving_input_receiver_fn(train_dataset),
                                                assets_extra=export_assets,
                                                exports_to_keep=args.keep_k_best_models)
 
