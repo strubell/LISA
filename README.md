@@ -148,7 +148,7 @@ How these different configuration files work is specified in more detail below.
 
 Full example data configs can be seen here: [`conll05.json`](config/data_configs/conll05.json). 
 
-Each top-level entry in the json defines a set of features and labels that will be passed to the model. Each of these entries consists of `mappings`, the actual mappings from columns in the data file to named features/labels, and optionally an `example_converter`, which defines a function that performs post-processing on each example (i.e., sentence or document) loaded through this entry. An example config using an example converter can be found [here](config/data_configs/conll05-bert.json). If no converter is provided, the default behavior is to perform no post-processing.
+Each top-level entry in the json defines a set of features and labels that will be passed to the model. Each of these entries consists of `mappings`, the actual mappings from columns in the data file to named features/labels, and optionally an `example_converter`, which defines a function that performs post-processing on each example (i.e., sentence or document) loaded through this entry. Example converters are defined in [`src/example_converters.py`](src/example_converters.py). An example config using an example converter can be found [here](config/data_configs/conll05-bert.json). If no converter is provided, the default behavior is to perform no post-processing.
 
 Each entry under `mapping` in the json defines a named feature or label that will be provided to the model. The following table describes the possible parameters for configuring how each input is interpreted.
 
