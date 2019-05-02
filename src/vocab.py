@@ -84,19 +84,19 @@ class Vocab:
                     (len(vocab_lookup_ops), str([k for k in vocab_lookup_ops.keys()])))
     return vocab_lookup_ops
 
-  '''
-  Gets the cached vocab ops for the given datafile, creating them if they already exist.
-  This is needed in order to avoid re-creating duplicate lookup ops for each dataset input_fn, 
-  since the lookup ops need to be called lazily from the input_fn in order to end up in the same tf.Graph.
-
-  Returns:
-    Map from vocab names to tf.contrib.lookup ops.
-    
-  '''
-  def get_lookup_ops(self):
-    if self.vocab_lookups is None:
-      self.vocab_lookups = self.create_vocab_lookup_ops()
-    return self.vocab_lookups
+  # '''
+  # Gets the cached vocab ops for the given datafile, creating them if they already exist.
+  # This is needed in order to avoid re-creating duplicate lookup ops for each dataset input_fn,
+  # since the lookup ops need to be called lazily from the input_fn in order to end up in the same tf.Graph.
+  #
+  # Returns:
+  #   Map from vocab names to tf.contrib.lookup ops.
+  #
+  # '''
+  # def get_lookup_ops(self):
+  #   if self.vocab_lookups is None:
+  #     self.vocab_lookups = self.create_vocab_lookup_ops()
+  #   return self.vocab_lookups
 
 
   '''
@@ -138,7 +138,6 @@ class Vocab:
             idx += 1
 
     # Create vocabs from data files
-    # TODO: somewhere in here, vocab loading is fucked (pos/deps)
     if filenames:
       for filename in filenames:
         with open(filename, 'r') as f:

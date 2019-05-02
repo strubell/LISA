@@ -117,15 +117,19 @@ def train_input_fn():
   # train_dataset = dataset.get_dataset(train_filenames, data_config, vocab, hparams.batch_size,
   #                                     num_epochs=hparams.num_train_epochs, shuffle=False,
   #                                     shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
-  return dataset.get_data_iterator(train_filenames, data_config, vocab, hparams.batch_size,
-                                   num_epochs=hparams.num_train_epochs, shuffle=False,
-                                   shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
+  # return dataset.get_data_iterator(train_filenames, data_config, vocab, hparams.batch_size,
+  #                                  num_epochs=hparams.num_train_epochs, shuffle=False,
+  #                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
+  return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
+                                  num_epochs=hparams.num_train_epochs, shuffle=False,
+                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
 
 def dev_input_fn():
   # return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
   # dev_dataset = dataset.get_dataset(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
-  return dataset.get_data_iterator(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
+  # return dataset.get_data_iterator(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
+  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
 
 # train_input = InputFn(train_filenames, data_config, vocab, hparams, hparams.num_train_epochs, shuffle=False)

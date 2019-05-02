@@ -45,8 +45,8 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, idx_map):
 
 def get_data_iterator(data_filenames, data_config, vocab, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier=1):
 
-  # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
-  vocab_lookup_ops = vocab.create_vocab_lookup_ops()
+  # # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
+  # vocab_lookup_ops = vocab.create_vocab_lookup_ops()
 
   bucket_boundaries = constants.DEFAULT_BUCKET_BOUNDARIES
   bucket_batch_sizes = [batch_size] * (len(bucket_boundaries) + 1)
