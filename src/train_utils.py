@@ -124,7 +124,7 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
       current_eval_result: current eval metrics.
       key: key to value used for comparison.
     Returns:
-      True if the loss of current_eval_result is smaller; otherwise, False.
+      True if current_eval_result is greater; otherwise, False.
     Raises:
       ValueError: If input eval result is None or no loss is available.
     """
@@ -153,35 +153,6 @@ def get_input_shapes(data_config, key):
 
 
 def get_serving_input_receiver_fn(data_config):
-
   input_shapes = get_input_shapes(data_config, 'feature')
-  print("input shapes", input_shapes)
-
   inputs = {k: tf.placeholder(tf.int64, shape) for k, shape in input_shapes.items()}
-
   return tf.estimator.export.ServingInputReceiver(inputs, inputs)
-
-# def get_serving_input_receiver_fn(data_config):
-#
-#   input_shapes = get_input_shapes(data_config, 'feature')
-#   print("input shapes", input_shapes)
-#
-#   inputs = {k: tf.placeholder(tf.int64, shape) for k, shape in input_shapes.items()}
-#
-#   def serving_input_receiver_fn():
-#     return tf.estimator.export.ServingInputReceiver(inputs, inputs)
-#
-#   return serving_input_receiver_fn
-
-
-# def serving_input_receiver_fn():
-#   inputs = tf.placeholder(tf.int32, [None, None, None])
-#   return tf.estimator.export.TensorServingInputReceiver(inputs, inputs)
-#
-# def serving_input_receiver_fn():
-#   inputs = {
-#     "features": tf.placeholder(tf.int32, [None, None, None]),
-#     "sentences": tf.placeholder(tf.int32, [None, None])
-#   }
-#   return tf.estimator.export.ServingInputReceiver(inputs, inputs)
-

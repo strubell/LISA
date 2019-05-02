@@ -1,7 +1,6 @@
 import tensorflow as tf
 import argparse
 import os
-import dataset
 from functools import partial
 import train_utils
 from vocab import Vocab
@@ -60,10 +59,6 @@ task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
 attention_config = train_utils.load_json_configs(args.attention_configs)
 
-# attention_config = {}
-# if args.attention_configs and args.attention_configs != '':
-#   attention_config = train_utils.load_json_configs(args.attention_configs)
-
 # Combine layer, task and layer, attention maps
 # todo save these maps in save_dir
 layer_task_config, layer_attention_config = util.combine_attn_maps(layer_config, attention_config, task_config)
@@ -93,54 +88,14 @@ vocab.update(filenames=dev_filenames)
 data_config = data_configs[0]
 
 
-# class InputFn:
-#
-#   def __init__(self, filenames, data_config, vocab, hparams, num_epochs, shuffle):
-#     # self.ds = dataset.get_dataset(filenames, data_config, vocab, hparams.batch_size,
-#     #                               num_epochs=hparams.num_train_epochs, shuffle=shuffle,
-#     #                               shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
-#     self.filenames = filenames
-#     self.data_config = data_config
-#     self.vocab = vocab
-#     self.hparams = hparams
-#     self.shuffle = shuffle
-#     self.num_epochs = num_epochs
-#     self.ds = None
-#
-#   def get_input_fn(self):
-#     self.ds = dataset.get_dataset(self.filenames, self.data_config, self.vocab, self.hparams.batch_size,
-#                                   num_epochs=self.num_epochs, shuffle=self.shuffle,
-#                                   shuffle_buffer_multiplier=self.hparams.shuffle_buffer_multiplier)
-#     return dataset.get_data_iterator(self.ds)
-
 def train_input_fn():
-  # train_dataset = dataset.get_dataset(train_filenames, data_config, vocab, hparams.batch_size,
-  #                                     num_epochs=hparams.num_train_epochs, shuffle=False,
-  #                                     shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
-  # return dataset.get_data_iterator(train_filenames, data_config, vocab, hparams.batch_size,
-  #                                  num_epochs=hparams.num_train_epochs, shuffle=False,
-  #                                  shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
   return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
-                                  num_epochs=hparams.num_train_epochs, shuffle=False,
+                                  num_epochs=hparams.num_train_epochs, shuffle=True,
                                   shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
 
 def dev_input_fn():
-  # return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
-  # dev_dataset = dataset.get_dataset(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
-  # return dataset.get_data_iterator(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
   return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
-
-
-# train_input = InputFn(train_filenames, data_config, vocab, hparams, hparams.num_train_epochs, shuffle=False)
-#
-# dev_input = InputFn(dev_filenames, data_config, vocab, hparams, 1, shuffle=False)
-
-# Generate mappings from feature/label names to indices in the model_fn inputs
-# feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
-# todo: don't hardcode!!
-# feature_idx_map = util.load_input_idx_maps(data_config['mappings'], 'feature', ['feature'])
-# label_idx_map = util.load_input_idx_maps(data_config['mappings'], 'label', ['label'])
 
 
 # Initialize the model
@@ -169,8 +124,8 @@ run_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_st
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=run_config)
 
 # Set up early stopping -- always keep the model with the best F1
-export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_dir, vocab_name)
-                 for vocab_name in vocab.vocab_names_sizes.keys()}
+asset_names = ["%s.txt" % util.clean_filename(vocab_name) for vocab_name in vocab.vocab_names_sizes.keys()]
+export_assets = {"%s" % asset_name: "%s/assets.extra/%s" % (args.save_dir, asset_name) for asset_name in asset_names}
 tf.logging.info("Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=args.best_eval_key),
