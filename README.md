@@ -146,9 +146,11 @@ How these different configuration files work is specified in more detail below.
 
 ## Data configs
 
-An full example data config can be seen here: [`conll05.json`](config/data_configs/conll05.json). 
+Full example data configs can be seen here: [`conll05.json`](config/data_configs/conll05.json). 
 
-Each top-level entry in the json defines a named feature or label that will be provided to the model. The following table describes the possible parameters for configuring how each input is interpreted.
+Each top-level entry in the json defines a set of features and labels that will be passed to the model. Each of these entries consists of `mappings`, the actual mappings from columns in the data file to named features/labels, and optionally an `example_converter`, which defines a function that performs post-processing on each example (i.e., sentence or document) loaded through this entry. An example config using an example converter can be found [here](config/data_configs/conll05-bert.json). If no converter is provided, the default behavior is to perform no post-processing.
+
+Each entry under `mapping` in the json defines a named feature or label that will be provided to the model. The following table describes the possible parameters for configuring how each input is interpreted.
 
 |     Field      |Type          |Description       | Default value |       
 |----------------|----------|------------------------|---|
@@ -160,6 +162,8 @@ Each top-level entry in the json defines a named feature or label that will be p
 | `updatable` | boolean | Whether this vocab should be updated after its initial creation (i.e. after creating a vocab based on the training data). | false |
 | `converter` | json| A json object defining a function (name and, optionally, parameters) for converting the raw input. These functions are defined in [`src/data_converters.py`](src/data_converters.py). | `idx_list_converter` |
 | `oov` | boolean | Whether an `OOV` entry should be added to this input's vocabulary. | false |
+| `shape` | list | Shape of the tensor resulting from this input. null is used instead of None to mean the size of a given dimension is dynamic. | [] |
+
 
 ### Converters
 The data config specifies a converter function and vocabulary for each desired column in the input data file. For each entry in the data config and each line in the input file, the column values specified by `conll_idx` are read in and provided to the given converter. Data generators, which take the data config and data file as input to perform this mapping, are defined in [`src/data_generator.py`](src/data_generator.py). 
