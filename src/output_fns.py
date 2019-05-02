@@ -246,9 +246,10 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
       # targets as follows (assuming p1 and p2 are predicates for f1 and f3, respectively):
       # (p1) f1 f1 f1
       # (p2) f3 f3 f3
-      srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
-
       if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+
+        srl_targets_transposed = tf.transpose(targets, [0, 2, 1])
+
         gold_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_targets), tf.int32), -1)
         srl_targets_indices = tf.where(tf.sequence_mask(tf.reshape(gold_predicate_counts, [-1])))
 
@@ -256,7 +257,6 @@ def srl_bilinear(mode, hparams, model_config, inputs, targets, num_labels, token
         srl_targets_gold_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_indices)
         output['targets'] = srl_targets_gold_predicates
 
-      if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
         predicted_predicate_counts = tf.reduce_sum(tf.cast(bool_mask_where_predicates(predicate_preds), tf.int32), -1)
         srl_targets_pred_indices = tf.where(tf.sequence_mask(tf.reshape(predicted_predicate_counts, [-1])))
         srl_targets_predicted_predicates = tf.gather_nd(srl_targets_transposed, srl_targets_pred_indices)
