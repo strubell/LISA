@@ -37,9 +37,10 @@ def get_params(mode, attn_map, train_outputs, features, labels):
     # if this is a map-type param, do map lookups and pass those through
     if 'label' in param_values:
       if mode == ModeKeys.PREDICT:
-        util.fatal_error("Labels can't be used during prediction (tried to pass '%s=%s' in attention_fn)" %
-                         (param_name, param_values['label']))
-      params[param_name] = labels[param_values['label']]
+        tf.logging.warn("Labels can't be used during prediction (passing '%s=None' in attention_fn)" % param_name)
+        params[param_name] = None
+      else:
+        params[param_name] = labels[param_values['label']]
     elif 'feature' in param_values:
       params[param_name] = features[param_values['feature']]
     # otherwise, this is a previous-prediction-type param, look those up and pass through
