@@ -158,7 +158,8 @@ def get_params(mode, task_outputs, task_map, train_outputs, features, labels, ta
         params[param_name] = {map_name: reverse_maps[map_name] for map_name in param_values['reverse_maps']}
       elif 'label' in param_values:
         if mode == ModeKeys.PREDICT:
-          util.fatal_error("Labels can't be used during prediction")
+          util.fatal_error("Labels can't be used during prediction (tried to pass '%s=%s' in evaluation_fn)" %
+                           (param_name, param_values['label']))
         params[param_name] = labels[param_values['label']]
       elif 'feature' in param_values:
         params[param_name] = features[param_values['feature']]

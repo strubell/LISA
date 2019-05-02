@@ -159,10 +159,19 @@ def get_serving_input_receiver_fn(data_config):
 
   inputs = {k: tf.placeholder(tf.int64, shape) for k, shape in input_shapes.items()}
 
-  def serving_input_receiver_fn():
-    return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+  return tf.estimator.export.ServingInputReceiver(inputs, inputs)
 
-  return serving_input_receiver_fn
+# def get_serving_input_receiver_fn(data_config):
+#
+#   input_shapes = get_input_shapes(data_config, 'feature')
+#   print("input shapes", input_shapes)
+#
+#   inputs = {k: tf.placeholder(tf.int64, shape) for k, shape in input_shapes.items()}
+#
+#   def serving_input_receiver_fn():
+#     return tf.estimator.export.ServingInputReceiver(inputs, inputs)
+#
+#   return serving_input_receiver_fn
 
 
 # def serving_input_receiver_fn():

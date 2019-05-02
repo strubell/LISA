@@ -174,7 +174,8 @@ export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_di
 tf.logging.info("Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=args.best_eval_key),
-                                               serving_input_receiver_fn=train_utils.get_serving_input_receiver_fn(data_config),
+                                               serving_input_receiver_fn=partial(train_utils.get_serving_input_receiver_fn,
+                                                                                 data_config=data_config),
                                                assets_extra=export_assets,
                                                exports_to_keep=args.keep_k_best_models)
 

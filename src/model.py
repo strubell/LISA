@@ -67,7 +67,7 @@ class LISAModel:
 
     print("MODE(%s) features" % str(mode), features)
 
-    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
+    with tf.variable_scope("LISA"):#, reuse=tf.AUTO_REUSE):
 
       # todo this assumes that word is always passed in, and that it has the same shape as all the other stuff
       words = features['word']
@@ -259,11 +259,12 @@ class LISAModel:
                       eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
                       eval_metric_ops[eval_name] = eval_result
 
-      # need to flatten the dict of predictions to make Estimator happy
-      flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
-
       if mode == ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode, predictions=flat_predictions)
+        # need to flatten the dict of predictions to make Estimator happy
+        flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
+        export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                            tf.estimator.export.PredictOutput(flat_predictions)}
+        return tf.estimator.EstimatorSpec(mode, predictions=flat_predictions, export_outputs=export_outputs)
 
       # set up moving average variables
       assign_moving_averages_dep = tf.no_op()
@@ -302,14 +303,10 @@ class LISAModel:
 
         logging_hook = tf.train.LoggingTensorHook(items_to_log, every_n_iter=20)
 
-        export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                          tf.estimator.export.PredictOutput(flat_predictions)}
-
         tf.logging.info("Created model with %d trainable parameters" % tf_utils.get_num_parameters(vars_to_train))
 
         if mode == ModeKeys.EVAL:
-          return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, eval_metric_ops=eval_metric_ops,
-                                            export_outputs=export_outputs)
+          return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-        return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op=train_op, training_hooks=[logging_hook],
-                                          export_outputs=export_outputs)
+        return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops, train_op=train_op,
+                                          training_hooks=[logging_hook])
