@@ -61,13 +61,13 @@ class Vocab:
 
         # add OOV as last element to in-memory dicts if we need to. this happens here rather than when creating
         # the maps so that we don't load redundant OOVs into lookup table above, and when updating vocabs.
-        if num_oov:
-          this_vocab_map = self.vocab_maps[v]
-          this_reverse_map = self.reverse_maps[v]
-          oov_idx = len(this_vocab_map)
-          this_vocab_map[constants.OOV_STRING] = oov_idx
-          this_reverse_map[oov_idx] = constants.OOV_STRING
-          self.vocab_names_sizes[v] += 1
+        # if num_oov:
+        #   this_vocab_map = self.vocab_maps[v]
+        #   this_reverse_map = self.reverse_maps[v]
+        #   oov_idx = len(this_vocab_map)
+        #   this_vocab_map[constants.OOV_STRING] = oov_idx
+        #   this_reverse_map[oov_idx] = constants.OOV_STRING
+        #   self.vocab_names_sizes[v] += 1
 
       # if embedding_files:
       #   for embedding_file in embedding_files:
