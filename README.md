@@ -183,16 +183,20 @@ def idx_list_converter(split_line, idx):
 When a vocab is specified for an entry in the data config, that vocab is used to map the string output of the converter to integer values suitable for features/labels in a TensorFlow model.<sup id="f2">[2](#f2)</sup> This mapping occurs in the `map_strings_to_ints` function in [`src/dataset.py`](src/dataset.py). 
 
 - TODO: vocab initialization
-- TODO: pre-trained word embeddings
+- TODO: pre-trained word embeddings and BERT
 
 ## Model configs
 TODO
 
-## Layer configs
-TODO
-
 ## Task configs
 TODO
+
+## Layer configs
+Layer configs attach tasks (from task configs) to layers. An example layer config can be found here: [`lisa_layers.json`](config/layer_configs/lisa_layers.json).
+
+Each key in the layer config corresponds to a task defined in a task config, and each value is the self-attention layer in the model which will be provided to the output function in that task config to perform prediction.
+
+The total number of self-attention layers in the model is the maximum layer defined in the layer config. 
 
 ## Attention configs
 TODO
