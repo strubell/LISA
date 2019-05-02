@@ -43,7 +43,7 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, idx_map):
   return _mapper
 
 
-def get_dataset(data_filenames, data_config, vocab, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier=1):
+def get_data_iterator(data_filenames, data_config, vocab, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier=1):
 
   # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops()
@@ -128,20 +128,27 @@ def get_dataset(data_filenames, data_config, vocab, batch_size, num_epochs, shuf
     if shuffle:
       dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=batch_size * shuffle_buffer_multiplier,
                                                                  count=num_epochs))
+    else:
+      dataset = dataset.repeat(num_epochs)
 
     # todo should the buffer be bigger?
     dataset.prefetch(buffer_size=1)
 
-    return dataset
-
-
-def get_data_iterator(dataset):
-    # create the iterator
-    # it has to be initializable due to the lookup tables
     iterator = dataset.make_initializable_iterator()
     tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
 
     feats, labels = iterator.get_next()
 
     return feats, labels
+
+
+# def get_data_iterator(dataset):
+#     # create the iterator
+#     # it has to be initializable due to the lookup tables
+#     iterator = dataset.make_initializable_iterator()
+#     tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
+#
+#     feats, labels = iterator.get_next()
+#
+#     return feats, labels
 

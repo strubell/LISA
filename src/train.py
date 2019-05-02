@@ -93,41 +93,44 @@ vocab.update(filenames=dev_filenames)
 data_config = data_configs[0]
 
 
-class InputFn:
-
-  def __init__(self, filenames, data_config, vocab, hparams, shuffle):
-    # self.ds = dataset.get_dataset(filenames, data_config, vocab, hparams.batch_size,
-    #                               num_epochs=hparams.num_train_epochs, shuffle=shuffle,
-    #                               shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
-    self.filenames = filenames
-    self.data_config = data_config
-    self.vocab = vocab
-    self.hparams = hparams
-    self.shuffle = shuffle
-    self.ds = None
-
-  def get_input_fn(self):
-    self.ds = dataset.get_dataset(self.filenames, self.data_config, self.vocab, self.hparams.batch_size,
-                                  num_epochs=self.hparams.num_train_epochs, shuffle=self.shuffle,
-                                  shuffle_buffer_multiplier=self.hparams.shuffle_buffer_multiplier)
-    return dataset.get_data_iterator(self.ds)
-
-# def train_input_fn():
-#   # train_dataset = dataset.get_dataset(train_filenames, data_config, vocab, hparams.batch_size,
-#   #                                     num_epochs=hparams.num_train_epochs, shuffle=False,
-#   #                                     shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
-#   return dataset.get_data_iterator(train_dataset)
+# class InputFn:
 #
+#   def __init__(self, filenames, data_config, vocab, hparams, num_epochs, shuffle):
+#     # self.ds = dataset.get_dataset(filenames, data_config, vocab, hparams.batch_size,
+#     #                               num_epochs=hparams.num_train_epochs, shuffle=shuffle,
+#     #                               shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
+#     self.filenames = filenames
+#     self.data_config = data_config
+#     self.vocab = vocab
+#     self.hparams = hparams
+#     self.shuffle = shuffle
+#     self.num_epochs = num_epochs
+#     self.ds = None
 #
-# def dev_input_fn():
-#   # return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
-#   dev_dataset = dataset.get_dataset(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
-#   return dataset.get_data_iterator(dev_dataset)
+#   def get_input_fn(self):
+#     self.ds = dataset.get_dataset(self.filenames, self.data_config, self.vocab, self.hparams.batch_size,
+#                                   num_epochs=self.num_epochs, shuffle=self.shuffle,
+#                                   shuffle_buffer_multiplier=self.hparams.shuffle_buffer_multiplier)
+#     return dataset.get_data_iterator(self.ds)
+
+def train_input_fn():
+  # train_dataset = dataset.get_dataset(train_filenames, data_config, vocab, hparams.batch_size,
+  #                                     num_epochs=hparams.num_train_epochs, shuffle=False,
+  #                                     shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
+  return dataset.get_data_iterator(train_filenames, data_config, vocab, hparams.batch_size,
+                                   num_epochs=hparams.num_train_epochs, shuffle=False,
+                                   shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
 
-train_input = InputFn(train_filenames, data_config, vocab, hparams, shuffle=False)
+def dev_input_fn():
+  # return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
+  # dev_dataset = dataset.get_dataset(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
+  return dataset.get_data_iterator(dev_filenames, data_config, vocab, hparams.batch_size, num_epochs=1, shuffle=False)
 
-dev_input = InputFn(dev_filenames, data_config, vocab, hparams, shuffle=False)
+
+# train_input = InputFn(train_filenames, data_config, vocab, hparams, hparams.num_train_epochs, shuffle=False)
+#
+# dev_input = InputFn(dev_filenames, data_config, vocab, hparams, 1, shuffle=False)
 
 # Generate mappings from feature/label names to indices in the model_fn inputs
 # feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
@@ -172,8 +175,8 @@ save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.be
                                                exports_to_keep=args.keep_k_best_models)
 
 # Train forever until killed
-train_spec = tf.estimator.TrainSpec(input_fn=train_input.get_input_fn)
-eval_spec = tf.estimator.EvalSpec(input_fn=dev_input.get_input_fn, throttle_secs=hparams.eval_throttle_secs,
+train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn)
+eval_spec = tf.estimator.EvalSpec(input_fn=dev_input_fn, throttle_secs=hparams.eval_throttle_secs,
                                   exporters=[save_best_exporter])
 
 # Run training
