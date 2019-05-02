@@ -43,7 +43,7 @@ def map_strings_to_ints(vocab_lookup_ops, data_config, idx_map):
   return _mapper
 
 
-def get_data_iterator(data_filenames, data_config, vocab, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier=1):
+def get_data_iterator(data_filenames, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier=1):
 
   # # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
   # vocab_lookup_ops = vocab.create_vocab_lookup_ops()
