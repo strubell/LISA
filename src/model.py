@@ -69,6 +69,12 @@ class LISAModel:
 
     with tf.variable_scope("LISA"):#, reuse=tf.AUTO_REUSE):
 
+      predictions = {}
+      eval_metric_ops = {}
+      export_outputs = {}
+      loss = tf.constant(0.)
+      items_to_log = {}
+
       # todo this assumes that word is always passed in, and that it has the same shape as all the other stuff
       words = features['word']
 
@@ -127,8 +133,10 @@ class LISAModel:
           bert_dir = embedding_map['bert_embeddings']
           bpe_lens = named_features['word_bpe_lens']
 
-          bert_embedded_tokens, bert_vars = bert_util.get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens,
-                                                                          self.vocab.vocab_maps)
+          bert_embedded_tokens, bert_vars, bert_weights_l2 = bert_util.get_bert_embeddings(bert_dir, bpe_sentences,
+                                                                                           bpe_lens, self.vocab.vocab_maps)
+
+          loss += bert_weights_l2
 
           # don't update bert parameters
           # todo don't hardcode to not update bert
@@ -160,12 +168,6 @@ class LISAModel:
 
       with tf.variable_scope('project_input'):
         current_input = nn_utils.MLP(current_input, sa_hidden_size, n_splits=1)
-
-      predictions = {}
-      eval_metric_ops = {}
-      export_outputs = {}
-      loss = tf.constant(0.)
-      items_to_log = {}
 
       num_layers = max(self.task_config.keys()) + 1
       tf.logging.info("Creating transformer model with %d layers" % num_layers)
