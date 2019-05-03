@@ -59,10 +59,6 @@ task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
 attention_config = train_utils.load_json_configs(args.attention_configs)
 
-# attention_config = {}
-# if args.attention_configs and args.attention_configs != '':
-#   attention_config = train_utils.load_json_configs(args.attention_configs)
-
 # Combine layer, task and layer, attention maps
 # todo save these maps in save_dir
 layer_task_config, layer_attention_config = util.combine_attn_maps(layer_config, attention_config, task_config)
@@ -84,44 +80,37 @@ embedding_files = [embeddings_map['pretrained_embeddings'] for embeddings_map in
                   ["%s/vocab.txt" % embeddings_map['bert_embeddings'] for embeddings_map in model_config['embeddings'].values()
                    if 'bert_embeddings' in embeddings_map]
 
-# todo: don't hardcode!!
-# sentences_config = train_utils.load_json_configs('config/data_configs/conll05-bert-sentences.json')
-
-# data_configs = [data_config, sentences_config]
-
 vocab = Vocab(data_configs, args.save_dir, train_filenames, embedding_files)
 vocab.update(filenames=dev_filenames)
 
+# todo: actually implement for multiple data configs!
+# todo: each data config needs an associated data file
+data_config = data_configs[0]
+
 
 def train_input_fn():
-  return train_utils.get_input_fn(vocab, data_configs, train_filenames, hparams.batch_size,
+  return train_utils.get_input_fn(vocab, data_config, train_filenames, hparams.batch_size,
                                   num_epochs=hparams.num_train_epochs, shuffle=True,
                                   shuffle_buffer_multiplier=hparams.shuffle_buffer_multiplier)
 
 
 def dev_input_fn():
-  return train_utils.get_input_fn(vocab, data_configs, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
-
-
-# Generate mappings from feature/label names to indices in the model_fn inputs
-# feature_idx_map, label_idx_map = util.load_feat_label_idx_maps(data_config)
-# todo: don't hardcode!!
-feature_idx_map = util.load_input_idx_maps(data_configs[0], 'feature', ['feature'])
-label_idx_map = util.load_input_idx_maps(data_configs[0], 'label', ['label'])
+  return train_utils.get_input_fn(vocab, data_config, dev_filenames, hparams.batch_size, num_epochs=1, shuffle=False)
 
 
 # Initialize the model
-model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, feature_idx_map, label_idx_map,
-                  vocab)
+model = LISAModel(hparams, model_config, layer_task_config, layer_attention_config, vocab)
 
 if args.debug:
   tf.logging.info("Created trainable variables: %s" % str([v.name for v in tf.trainable_variables()]))
 
 # Distributed training
+# todo this does not work
 distribution = tf.contrib.distribute.MirroredStrategy(num_gpus=args.num_gpus) if args.num_gpus > 1 else None
 
 # Enable XLA JIT (via: https://medium.com/future-vision/bert-meets-gpus-403d3fbed848)
 session_config = tf.ConfigProto()
+# todo this doesn't currently work (on blake)
 if args.use_xla:
   optimizer_options = session_config.graph_options.optimizer_options
   optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
@@ -135,12 +124,13 @@ run_config = tf.estimator.RunConfig(save_checkpoints_steps=hparams.eval_every_st
 estimator = tf.estimator.Estimator(model_fn=model.model_fn, model_dir=args.save_dir, config=run_config)
 
 # Set up early stopping -- always keep the model with the best F1
-export_assets = {"%s.txt" % vocab_name: "%s/assets.extra/%s.txt" % (args.save_dir, vocab_name)
-                 for vocab_name in vocab.vocab_names_sizes.keys()}
+asset_names = ["%s.txt" % util.clean_filename(vocab_name) for vocab_name in vocab.vocab_names_sizes.keys()]
+export_assets = {"%s" % asset_name: "%s/assets.extra/%s" % (args.save_dir, asset_name) for asset_name in asset_names}
 tf.logging.info("Exporting assets: %s" % str(export_assets))
 save_best_exporter = tf.estimator.BestExporter(compare_fn=partial(train_utils.best_model_compare_fn,
                                                                   key=args.best_eval_key),
-                                               serving_input_receiver_fn=train_utils.serving_input_receiver_fn,
+                                               serving_input_receiver_fn=partial(train_utils.get_serving_input_receiver_fn,
+                                                                                 data_config=data_config),
                                                assets_extra=export_assets,
                                                exports_to_keep=args.keep_k_best_models)
 

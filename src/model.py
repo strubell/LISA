@@ -16,16 +16,15 @@ import bert_util
 
 class LISAModel:
 
-  def __init__(self, hparams, model_config, task_config, attention_config, feature_idx_map, label_idx_map,
-               vocab):
+  def __init__(self, hparams, model_config, task_config, attention_config, vocab):
     self.train_hparams = hparams
     self.test_hparams = train_utils.copy_without_dropout(hparams)
 
     self.model_config = model_config
     self.task_config = task_config
     self.attention_config = attention_config
-    self.feature_idx_map = feature_idx_map
-    self.label_idx_map = label_idx_map
+    # self.feature_idx_map = feature_idx_map
+    # self.label_idx_map = label_idx_map
     self.vocab = vocab
     self.frozen_variables = set()
 
@@ -66,47 +65,47 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
-    intmapped_feats = features['features']
+    print("MODE(%s) features" % str(mode), features)
 
-    with tf.variable_scope("LISA", reuse=tf.AUTO_REUSE):
+    with tf.variable_scope("LISA"):#, reuse=tf.AUTO_REUSE):
 
-      batch_shape = tf.shape(intmapped_feats)
-      batch_size = batch_shape[0]
-      batch_seq_len = batch_shape[1]
+      # todo this assumes that word is always passed in, and that it has the same shape as all the other stuff
+      words = features['word']
+
+      # batch_shape = tf.shape(words)
+      # batch_size = batch_shape[0]
+      # batch_seq_len = batch_shape[1]
       layer_config = self.model_config['layers']
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
-      named_features = {f: tf.squeeze(intmapped_feats[:, :, idx[0]:idx[1]], -1) if idx[1] != -1 else intmapped_feats[:, :, idx[0]:]
-               for f, idx in self.feature_idx_map.items()}
-
-      # todo this assumes that word_type is always passed in
-      words = named_features['word']
-
       # for masking out padding tokens
-      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros([batch_size, batch_seq_len]),
-                                tf.ones([batch_size, batch_seq_len]))
+      tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros_like(words, dtype=tf.float32),
+                                tf.ones_like(words, dtype=tf.float32))
 
-      # Extract named features from monolithic "features" input
-      named_features = {f: tf.multiply(tf.cast(tokens_to_keep, tf.int32), v) for f, v in named_features.items()}
+      def get_mask(t):
+        return tf.where(tf.equal(t, constants.PAD_VALUE), tf.zeros_like(t), tf.ones_like(t))
+
+      # Zero-mask features
+      named_features = {f: tf.multiply(get_mask(v), v) for f, v in features.items()}
 
       # Extract named labels from monolithic "labels" input, and mask them
-      # todo fix masking -- is it even necessary?
+      # todo: why is this even necessary?
       named_labels = None
       if mode != ModeKeys.PREDICT:
-        named_labels = {}
-        for l, idx in self.label_idx_map.items():
-          these_labels = labels[:, :, idx[0]:idx[1]] if idx[1] != -1 else labels[:, :, idx[0]:]
-          these_labels_masked = tf.multiply(these_labels, tf.cast(tf.expand_dims(tokens_to_keep, -1), tf.int32))
-          # check if we need to mask another dimension
-          if idx[1] == -1:
-            last_dim = tf.shape(these_labels)[2]
-            this_mask = tf.where(tf.equal(these_labels_masked, constants.PAD_VALUE),
-                                 tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int32),
-                                 tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int32))
-            these_labels_masked = tf.multiply(these_labels_masked, this_mask)
-          else:
-            these_labels_masked = tf.squeeze(these_labels_masked, -1)
-          named_labels[l] = these_labels_masked
+        named_labels = {f: tf.multiply(get_mask(v), v) for f, v in labels.items()}
+
+        # for l, these_labels in named_labels.items():
+        #   this_shape = these_labels.get_shape().as_list()
+        #   if len(this_shape) == 2:
+        #     these_labels_masked = tf.multiply(these_labels, tf.cast(tokens_to_keep, tf.int64))
+        #   # check if we need to mask another dimension
+        #   elif len(this_shape) == 3:
+        #     last_dim = tf.shape(these_labels)[2]
+        #     this_mask = tf.where(tf.equal(these_labels, constants.PAD_VALUE),
+        #                          tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int64),
+        #                          tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int64))
+        #     these_labels_masked = tf.multiply(these_labels, this_mask)
+        #   named_labels[l] = these_labels_masked
 
       # load transition parameters
       transition_stats = util.load_transition_params(self.task_config, self.vocab)
@@ -123,7 +122,8 @@ class LISAModel:
           embeddings[embedding_name] = embedding_table
         elif 'bert_embeddings' in embedding_map:
 
-          bpe_sentences = features['sentences']
+          # todo don't hardcode this lookup, specify it in the config
+          bpe_sentences = named_features['word_bpe']
           bert_dir = embedding_map['bert_embeddings']
           bpe_lens = named_features['word_bpe_lens']
 
@@ -233,9 +233,9 @@ class LISAModel:
 
                 # want task_outputs to have:
                 # - predictions
-                # - loss
                 # - scores
                 # - probabilities
+                # - loss (if training)
                 predictions[task] = task_outputs
 
                 if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
@@ -259,11 +259,12 @@ class LISAModel:
                       eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
                       eval_metric_ops[eval_name] = eval_result
 
-      # need to flatten the dict of predictions to make Estimator happy
-      flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
-
       if mode == ModeKeys.PREDICT:
-        return tf.estimator.EstimatorSpec(mode, predictions=flat_predictions)
+        # need to flatten the dict of predictions to make Estimator happy
+        flat_predictions = {"%s_%s" % (k1, k2): v2 for k1, v1 in predictions.items() for k2, v2 in v1.items()}
+        export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                            tf.estimator.export.PredictOutput(flat_predictions)}
+        return tf.estimator.EstimatorSpec(mode, predictions=flat_predictions, export_outputs=export_outputs)
 
       # set up moving average variables
       assign_moving_averages_dep = tf.no_op()
@@ -302,14 +303,10 @@ class LISAModel:
 
         logging_hook = tf.train.LoggingTensorHook(items_to_log, every_n_iter=20)
 
-        export_outputs = {tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
-                          tf.estimator.export.PredictOutput(flat_predictions)}
-
         tf.logging.info("Created model with %d trainable parameters" % tf_utils.get_num_parameters(vars_to_train))
 
         if mode == ModeKeys.EVAL:
-          return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, eval_metric_ops=eval_metric_ops,
-                                            export_outputs=export_outputs)
+          return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
-        return tf.estimator.EstimatorSpec(mode, flat_predictions, loss, train_op=train_op, training_hooks=[logging_hook],
-                                          export_outputs=export_outputs)
+        return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops, train_op=train_op,
+                                          training_hooks=[logging_hook])

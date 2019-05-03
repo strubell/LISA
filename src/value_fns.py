@@ -1,4 +1,6 @@
 import tensorflow as tf
+from tensorflow.estimator import ModeKeys
+import util
 
 
 def label_attention(mode, train_label_scores, eval_label_scores, label_embeddings):
@@ -44,7 +46,11 @@ def get_params(mode, value_map, train_outputs, features, labels, embeddings):
   params_map = value_map['params']
   for param_name, param_values in params_map.items():
     if 'label' in param_values:
-      params[param_name] = labels[param_values['label']]
+      if mode == ModeKeys.PREDICT:
+        tf.logging.warn("Labels can't be used during prediction (passing '%s=None' in value_fn)" % param_name)
+        params[param_name] = None
+      else:
+        params[param_name] = labels[param_values['label']]
     elif 'embeddings' in param_values:
       params[param_name] = embeddings[param_values['embeddings']]
     elif 'feature' in param_values:

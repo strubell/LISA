@@ -17,7 +17,7 @@ def get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens, vocab_maps):
   bert_config = bert.modeling.BertConfig.from_json_file(bert_dir + "/bert_config.json")
   bert_model = bert.modeling.BertModel(config=bert_config,
                                        is_training=False,
-                                       input_ids=bpe_sentences,
+                                       input_ids=tf.cast(bpe_sentences, tf.int32),
                                        input_mask=bert_no_pad_mask)
 
   tvars = tf.trainable_variables()

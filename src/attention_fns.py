@@ -1,5 +1,7 @@
 import tensorflow as tf
+from tensorflow.estimator import ModeKeys
 import constants
+import util
 
 
 def copy_from_predicted(mode, train_attention_to_copy, eval_attention_to_copy):
@@ -25,8 +27,7 @@ def dispatch(fn_name):
   try:
     return dispatcher[fn_name]
   except KeyError:
-    print('Undefined attention function `%s' % fn_name)
-    exit(1)
+    util.fatal_error('Undefined attention function `%s' % fn_name)
 
 
 def get_params(mode, attn_map, train_outputs, features, labels):
@@ -35,7 +36,11 @@ def get_params(mode, attn_map, train_outputs, features, labels):
   for param_name, param_values in params_map.items():
     # if this is a map-type param, do map lookups and pass those through
     if 'label' in param_values:
-      params[param_name] = labels[param_values['label']]
+      if mode == ModeKeys.PREDICT:
+        tf.logging.warn("Labels can't be used during prediction (passing '%s=None' in attention_fn)" % param_name)
+        params[param_name] = None
+      else:
+        params[param_name] = labels[param_values['label']]
     elif 'feature' in param_values:
       params[param_name] = features[param_values['feature']]
     # otherwise, this is a previous-prediction-type param, look those up and pass through

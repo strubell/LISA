@@ -29,12 +29,11 @@ def load_hparams(args, model_config):
   return hparams
 
 
-def get_input_fn(vocab, data_configs, data_files, batch_size, num_epochs, shuffle,
-                 shuffle_buffer_multiplier=1):
+def get_input_fn(vocab, data_config, data_files, batch_size, num_epochs, shuffle, shuffle_buffer_multiplier=1):
   # this needs to be created from here (lazily) so that it ends up in the same tf.Graph as everything else
   vocab_lookup_ops = vocab.create_vocab_lookup_ops()
 
-  return dataset.get_data_iterator(data_files, data_configs, vocab_lookup_ops, batch_size, num_epochs, shuffle,
+  return dataset.get_data_iterator(data_files, data_config, vocab_lookup_ops, batch_size, num_epochs, shuffle,
                                    shuffle_buffer_multiplier)
 
 
@@ -125,7 +124,7 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
       current_eval_result: current eval metrics.
       key: key to value used for comparison.
     Returns:
-      True if the loss of current_eval_result is smaller; otherwise, False.
+      True if current_eval_result is greater; otherwise, False.
     Raises:
       ValueError: If input eval result is None or no loss is available.
     """
@@ -139,14 +138,21 @@ def best_model_compare_fn(best_eval_result, current_eval_result, key):
   return best_eval_result[key] < current_eval_result[key]
 
 
-# def serving_input_receiver_fn():
-#   inputs = tf.placeholder(tf.int32, [None, None, None])
-#   return tf.estimator.export.TensorServingInputReceiver(inputs, inputs)
+def get_input_shapes(data_config, key):
+  shapes = {}
+  for _, config in data_config.items():
+    for d, datum_config in config['mappings'].items():
+      if key in datum_config and datum_config[key]:
+        last_dims_shape = []
+        if 'shape' in datum_config:
+          last_dims_shape = [s if s else None for s in datum_config['shape']]
+        # batch x sequence length x last_dims_shape...
+        shapes[d] = [None, None] + last_dims_shape
 
-def serving_input_receiver_fn():
-  inputs = {
-    "features": tf.placeholder(tf.int32, [None, None, None]),
-    "sentences": tf.placeholder(tf.int32, [None, None])
-  }
+  return shapes
+
+
+def get_serving_input_receiver_fn(data_config):
+  input_shapes = get_input_shapes(data_config, 'feature')
+  inputs = {k: tf.placeholder(tf.int64, shape) for k, shape in input_shapes.items()}
   return tf.estimator.export.ServingInputReceiver(inputs, inputs)
-
