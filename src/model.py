@@ -137,6 +137,7 @@ class LISAModel:
                                                                                            bpe_lens, self.vocab.vocab_maps)
 
           loss += bert_weights_l2
+          items_to_log['bert_l2_loss'] = bert_weights_l2
 
           # don't update bert parameters
           # todo don't hardcode to not update bert
