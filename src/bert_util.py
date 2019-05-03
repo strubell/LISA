@@ -49,7 +49,8 @@ def get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens, vocab_maps):
 
   # todo: pass in this penalty
   l2_penalty = 0.001
-  bert_weights_l2 = tf.contrib.layers.l2_regularizer(bert_layer_weights, l2_penalty)
+  l2_regularizer = tf.contrib.layers.l2_regularizer(l2_penalty)
+  bert_weights_l2_loss = l2_regularizer(bert_layer_weights)
 
   bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
   bert_embeddings_avg = tf.reduce_sum(bert_embeddings_concat, -1)
@@ -81,4 +82,4 @@ def get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens, vocab_maps):
   # average over bpes to get tokens
   bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=1), [batch_size, batch_seq_len, bert_dim])
 
-  return bert_tokens, bert_vars, bert_weights_l2
+  return bert_tokens, bert_vars, bert_weights_l2_loss
