@@ -117,22 +117,6 @@
           }
         }
       }
-    },
-    "label_components": [
-      "gold_pos",
-      "predicate"
-    ]
-  },
-  "srl": {
-    "conll_idx": [
-      14,
-      -1
-    ],
-    "type": "range",
-    "label": true,
-    "vocab": "srl",
-    "converter": {
-      "name": "idx_range_converter"
     }
   }
 }
