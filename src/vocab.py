@@ -56,8 +56,11 @@ class Vocab:
         num_oov = 1 if 'oov' in self.combined_data_config[v] and self.combined_data_config[v]['oov'] else 0
         this_lookup = tf.contrib.lookup.index_table_from_file("%s/%s.txt" % (self.vocabs_dir, v_clean),
                                                               num_oov_buckets=num_oov,
-                                                              key_column_index=0)
+                                                              key_column_index=0,
+                                                              name="lookup_table_%s" % v_clean)
+
         vocab_lookup_ops[v] = this_lookup
+
 
         # add OOV as last element to in-memory dicts if we need to. this happens here rather than when creating
         # the maps so that we don't load redundant OOVs into lookup table above, and when updating vocabs.
@@ -116,9 +119,19 @@ class Vocab:
     vocabs = []
     vocabs_index = {}
     combined_data_config = {}
-    vocabs_from_file = set()
+    # vocabs_from_file = set()
     idx = 0
-    for data_config in data_configs:
+
+    load_vocabs_from_existing = False
+    if not filenames:
+      load_vocabs_from_existing = True
+      filenames = [[] for _ in data_configs]
+
+    # Here, we initialize vocabs with the required vocabs as defined in all the data configs, and
+    # combined_data_config with the configs for each of those vocabs. vocabs_index maps from vocab names to
+    # the index in vocabs (a list) which contains the actual vocab (to preserve ordering).
+    for data_config, data_files in zip(data_configs, filenames):
+      vocabs_from_file = set()
       for c in data_config:
         mapping_config = data_config[c]['mappings']
         for d, config_map in mapping_config.items():
@@ -128,7 +141,7 @@ class Vocab:
             this_vocab_name = config_map['vocab']
             # if the vocab name is the same as the name of this entry, then we create our own vocab from the data
             if this_vocab_name == d:
-              vocabs_from_file.add(this_vocab_name)
+                vocabs_from_file.add(this_vocab_name)
             combined_data_config[this_vocab_name] = config_map
             this_vocab = collections.OrderedDict()
             if update_only and updatable and this_vocab_name in self.vocab_maps:
@@ -137,32 +150,57 @@ class Vocab:
             vocabs_index[this_vocab_name] = idx
             idx += 1
 
+      # We also load vocabs from file when appropriate.
+      if not load_vocabs_from_existing:
+        # todo put this in a function
+        for filename in data_files:
+          print("filename: %s" % filename)
+          with open(filename, 'r') as f:
+            for line in f:
+              line = line.strip()
+              if line:
+                split_line = line.split()
+                # only want to do this for vocabs that we're generating
+                for d in vocabs_from_file:
+                  datum_idx = combined_data_config[d]['conll_idx']
+                  this_vocab_map = vocabs[vocabs_index[d]]
+                  converter_name = combined_data_config[d]['converter']['name'] if 'converter' in \
+                                                                                   combined_data_config[
+                                                                                     d] else 'default_converter'
+                  converter_params = data_converters.get_params(combined_data_config[d], split_line, datum_idx)
+                  this_data = data_converters.dispatch(converter_name)(**converter_params)
+                  for this_datum in this_data:
+                    if this_datum not in this_vocab_map:
+                      this_vocab_map[this_datum] = 0
+                    this_vocab_map[this_datum] += 1
+
     # Create vocabs from data files
-    if filenames:
-      for filename in filenames:
-        with open(filename, 'r') as f:
-          for line in f:
-            line = line.strip()
-            if line:
-              split_line = line.split()
-              # only want to do this for vocabs that we're generating
-              for d in vocabs_from_file:
-                datum_idx = combined_data_config[d]['conll_idx']
-                this_vocab_map = vocabs[vocabs_index[d]]
-                converter_name = combined_data_config[d]['converter']['name'] if 'converter' in combined_data_config[d] else 'default_converter'
-                converter_params = data_converters.get_params(combined_data_config[d], split_line, datum_idx)
-                this_data = data_converters.dispatch(converter_name)(**converter_params)
-                for this_datum in this_data:
-                  if this_datum not in this_vocab_map:
-                    this_vocab_map[this_datum] = 0
-                  this_vocab_map[this_datum] += 1
+    # if filenames:
+      # for filename, data_config in zip(filenames, data_configs):
+      #   with open(filename, 'r') as f:
+      #     for line in f:
+      #       line = line.strip()
+      #       if line:
+      #         split_line = line.split()
+      #         # only want to do this for vocabs that we're generating
+      #         for d in vocabs_from_file:
+      #           datum_idx = combined_data_config[d]['conll_idx']
+      #           this_vocab_map = vocabs[vocabs_index[d]]
+      #           converter_name = combined_data_config[d]['converter']['name'] if 'converter' in combined_data_config[d] else 'default_converter'
+      #           converter_params = data_converters.get_params(combined_data_config[d], split_line, datum_idx)
+      #           this_data = data_converters.dispatch(converter_name)(**converter_params)
+      #           for this_datum in this_data:
+      #             if this_datum not in this_vocab_map:
+      #               this_vocab_map[this_datum] = 0
+      #             this_vocab_map[this_datum] += 1
 
     # Assume we have the vocabs saved to disk; load them
-    else:
+    if load_vocabs_from_existing:
       for d in vocabs_index.keys():
         # if d in combined_data_config: # todo i dont think this line is necessary
         this_vocab_map = vocabs[vocabs_index[d]]
-        with open("%s/%s.txt" % (self.vocabs_dir, d), 'r') as f:
+        d_clean = util.clean_filename(d)
+        with open("%s/%s.txt" % (self.vocabs_dir, d_clean), 'r') as f:
           for line in f:
             datum, count = line.strip().split()
             this_vocab_map[datum] = int(count)
@@ -215,6 +253,8 @@ class Vocab:
     for d in vocabs_index.keys():
       this_vocab_map = vocabs[vocabs_index[d]]
       d_clean = util.clean_filename(d)
+      print("writing %s/%s.txt" % (self.vocabs_dir, d_clean))
+      print(list(this_vocab_map.items())[:10])
       with open("%s/%s.txt" % (self.vocabs_dir, d_clean), 'w') as f:
         for k, v in this_vocab_map.items():
           print("%s\t%d" % (k, v), file=f)
