@@ -269,8 +269,6 @@ def get_multiple_dataset_iterator(data_filenames, data_configs, vocab_lookup_ops
       d = get_dataset_multi(fnames, this_config, data_configs, vocab_lookup_ops, batch_size, num_epochs, shuffle,
                             shuffle_buffer_multiplier)
       datasets.append(d)
-      print("output types:", d.output_types)
-      print("output_classes:", d.output_classes)
 
     multi_dataset = tf.contrib.data.sample_from_datasets(datasets)
 
