@@ -86,7 +86,7 @@ def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_pe
   batch_seq_len = token_batch_shape[1]
 
   bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather,
-                                    tf.stack([batch_size * batch_seq_len, max_bpe_len, bert_dim]))
+                                    tf.cast(tf.stack([batch_size * batch_seq_len, max_bpe_len, bert_dim]), tf.int64))
 
   # average over bpes to get tokens
   bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=1), [batch_size, batch_seq_len, bert_dim])
