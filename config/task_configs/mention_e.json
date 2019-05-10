@@ -1,0 +1,23 @@
+{
+  "mention_e": {
+    "penalty": 1.0,
+    "output_fn": {
+      "name": "softmax_classifier"
+    },
+    "eval_fns": {
+      "m_e_accuracy": {
+        "name": "accuracy",
+
+        "params": {
+          "predictions": {
+            "layer": "mention_e",
+            "output": "predictions"
+          },
+          "targets": {
+            "label": "mention_e"
+          }
+        }
+      }
+    }
+  }
+}
