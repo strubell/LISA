@@ -80,7 +80,7 @@ class LISAModel:
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
 
       # todo don't hardcode this
-      bert_weights_l2 = 0.001
+      bert_weights_l2_penalty = 0.001
 
       # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros_like(words, dtype=tf.float32),
@@ -125,7 +125,7 @@ class LISAModel:
           bert_vocab = self.vocab.vocab_maps['%s/vocab.txt' % bert_dir]
           cached_bert['vocab'] = bert_vocab
           bert_embedded_tokens, bert_weights_l2 = bert_util.get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences,
-                                                                             bpe_lens, l2_penalty=bert_weights_l2)
+                                                                             bpe_lens, l2_penalty=bert_weights_l2_penalty)
           loss += bert_weights_l2
           items_to_log['bert_l2_loss'] = bert_weights_l2
 
@@ -208,7 +208,7 @@ class LISAModel:
                                                                                                 cached_bert['embeddings'],
                                                                                                 named_features['word_bpe'],
                                                                                                 named_features['word_bpe_lens'],
-                                                                                                bert_weights_l2)
+                                                                                                bert_weights_l2_penalty)
                     loss += task_bert_weights_l2
                     items_to_log['bert_l2_loss_%d' % i] = task_bert_weights_l2
 
