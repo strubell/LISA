@@ -1,0 +1,22 @@
+{
+  "spans": {
+    "penalty": 1.0,
+    "output_fn": {
+      "name": "softmax_classifier"
+    },
+    "eval_fns": {
+      "span_accuracy": {
+        "name": "accuracy",
+        "params": {
+          "predictions": {
+            "layer": "spans",
+            "output": "predictions"
+          },
+          "targets": {
+            "label": "spans"
+          }
+        }
+      }
+    }
+  }
+}
