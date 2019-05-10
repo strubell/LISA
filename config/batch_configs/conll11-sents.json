@@ -1,0 +1,18 @@
+{
+  "data_configs": [
+    "config/data_configs/conll11-sents.json"
+  ],
+  "task_configs": [
+    "config/task_configs/pos.json",
+    "config/task_configs/parse_heads.json",
+    "config/task_configs/parse_labels.json",
+    "config/task_configs/mentions.json"
+    ],
+
+  "attention_configs": [
+    "config/attention_configs/parse_attention.json"
+  ],
+  "layer_configs": [
+    "config/layer_configs/conll11_sent_layers.json"
+  ]
+}

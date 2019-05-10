@@ -1,0 +1,51 @@
+{
+  "features": {
+    "mappings": {
+      "sent_id": {
+        "conll_idx": 1,
+        "label": true
+      },
+      "word": {
+        "conll_idx": 3,
+        "feature": true,
+        "vocab": "word",
+        "oov": false,
+        "updatable": true
+      },
+      "word_type": {
+        "conll_idx": 3,
+        "feature": true,
+        "vocab": "embeddings/glove.6B.100d.txt",
+        "converter": {
+          "name": "lowercase"
+        },
+        "oov": true
+      },
+      "gold_pos": {
+        "conll_idx": 4,
+        "label": true,
+        "vocab": "gold_pos"
+      },
+      "parse_head": {
+        "conll_idx": [
+          9,
+          2
+        ],
+        "label": true,
+        "converter": {
+          "name": "parse_roots_self_loop"
+        }
+      },
+      "parse_label": {
+        "conll_idx": 10,
+        "label": true,
+        "vocab": "parse_label"
+      },
+      "mention": {
+        "conll_idx": -3,
+        "label": true,
+        "vocab": "mention"
+      }
+    }
+  }
+}

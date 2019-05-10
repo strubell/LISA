@@ -1,0 +1,37 @@
+{
+  "features": {
+    "mappings": {
+      "sent_id": {
+        "conll_idx": 1,
+        "label": true
+      },
+      "word": {
+        "conll_idx": 3,
+        "feature": true,
+        "vocab": "word",
+        "oov": false,
+        "updatable": true
+      },
+      "word_type": {
+        "conll_idx": 3,
+        "feature": true,
+        "vocab": "embeddings/glove.6B.100d.txt",
+        "converter": {
+          "name": "lowercase"
+        },
+        "oov": true
+      },
+      "speaker": {
+        "conll_idx": 14,
+        "feature": true,
+        "vocab": "speaker",
+        "oov": true
+      },
+      "mention": {
+        "conll_idx": -3,
+        "label": true,
+        "vocab": "mention"
+      }
+    }
+  }
+}
