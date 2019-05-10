@@ -73,7 +73,7 @@ def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_pe
   # [batch_size*batch_seq_len]
   bpe_lens_flat = tf.reshape(bpe_lens, [-1])
 
-  max_bpe_len = tf.reduce_max(bpe_lens)
+  max_bpe_len = tf.cast(tf.reduce_max(bpe_lens), tf.int32)
 
   # [batch_size*batch_seq_len x max_bpe_len]
   # the number of 1s in scatter_mask (and therefore number of scatter indices) should equal the number of bpe
