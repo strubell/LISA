@@ -1,6 +1,7 @@
 {
   "parse_label": {
     "penalty": 0.1,
+    "bert": true,
     "output_fn": {
       "name": "conditional_bilinear",
       "params": {

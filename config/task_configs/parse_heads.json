@@ -1,6 +1,7 @@
 {
   "parse_head": {
     "penalty": 1.0,
+    "bert": true,
     "output_fn": {
       "name": "parse_bilinear",
       "params": {

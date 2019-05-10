@@ -4,15 +4,19 @@ import tf_utils
 import bert.modeling
 
 
-def get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens, vocab_maps):
+def get_bert_mask(bpe_sentences, ids_to_mask=None):
+  bert_keep_mask = tf.greater(bpe_sentences, 0)
+  if ids_to_mask:
+    for idx_to_mask in ids_to_mask:
+      bert_keep_mask *= tf.cast(tf.not_equal(bpe_sentences, idx_to_mask), tf.int32)
+  return bert_keep_mask
+
+
+def get_bert_embeddings(bert_dir, bpe_sentences):
 
   # todo maybe hardcode these paths less
   bert_checkpoint = bert_dir + "/bert_model.ckpt"
-  bert_mask_indices = [vocab_maps['%s/vocab.txt' % bert_dir][s] for s in constants.BERT_MASK_STRS]
-  bert_no_pad_mask = tf.greater(bpe_sentences, 0)
-  bert_keep_mask = tf.cast(bert_no_pad_mask, tf.int32)
-  for idx_to_mask in bert_mask_indices:
-    bert_keep_mask *= tf.cast(tf.not_equal(bpe_sentences, idx_to_mask), tf.int32)
+  bert_no_pad_mask = get_bert_mask(bpe_sentences)
 
   bert_config = bert.modeling.BertConfig.from_json_file(bert_dir + "/bert_config.json")
   bert_model = bert.modeling.BertModel(config=bert_config,
@@ -38,6 +42,13 @@ def get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens, vocab_maps):
 
   # list of [batch_size, bpe_seq_length, hidden_size]
   bert_embeddings = bert_model.get_all_encoder_layers()
+  return bert_embeddings, bert_vars
+
+
+def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_penalty=0.001):
+
+  bert_mask_indices = [bert_vocab[s] for s in constants.BERT_MASK_STRS]
+  bert_keep_mask = get_bert_mask(bpe_sentences, bert_mask_indices)
 
   # todo take last k, rather than all layers
   num_bert_layers = len(bert_embeddings)
@@ -47,8 +58,6 @@ def get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens, vocab_maps):
       zip(bert_layer_weights_normed, bert_embeddings)):
     bert_embeddings[bert_layer_idx] = tf.expand_dims(bert_layer_output * bert_layer_weight, -1)
 
-  # todo: pass in this penalty
-  l2_penalty = 0.001
   l2_regularizer = tf.contrib.layers.l2_regularizer(l2_penalty)
   bert_weights_l2_loss = l2_regularizer(bert_layer_weights)
 
@@ -82,4 +91,4 @@ def get_bert_embeddings(bert_dir, bpe_sentences, bpe_lens, vocab_maps):
   # average over bpes to get tokens
   bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=1), [batch_size, batch_seq_len, bert_dim])
 
-  return bert_tokens, bert_vars, bert_weights_l2_loss
+  return bert_tokens, bert_weights_l2_loss

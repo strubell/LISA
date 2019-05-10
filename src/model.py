@@ -65,9 +65,7 @@ class LISAModel:
     # todo can estimators handle dropout for us or do we need to do it on our own?
     hparams = self.hparams(mode)
 
-    print("MODE(%s) features" % str(mode), features)
-
-    with tf.variable_scope("LISA"):#, reuse=tf.AUTO_REUSE):
+    with tf.variable_scope("LISA"):
 
       predictions = {}
       eval_metric_ops = {}
@@ -78,11 +76,11 @@ class LISAModel:
       # todo this assumes that word is always passed in, and that it has the same shape as all the other stuff
       words = features['word']
 
-      # batch_shape = tf.shape(words)
-      # batch_size = batch_shape[0]
-      # batch_seq_len = batch_shape[1]
       layer_config = self.model_config['layers']
       sa_hidden_size = layer_config['head_dim'] * layer_config['num_heads']
+
+      # todo don't hardcode this
+      bert_weights_l2 = 0.001
 
       # for masking out padding tokens
       tokens_to_keep = tf.where(tf.equal(words, constants.PAD_VALUE), tf.zeros_like(words, dtype=tf.float32),
@@ -100,24 +98,12 @@ class LISAModel:
       if mode != ModeKeys.PREDICT:
         named_labels = {f: tf.multiply(get_mask(v), v) for f, v in labels.items()}
 
-        # for l, these_labels in named_labels.items():
-        #   this_shape = these_labels.get_shape().as_list()
-        #   if len(this_shape) == 2:
-        #     these_labels_masked = tf.multiply(these_labels, tf.cast(tokens_to_keep, tf.int64))
-        #   # check if we need to mask another dimension
-        #   elif len(this_shape) == 3:
-        #     last_dim = tf.shape(these_labels)[2]
-        #     this_mask = tf.where(tf.equal(these_labels, constants.PAD_VALUE),
-        #                          tf.zeros([batch_size, batch_seq_len, last_dim], dtype=tf.int64),
-        #                          tf.ones([batch_size, batch_seq_len, last_dim], dtype=tf.int64))
-        #     these_labels_masked = tf.multiply(these_labels, this_mask)
-        #   named_labels[l] = these_labels_masked
-
       # load transition parameters
       transition_stats = util.load_transition_params(self.task_config, self.vocab)
 
       # Create embeddings tables, loading pre-trained or BERT if specified
       embeddings = {}
+      cached_bert = {}
       for embedding_name, embedding_map in self.model_config['embeddings'].items():
         embedding_dim = embedding_map['embedding_dim']
         if 'pretrained_embeddings' in embedding_map:
@@ -133,9 +119,13 @@ class LISAModel:
           bert_dir = embedding_map['bert_embeddings']
           bpe_lens = named_features['word_bpe_lens']
 
-          bert_embedded_tokens, bert_vars, bert_weights_l2 = bert_util.get_bert_embeddings(bert_dir, bpe_sentences,
-                                                                                           bpe_lens, self.vocab.vocab_maps)
+          bert_embeddings, bert_vars = bert_util.get_bert_embeddings(bert_dir, bpe_sentences)
+          cached_bert['embeddings'] = bert_embeddings
 
+          bert_vocab = self.vocab.vocab_maps['%s/vocab.txt' % bert_dir]
+          cached_bert['vocab'] = bert_vocab
+          bert_embedded_tokens, bert_weights_l2 = bert_util.get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences,
+                                                                             bpe_lens, l2_penalty=bert_weights_l2)
           loss += bert_weights_l2
           items_to_log['bert_l2_loss'] = bert_weights_l2
 
@@ -208,59 +198,78 @@ class LISAModel:
 
               # todo test a list of tasks for each layer
               for task, task_map in self.task_config[i].items():
-                # task_labels = named_labels[task]
-                task_vocab_size = self.vocab.vocab_names_sizes[task] if task in self.vocab.vocab_names_sizes else -1
+                with tf.variable_scope(task):
 
-                # Set up CRF / Viterbi transition params if specified
-                with tf.variable_scope("crf"):  # to share parameters, change scope here
-                  # transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
-                  task_transition_stats = transition_stats[task] if task in transition_stats else None
+                  # todo: also try this before layer norm?
+                  # todo: also try this as input to the preceding layer (to allow for a self-attention layer of processing)?
+                  # if any task attached to this layer desires a unique bert weighted avg, then compute and add it in here
+                  if 'bert' in task_map and task_map['bert']:
+                    task_bert_tok_embeddings, task_bert_weights_l2 = bert_util.get_weighted_avg(cached_bert['vocab'],
+                                                                                                cached_bert['embeddings'],
+                                                                                                named_features['word_bpe'],
+                                                                                                named_features['word_bpe_lens'],
+                                                                                                bert_weights_l2)
+                    loss += task_bert_weights_l2
+                    items_to_log['bert_l2_loss_%d' % i] = task_bert_weights_l2
 
-                  # create transition parameters if training or decoding with crf/viterbi
-                  task_crf = 'crf' in task_map and task_map['crf']
-                  task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
-                  transition_params = None
-                  if task_viterbi_decode or task_crf:
-                    transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
-                                                        initializer=tf.constant_initializer(task_transition_stats),
-                                                        trainable=task_crf)
-                    train_or_decode_str = "training" if task_crf else "decoding"
-                    tf.logging.info("Created transition params for %s %s" % (train_or_decode_str, task))
+                    # project down to the correct dim
+                    task_bert_projected = nn_utils.MLP(task_bert_tok_embeddings, sa_hidden_size, n_splits=1)
 
-                task_labels = named_labels[task] if mode != ModeKeys.PREDICT else None
-                output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
-                                                         named_features, current_input, task_vocab_size,
-                                                         self.vocab.joint_label_lookup_maps, tokens_to_keep,
-                                                         transition_params, hparams, named_labels, task_labels)
-                task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
+                    current_input += task_bert_projected
 
-                # want task_outputs to have:
-                # - predictions
-                # - scores
-                # - probabilities
-                # - loss (if training)
-                predictions[task] = task_outputs
+                  # task_labels = named_labels[task]
+                  task_vocab_size = self.vocab.vocab_names_sizes[task] if task in self.vocab.vocab_names_sizes else -1
 
-                if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+                  # Set up CRF / Viterbi transition params if specified
+                  with tf.variable_scope("crf"):  # to share parameters, change scope here
+                    # transition_stats_file = task_map['transition_stats'] if 'transition_stats' in task_map else None
+                    task_transition_stats = transition_stats[task] if task in transition_stats else None
 
-                  # get the individual task loss and apply penalty
-                  this_task_loss = task_outputs['loss'] * task_map['penalty']
+                    # create transition parameters if training or decoding with crf/viterbi
+                    task_crf = 'crf' in task_map and task_map['crf']
+                    task_viterbi_decode = task_crf or 'viterbi' in task_map and task_map['viterbi']
+                    transition_params = None
+                    if task_viterbi_decode or task_crf:
+                      transition_params = tf.get_variable("transitions", [task_vocab_size, task_vocab_size],
+                                                          initializer=tf.constant_initializer(task_transition_stats),
+                                                          trainable=task_crf)
+                      train_or_decode_str = "training" if task_crf else "decoding"
+                      tf.logging.info("Created transition params for %s %s" % (train_or_decode_str, task))
 
-                  # log this task's loss
-                  items_to_log['%s_loss' % task] = this_task_loss
+                  task_labels = named_labels[task] if mode != ModeKeys.PREDICT else None
+                  output_fn_params = output_fns.get_params(mode, self.model_config, task_map['output_fn'], predictions,
+                                                           named_features, current_input, task_vocab_size,
+                                                           self.vocab.joint_label_lookup_maps, tokens_to_keep,
+                                                           transition_params, hparams, named_labels, task_labels)
+                  task_outputs = output_fns.dispatch(task_map['output_fn']['name'])(**output_fn_params)
 
-                  # add this loss to the overall loss being minimized
-                  loss += this_task_loss
+                  # want task_outputs to have:
+                  # - predictions
+                  # - scores
+                  # - probabilities
+                  # - loss (if training)
+                  predictions[task] = task_outputs
 
-                  if mode == ModeKeys.EVAL:
-                    # do the evaluation
-                    for eval_name, eval_map in task_map['eval_fns'].items():
-                      eval_fn_params = evaluation_fns.get_params(mode, task_outputs, eval_map, predictions,
-                                                                 named_features,
-                                                                 named_labels, task_labels, self.vocab.reverse_maps,
-                                                                 tokens_to_keep)
-                      eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
-                      eval_metric_ops[eval_name] = eval_result
+                  if mode == ModeKeys.TRAIN or mode == ModeKeys.EVAL:
+
+                    # get the individual task loss and apply penalty
+                    this_task_loss = task_outputs['loss'] * task_map['penalty']
+
+                    # log this task's loss
+                    items_to_log['%s_loss' % task] = this_task_loss
+
+                    # add this loss to the overall loss being minimized
+                    loss += this_task_loss
+
+                    if mode == ModeKeys.EVAL:
+                      # do the evaluation
+                      for eval_name, eval_map in task_map['eval_fns'].items():
+                        eval_fn_params = evaluation_fns.get_params(mode, task_outputs, eval_map, predictions,
+                                                                   named_features,
+                                                                   named_labels, task_labels, self.vocab.reverse_maps,
+                                                                   tokens_to_keep)
+                        eval_result = evaluation_fns.dispatch(eval_map['name'])(**eval_fn_params)
+                        eval_metric_ops[eval_name] = eval_result
 
       if mode == ModeKeys.PREDICT:
         # need to flatten the dict of predictions to make Estimator happy
