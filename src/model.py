@@ -210,7 +210,7 @@ class LISAModel:
                                                                                                 named_features['word_bpe_lens'],
                                                                                                 bert_weights_l2_penalty)
                     loss += task_bert_weights_l2
-                    items_to_log['bert_l2_loss_%d' % i] = task_bert_weights_l2
+                    items_to_log['bert_l2_loss_%s' % task] = task_bert_weights_l2
 
                     # project down to the correct dim
                     task_bert_projected = nn_utils.MLP(task_bert_tok_embeddings, sa_hidden_size, n_splits=1)
