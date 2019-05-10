@@ -45,7 +45,7 @@ def get_bert_embeddings(bert_dir, bpe_sentences):
   return bert_embeddings, bert_vars
 
 
-def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_penalty=0.001):
+def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_penalty):
 
   bert_mask_indices = [bert_vocab[s] for s in constants.BERT_MASK_STRS]
   bert_keep_mask = get_bert_mask(bpe_sentences, bert_mask_indices)
@@ -54,14 +54,14 @@ def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_pe
   num_bert_layers = len(bert_embeddings)
   bert_layer_weights = tf.get_variable("bert_layer_weights", shape=[num_bert_layers], initializer=tf.zeros_initializer)
   bert_layer_weights_normed = tf.split(tf.nn.softmax(bert_layer_weights + 1.0 / num_bert_layers), num_bert_layers)
-  for bert_layer_idx, (bert_layer_weight, bert_layer_output) in enumerate(
-      zip(bert_layer_weights_normed, bert_embeddings)):
-    bert_embeddings[bert_layer_idx] = tf.expand_dims(bert_layer_output * bert_layer_weight, -1)
+  bert_embeddings_weighted = []
+  for bert_layer_weight, bert_layer_output in zip(bert_layer_weights_normed, bert_embeddings):
+    bert_embeddings_weighted.append(tf.expand_dims(bert_layer_output * bert_layer_weight, -1))
 
   l2_regularizer = tf.contrib.layers.l2_regularizer(l2_penalty)
   bert_weights_l2_loss = l2_regularizer(bert_layer_weights)
 
-  bert_embeddings_concat = tf.concat(bert_embeddings, axis=-1)
+  bert_embeddings_concat = tf.concat(bert_embeddings_weighted, axis=-1)
   bert_embeddings_avg = tf.reduce_sum(bert_embeddings_concat, -1)
 
   # [bpe_toks_in_batch x bert_dim]
