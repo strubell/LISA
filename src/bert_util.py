@@ -8,8 +8,8 @@ def get_bert_mask(bpe_sentences, ids_to_mask=None):
   bert_keep_mask = tf.greater(bpe_sentences, 0)
   if ids_to_mask:
     for idx_to_mask in ids_to_mask:
-      bert_keep_mask *= tf.cast(tf.not_equal(bpe_sentences, idx_to_mask), tf.int32)
-  return bert_keep_mask
+      bert_keep_mask = tf.logical_and(bert_keep_mask, tf.not_equal(bpe_sentences, idx_to_mask))
+  return tf.cast(bert_keep_mask, tf.int32)
 
 
 def get_bert_embeddings(bert_dir, bpe_sentences):
