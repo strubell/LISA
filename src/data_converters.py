@@ -45,7 +45,19 @@ def idx_list_converter(split_line, idx):
   return [split_line[i] for i in idx]
 
 
+def span_start_converter(split_line, idx):
+  assert type(idx) == int
+  maybe_labels = split_line[idx]
+  if maybe_labels == '-':
+    span_starts = ["-1"]
+  else:
+    span_starts = maybe_labels.split("|")
+
+  return span_starts
+
+
 dispatcher = {
+  'span_starts': span_start_converter,
   'parse_roots_self_loop': parse_roots_self_loop_converter,
   'strip_conll12_domain': strip_conll12_domain_converter,
   'conll12_binary_predicates': conll12_binary_predicates_converter,
@@ -55,7 +67,7 @@ dispatcher = {
   'joint_converter': joint_converter,
   'idx_range_converter': idx_range_converter,
   'idx_list_converter': idx_list_converter,
-  'default_converter': idx_list_converter
+  'default_converter': idx_list_converter,
 }
 
 
