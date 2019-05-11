@@ -73,7 +73,9 @@ def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_pe
   # [batch_size*batch_seq_len]
   bpe_lens_flat = tf.reshape(bpe_lens, [-1])
 
-  max_bpe_len = tf.cast(tf.reduce_max(bpe_lens), tf.int32)
+  # need commented for tf-1.10
+  # max_bpe_len = tf.cast(tf.reduce_max(bpe_lens), tf.int32)
+  max_bpe_len = tf.reduce_max(bpe_lens)
 
   # [batch_size*batch_seq_len x max_bpe_len]
   # the number of 1s in scatter_mask (and therefore number of scatter indices) should equal the number of bpe
@@ -85,8 +87,11 @@ def get_weighted_avg(bert_vocab, bert_embeddings, bpe_sentences, bpe_lens, l2_pe
   batch_size = token_batch_shape[0]
   batch_seq_len = token_batch_shape[1]
 
+  # need commented for tf-1.10
+  # bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather,
+  #                                   tf.cast(tf.stack([batch_size * batch_seq_len, max_bpe_len, bert_dim]), tf.int64))
   bert_reps_scatter = tf.scatter_nd(scatter_indices, bert_embeddings_avg_gather,
-                                    tf.cast(tf.stack([batch_size * batch_seq_len, max_bpe_len, bert_dim]), tf.int64))
+                                    [batch_size * batch_seq_len, max_bpe_len, bert_dim])
 
   # average over bpes to get tokens
   bert_tokens = tf.reshape(tf.reduce_mean(bert_reps_scatter, axis=1), [batch_size, batch_seq_len, bert_dim])
