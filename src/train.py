@@ -55,8 +55,8 @@ os.environ['TF_ENABLE_AUTO_MIXED_PRECISION'] = '1'
 
 # Load all the various configurations
 # todo: validate json
-data_configs = [train_utils.load_json_configs(c) for c in args.data_configs.split(',')]
-model_config = train_utils.load_json_configs(args.model_configs)
+data_configs = [train_utils.load_json_configs(c, args) for c in args.data_configs.split(',')]
+model_config = train_utils.load_json_configs(args.model_configs, args)
 task_config = train_utils.load_json_configs(args.task_configs, args)
 layer_config = train_utils.load_json_configs(args.layer_configs)
 attention_config = train_utils.load_json_configs(args.attention_configs)
