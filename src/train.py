@@ -40,6 +40,8 @@ arg_parser.add_argument('--best_eval_key', required=True, type=str,
                         help='Key corresponding to the evaluation to be used for determining early stopping.')
 arg_parser.add_argument('--use_xla', dest='use_xla', action='store_true',
                         help="Whether to use TensorFlow's XLA JIT.")
+arg_parser.add_argument('--bert_dir', type=str,
+                        help="Path to BERT pre-trained language model and config.")
 
 arg_parser.set_defaults(debug=False, num_gpus=1, keep_k_best_models=1, use_xla=False)
 

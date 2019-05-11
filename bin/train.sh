@@ -20,5 +20,6 @@ python3 src/train.py \
 --layer_configs $layer_configs \
 --attention_configs "$attention_configs" \
 --best_eval_key $best_eval_key \
+--bert_dir "$bert_dir" \
 $params
 

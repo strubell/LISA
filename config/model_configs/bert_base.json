@@ -32,7 +32,7 @@
  "embeddings": {
    "word_bpe": {
      "embedding_dim": 768,
-     "bert_embeddings": "cased_L-12_H-768_A-12"
+     "bert_embeddings": "##bert_dir##"
    }
  },
  "inputs": [

@@ -21,7 +21,7 @@
         "converter": {
           "name": "bert_wordpiece_lens_converter",
           "params": {
-            "wordpiece_vocab": "cased_L-12_H-768_A-12/vocab.txt"
+            "wordpiece_vocab": "##bert_dir##/vocab.txt"
           }
         }
       },
@@ -107,13 +107,13 @@
       "word_bpe": {
         "conll_idx": 3,
         "feature": true,
-        "vocab": "cased_L-12_H-768_A-12/vocab.txt",
+        "vocab": "##bert_dir##/vocab.txt",
         "oov": false,
         "updatable": true,
         "converter": {
           "name": "bert_wordpiece_converter",
           "params": {
-            "wordpiece_vocab": "cased_L-12_H-768_A-12/vocab.txt"
+            "wordpiece_vocab": "##bert_dir##/vocab.txt"
           }
         }
       }
