@@ -1,3 +1,5 @@
 {
-  "joint_pos_predicate": 1
+  "joint_pos_predicate": 1,
+  "parse_head": 2,
+  "parse_label": 2
 }
